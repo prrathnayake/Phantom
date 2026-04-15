@@ -18,7 +18,7 @@ def _collect_with_psutil() -> Dict[str, Any]:
         # Only interested in listening sockets
         if conn.status == psutil.CONN_LISTEN:
             laddr = f"{conn.laddr.ip}:{conn.laddr.port}"
-            proto = "tcp" if conn.type == psutil.SOCK_STREAM else "udp"
+            proto = "tcp" if hasattr(psutil, 'SOCK_STREAM') and conn.family == psutil.AF_INET else "udp"
             ports.append({"protocol": proto, "address": laddr})
     return {
         "count": len(ports),
