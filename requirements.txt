@@ -7,3 +7,6 @@ requests>=2.31
 
 # TUI dashboard dependencies
 textual>=0.90.0
+
+# Environment variable loading
+python-dotenv>=1.0

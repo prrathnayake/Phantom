@@ -5,6 +5,9 @@ environment variables for convenience (see below).
 """
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv()
 
 LOG_DIR = Path(os.environ.get("AGENT_LOG_DIR", Path(__file__).parent / "logs"))
 
