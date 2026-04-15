@@ -6,9 +6,10 @@ Rolling state for the current working day.
 - None currently
 
 ## Recent Completions
+- Added BACKGROUND TASKS panel to TUI dashboard for monitoring active/pending threadpool tasks and debug logs
 - Added debug logging throughout codebase (sensors, core, analysis, skills, utils)
+- Fixed config: changed WATCH_DIRECTORY to project folder, added .logs/ to gitignore
 - Created DebugLogger class (utils/debug_log.py) with sensor(), task(), detection() methods
-- Debug logging enabled via AGENT_DEBUG=true environment variable
 - Major performance optimization: LogCounter, EventCache, AgentState, ThreadPool async refresh, OpenRouter chat, risk score
 - Created singleton ThreadPool (utils/threadpool.py) with mutex-based error handling, worker queue, exception catching, graceful shutdown
 - Created TUI dashboard (dashboard.py) using Textual library

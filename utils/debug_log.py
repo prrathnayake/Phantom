@@ -43,8 +43,8 @@ class DebugLogger:
     def warning(self, message: str, data: Dict[str, Any] = None) -> None:
         self.log("WARNING", message, data)
 
-    def sensor(self, sensor_name: str, payload: Dict[str, Any]) -> None:
-        self.log(f"SENSOR:{sensor_name}", "Sensor collected data", payload)
+    def sensor(self, sensor_name: str, message: str, data: Dict[str, Any] = None) -> None:
+        self.log(f"SENSOR:{sensor_name}", message, data)
 
     def task(self, task_name: str, message: str, data: Dict[str, Any] = None) -> None:
         self.log(f"TASK:{task_name}", message, data)
