@@ -6,6 +6,7 @@ Rolling state for the current working day.
 - None currently
 
 ## Recent Completions
+- Major performance optimization: LogCounter, EventCache, AgentState, ThreadPool async refresh, OpenRouter chat, risk score
 - Created singleton ThreadPool (utils/threadpool.py) with mutex-based error handling, worker queue, exception catching, graceful shutdown
 - Created TUI dashboard (dashboard.py) using Textual library
 - Fixed logs folder to use local ./logs/ instead of C:\Users\cybor\agent_logs
