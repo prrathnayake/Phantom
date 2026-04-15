@@ -4,3 +4,6 @@
 psutil>=5.9
 watchdog>=3.0
 requests>=2.31
+
+# TUI dashboard dependencies
+textual>=0.90.0
