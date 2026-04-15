@@ -175,7 +175,7 @@ class DashboardApp(App):
 
     def _refresh_log_counts_if_needed(self) -> None:
         """Refresh expensive log counts less often."""
-        if self._refresh_count - self._last_count_refresh < 5:
+        if self._refresh_count - self._last_count_refresh <= 4:
             return
 
         self._events_count_cache = safe_tail_line_count(LOG_DIR / "events.log")
@@ -301,7 +301,7 @@ class DashboardApp(App):
             lines.append(f"[{ts}] {severity} {rule}")
             lines.append(f"  {desc[:70]}")
 
-            if i < len(detections[:15]) - 1:
+            if i < len(detections) - 1:
                 lines.append("")
 
         return "\n".join(lines)
