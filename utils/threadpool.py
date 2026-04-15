@@ -95,7 +95,7 @@ class ThreadPool:
     _instance: Optional['ThreadPool'] = None
     _lock = threading.Lock()
 
-    def __init__(self, num_threads: int = 4):
+    def __init__(self, num_threads: int = 8):
         """Initialize thread pool (internal - use get_instance).
         
         Args:
@@ -120,7 +120,7 @@ class ThreadPool:
         self._initialized = False
 
     @classmethod
-    def get_instance(cls, num_threads: int = 4) -> 'ThreadPool':
+    def get_instance(cls, num_threads: int = 8) -> 'ThreadPool':
         """Get or create the singleton ThreadPool instance.
         
         Uses double-checked locking pattern for efficient singleton access.
@@ -308,7 +308,7 @@ class ThreadPool:
                 cls._instance = None
 
 
-def init_threadpool(num_threads: int = 4) -> ThreadPool:
+def init_threadpool(num_threads: int = 8) -> ThreadPool:
     """Initialize and return a singleton ThreadPool.
     
     Convenience function that combines get_instance() and initialize().

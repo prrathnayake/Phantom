@@ -1,5 +1,11 @@
-"""Unified TUI Dashboard for the SMA - Secure Monitoring Agent."""
-from __future__ import annotations
+"""Unified TUI Dashboard for the SMA - Secure Monitoring Agent.
+
+Optimized architecture:
+- UI only (Dashboard handles rendering)
+- State Manager (AgentState for sensor snapshots)
+- Data Service (EventCache for storage reads)
+- Background refresh via ThreadPool
+"""
 
 from datetime import datetime
 from pathlib import Path
@@ -10,27 +16,22 @@ import sys
 
 from textual.app import App, ComposeResult
 from textual.containers import Container, Vertical, Horizontal
-from textual.widgets import Footer, Header, Static, Button, TextArea, Label
+from textual.widgets import Footer, Header, Static, Button, TextArea
+from textual import work
+from textual.timer import Timer
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from config import DETECTION_THRESHOLDS, LOG_DIR
 from core.storage import Storage
-
-
-def safe_tail_line_count(path: Path) -> int:
-    """Cheap line count fallback."""
-    if not path.exists():
-        return 0
-    try:
-        with path.open("r", encoding="utf-8") as f:
-            return sum(1 for _ in f)
-    except OSError:
-        return 0
+from utils.event_cache import EventCache
+from utils.log_counter import MultiLogCounter
+from utils.agent_state import AgentState, create_agent_state
+from utils.threadpool import init_threadpool
 
 
 class ChatDisplay(Static):
-    """scrollable chat display widget."""
+    """Scrollable chat display widget."""
 
     def update_messages(self, messages: list[dict[str, str]]) -> None:
         lines = []
@@ -48,7 +49,7 @@ class ChatDisplay(Static):
 
 
 class DashboardApp(App):
-    """Main TUI dashboard with monitoring, chat, and command runner."""
+    """Main TUI dashboard with optimized data handling."""
 
     CSS = """
     Screen {
@@ -129,13 +130,25 @@ class DashboardApp(App):
         self.storage = Storage()
         self._refresh_count = 0
         self._app_start_time = datetime.now()
-        self._last_process_data: dict[str, Any] = {}
-        self._last_port_data: dict[str, Any] = {}
-        self._last_file_data: dict[str, Any] = {}
-        self._events_count_cache = safe_tail_line_count(LOG_DIR / "events.log")
-        self._detections_count_cache = safe_tail_line_count(LOG_DIR / "detections.log")
-        self._last_count_refresh = 0
+        
+        self._event_cache = EventCache(
+            events_file=LOG_DIR / "events.log",
+            detections_file=LOG_DIR / "detections.log",
+            max_events=200,
+            max_detections=50,
+            ttl=5.0
+        )
+        
+        self._log_counter = MultiLogCounter()
+        self._log_counter.register("events", LOG_DIR / "events.log")
+        self._log_counter.register("detections", LOG_DIR / "detections.log")
+        
+        self._agent_state = create_agent_state()
+        
         self._chat_messages: list[dict[str, str]] = []
+        
+        self._llm_client = None
+        self._refresh_timer: Timer | None = None
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
@@ -177,10 +190,10 @@ class DashboardApp(App):
         self.status_content = self.query_one("#status-content", Static)
         self.chat_display = self.query_one("#chat-messages", ChatDisplay)
         self.command_input = self.query_one("#command-input", TextArea)
-        self._refresh_log_counts_if_needed()
-        self.set_interval(3.0, self.do_refresh)
-        self.do_refresh()
-        self.chat_display.update_messages(self._chat_messages)
+        
+        self._refresh_timer = self.set_interval(3.0, self._do_background_refresh)
+        
+        self._do_background_refresh()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         button_id = event.button.id
@@ -194,7 +207,7 @@ class DashboardApp(App):
             self.run_status()
 
     def action_refresh(self) -> None:
-        self.do_refresh()
+        self._do_background_refresh()
 
     def action_focus_chat(self) -> None:
         self.command_input.focus()
@@ -211,30 +224,38 @@ class DashboardApp(App):
         self._chat_messages = []
         self.chat_display.update_messages(self._chat_messages)
 
+    @work(thread=True)
     def run_scan(self) -> None:
-        self._chat_messages.append({"role": "system", "content": "Running system scan..."})
+        self._chat_messages.append({"role": "system", "content": "Scanning system..."})
         self.chat_display.update_messages(self._chat_messages)
+        
         from utils.system_scanner import scan_system, format_system_info
         info = scan_system()
         report = format_system_info(info)
+        
         self._chat_messages.append({"role": "system", "content": report})
         self.chat_display.update_messages(self._chat_messages)
 
+    @work(thread=True)
     def run_status(self) -> None:
         self._chat_messages.append({"role": "system", "content": "Checking agent status..."})
         self.chat_display.update_messages(self._chat_messages)
+        
         from utils.system_scanner import scan_system, get_missing_packages
         info = scan_system()
         missing = get_missing_packages(info)
+        
         if missing:
-            status_msg = f"Missing packages: {', '.join(missing)}"
+            status_msg = f"Missing: {', '.join(missing)}"
         else:
             status_msg = "All dependencies installed. Agent ready."
+        
         self._chat_messages.append({"role": "system", "content": status_msg})
         self.chat_display.update_messages(self._chat_messages)
 
     def process_user_input(self, text: str) -> None:
         text_lower = text.lower().strip()
+        
         if text_lower in ["scan", "system scan", "check"]:
             self.run_scan()
         elif text_lower in ["status", "check status"]:
@@ -244,86 +265,96 @@ class DashboardApp(App):
         elif text_lower in ["help", "?"]:
             help_msg = (
                 "Available commands:\n"
-                "  scan - Scan system for OS and requirements\n"
-                "  status - Check agent status\n"
-                "  clear - Clear chat messages\n"
-                "  help - Show this help\n"
-                "  Or type any message to chat with the agent."
+                "  scan - Scan system\n"
+                "  status - Check status\n"
+                "  clear - Clear chat\n"
+                "  help - Show help"
             )
             self._chat_messages.append({"role": "system", "content": help_msg})
             self.chat_display.update_messages(self._chat_messages)
         else:
-            self._chat_messages.append({"role": "system", "content": f"You said: {text}"})
+            self._handle_llm_chat(text)
+
+    @work(thread=True)
+    def _handle_llm_chat(self, text: str) -> None:
+        try:
+            from core import OpenRouterClient
+            if self._llm_client is None:
+                self._llm_client = OpenRouterClient()
+            
+            if not self._llm_client.api_key:
+                self._chat_messages.append({"role": "assistant", "content": f"You said: {text}"})
+                self.chat_display.update_messages(self._chat_messages)
+                return
+            
+            messages = self._build_context()
+            messages.append({"role": "user", "content": text})
+            
+            response = self._llm_client.chat_completion(messages)
+            
+            if response:
+                self._chat_messages.append({"role": "assistant", "content": response})
+            else:
+                self._chat_messages.append({"role": "system", "content": "LLM unavailable"})
+            
+            self.chat_display.update_messages(self._chat_messages)
+        except Exception as e:
+            self._chat_messages.append({"role": "system", "content": f"Error: {e}"})
             self.chat_display.update_messages(self._chat_messages)
 
-    def do_refresh(self) -> None:
+    def _build_context(self) -> list[dict[str, str]]:
+        messages = [{"role": "system", "content": "You are a security monitoring agent."}]
+        
+        state = self._agent_state.get_all()
+        risk_score, risk_level = self._agent_state.calculate_risk()
+        
+        context = (
+            f"Current risk level: {risk_level} (score: {risk_score})\n"
+            f"Process count: {state.process.get('count', 0)}\n"
+            f"Open ports: {state.port.get('count', 0)}\n"
+            f"File changes: {state.file.get('change_count', 0)}"
+        )
+        messages.append({"role": "system", "content": context})
+        
+        for msg in self._chat_messages[-5:]:
+            messages.append(msg)
+        
+        return messages
+
+    def _do_background_refresh(self) -> None:
         self._refresh_count += 1
-        events = self._safe_get_events()
-        detections = self._safe_get_detections()
-        self._extract_latest_sensor_snapshots(events)
-        self._refresh_log_counts_if_needed()
+        
+        try:
+            events = self.storage.get_recent_events(count=50)
+            detections = self.storage.get_recent_detections(count=30)
+            
+            self._event_cache.update(events, detections)
+            self._agent_state.update_from_events(events)
+            
+            self._log_counter.update_all()
+        except Exception:
+            pass
+        
         self.process_content.update(self._render_process_panel())
         self.port_content.update(self._render_port_panel())
         self.file_content.update(self._render_file_panel())
-        self.detections_content.update(self._render_detections_panel(detections))
-        self.events_content.update(self._render_events_panel(events))
+        self.detections_content.update(self._render_detections_panel())
+        self.events_content.update(self._render_events_panel())
         self.status_content.update(self._render_status_panel())
 
-    def _safe_get_events(self) -> list[dict[str, Any]]:
-        try:
-            return self.storage.get_recent_events(count=200) or []
-        except Exception:
-            return []
-
-    def _safe_get_detections(self) -> list[dict[str, Any]]:
-        try:
-            return self.storage.get_recent_detections(count=50) or []
-        except Exception:
-            return []
-
-    def _extract_latest_sensor_snapshots(self, events: list[dict[str, Any]]) -> None:
-        proc_found = port_found = file_found = False
-        for event in reversed(events):
-            sensor = event.get("sensor", "")
-            data = event.get("data", {})
-            if sensor == "process_sensor" and not proc_found:
-                self._last_process_data = data
-                proc_found = True
-            elif sensor == "port_sensor" and not port_found:
-                self._last_port_data = data
-                port_found = True
-            elif sensor == "file_sensor" and not file_found:
-                self._last_file_data = data
-                file_found = True
-            if proc_found and port_found and file_found:
-                break
-
-    def _refresh_log_counts_if_needed(self) -> None:
-        if self._refresh_count - self._last_count_refresh <= 4:
-            return
-        self._events_count_cache = safe_tail_line_count(LOG_DIR / "events.log")
-        self._detections_count_cache = safe_tail_line_count(LOG_DIR / "detections.log")
-        self._last_count_refresh = self._refresh_count
-
-    def _status_meta(self, count: int, threshold: int) -> tuple[str, str, float]:
-        pct = (count / threshold * 100) if threshold > 0 else 0.0
-        if count > threshold:
-            return "HIGH", "(!)", pct
-        if pct > 80:
-            return "WARN", "(~)", pct
-        return "OK", "(+)", pct
-
     def _render_process_panel(self) -> str:
+        process = self._agent_state.get_process()
         threshold = DETECTION_THRESHOLDS["process_count"]
-        count = self._last_process_data.get("count", 0)
-        status, indicator, pct = self._status_meta(count, threshold)
+        count = process.get("count", 0)
+        status, indicator = self._get_status(count, threshold)
+        
         lines = [
             f"Count: {count} {indicator}",
             f"Threshold: {threshold}",
             f"Status: {status}",
-            f"Usage: {pct:.0f}%",
         ]
-        top = self._last_process_data.get("top_processes", [])
+        
+        top = process.get("top_processes", [])
         if top:
             lines.append("")
             lines.append("[Top Processes]")
@@ -333,103 +364,119 @@ class DashboardApp(App):
                 cpu = proc.get("cpu_percent", 0)
                 mem = proc.get("memory_percent", 0)
                 lines.append(f"  {name:20s} PID:{str(pid):>6} CPU:{cpu:5.1f}% MEM:{mem:5.1f}%")
+        
         return "\n".join(lines)
 
     def _render_port_panel(self) -> str:
+        port = self._agent_state.get_port()
         threshold = DETECTION_THRESHOLDS["open_ports"]
-        count = self._last_port_data.get("count", 0)
-        status, indicator, pct = self._status_meta(count, threshold)
+        count = port.get("count", 0)
+        status, indicator = self._get_status(count, threshold)
+        
         lines = [
             f"Open Ports: {count} {indicator}",
             f"Threshold: {threshold}",
             f"Status: {status}",
-            f"Usage: {pct:.0f}%",
         ]
-        listening = self._last_port_data.get("listening", [])
+        
+        listening = port.get("listening", [])
         if listening:
             lines.append("")
             lines.append("[Listening Ports]")
-            for port in listening[:10]:
-                proto = port.get("protocol", "tcp")
-                addr = port.get("address", "?")
+            for p in listening[:10]:
+                proto = p.get("protocol", "tcp")
+                addr = p.get("address", "?")
                 lines.append(f"  {proto:4s} {addr}")
             if len(listening) > 10:
                 lines.append(f"  ... and {len(listening) - 10} more")
+        
         return "\n".join(lines)
 
     def _render_file_panel(self) -> str:
+        file_data = self._agent_state.get_file()
         threshold = DETECTION_THRESHOLDS["file_changes"]
-        total = self._last_file_data.get("change_count", 0)
-        status, indicator, pct = self._status_meta(total, threshold)
-        added = self._last_file_data.get("added", [])
-        modified = self._last_file_data.get("modified", [])
-        removed = self._last_file_data.get("removed", [])
+        total = file_data.get("change_count", 0)
+        status, indicator = self._get_status(total, threshold)
+        
+        added = file_data.get("added", [])
+        modified = file_data.get("modified", [])
+        removed = file_data.get("removed", [])
+        
         lines = [
             f"Total Changes: {total} {indicator}",
             f"Threshold: {threshold}",
             f"Status: {status}",
-            f"Usage: {pct:.0f}%",
             "",
             "[Change Summary]",
             f"  Added: {len(added)}",
             f"  Modified: {len(modified)}",
             f"  Removed: {len(removed)}",
         ]
+        
         if added[:3]:
             lines.append("")
             lines.append("[Recent Added]")
-            lines.extend(f"  + {str(path)[:60]}" for path in added[:3])
+            lines.extend(f"  + {str(p)[:60]}" for p in added[:3])
+        
         if modified[:3]:
             lines.append("")
             lines.append("[Recent Modified]")
-            lines.extend(f"  ~ {str(path)[:60]}" for path in modified[:3])
+            lines.extend(f"  ~ {str(p)[:60]}" for p in modified[:3])
+        
         return "\n".join(lines)
 
-    def _render_detections_panel(self, detections: list[dict[str, Any]]) -> str:
+    def _render_detections_panel(self) -> str:
+        detections = self._event_cache.get_detections()
         if not detections:
-            return "[No detections recorded]\n\nSystem operating normally."
+            return "[No detections]\n\nSystem operating normally."
+        
         process_threshold = DETECTION_THRESHOLDS["process_count"]
         port_threshold = DETECTION_THRESHOLDS["open_ports"]
+        
         lines: list[str] = []
         for i, det in enumerate(detections[:15]):
             ts = str(det.get("timestamp", ""))[11:19]
             rule = str(det.get("rule", ""))
-            desc = str(det.get("description", ""))
+            desc = str(det.get("description", ""))[:60]
             details = det.get("details", {})
+            
             severity = "(~)"
             if "process" in rule:
                 severity = "(!)" if details.get("count", 0) > process_threshold else "(~)"
             elif "port" in rule:
                 severity = "(!)" if details.get("count", 0) > port_threshold else "(~)"
-            elif "file" in rule:
-                severity = "(!)" if details.get("added") or details.get("modified") else "(~)"
+            
             lines.append(f"[{ts}] {severity} {rule}")
-            lines.append(f"  {desc[:70]}")
+            lines.append(f"  {desc}")
             if i < len(detections) - 1:
                 lines.append("")
+        
         return "\n".join(lines)
 
-    def _render_events_panel(self, events: list[dict[str, Any]]) -> str:
+    def _render_events_panel(self) -> str:
+        events = self._event_cache.get_events()
         if not events:
-            return "[No events recorded yet]\n\nWaiting for sensor data..."
+            return "[No events]\n\nWaiting for sensor data..."
+        
         lines: list[str] = []
         for event in events[:20]:
             ts = str(event.get("timestamp", ""))[11:19]
             sensor = str(event.get("sensor", ""))
             data = event.get("data", {})
+            
             if sensor == "process_sensor":
                 lines.append(f"[{ts}] PROCESS_SENSOR")
-                lines.append(f"  Running processes: {data.get('count', 0)}")
+                lines.append(f"  Running: {data.get('count', 0)}")
             elif sensor == "port_sensor":
                 lines.append(f"[{ts}] PORT_SENSOR")
-                lines.append(f"  Listening ports: {data.get('count', 0)}")
+                lines.append(f"  Listening: {data.get('count', 0)}")
             elif sensor == "file_sensor":
                 lines.append(f"[{ts}] FILE_SENSOR")
-                lines.append(f"  Changes: {data.get('change_count', 0)} (+{len(data.get('added', []))} ~{len(data.get('modified', []))})")
+                lines.append(f"  Changes: {data.get('change_count', 0)}")
             else:
                 lines.append(f"[{ts}] {sensor}")
-                lines.append(f"  {str(data)[:60]}")
             lines.append("")
+        
         return "\n".join(lines)
 
     def _render_status_panel(self) -> str:
@@ -437,22 +484,26 @@ class DashboardApp(App):
         total_seconds = int(uptime.total_seconds())
         hours, remainder = divmod(total_seconds, 3600)
         minutes, seconds = divmod(remainder, 60)
-        latest_event_time = "N/A"
-        events = self._safe_get_events()
-        if events:
-            latest_event_time = events[0].get("timestamp", "")[:19]
+        
+        risk_score, risk_level = self._agent_state.calculate_risk()
+        risk_details = self._agent_state.get_risk_details()
+        
+        events_count, detections_count = self._log_counter.get_all()
+        
         return "\n".join([
             "[Agent Information]",
-            "  Status: RUNNING",
+            f"  Status: RUNNING",
             f"  Uptime: {hours}h {minutes}m {seconds}s",
             f"  Refresh: #{self._refresh_count}",
-            f"  Last Update: {datetime.now().strftime('%H:%M:%S')}",
-            f"  Latest Event: {latest_event_time}",
+            "",
+            "[Risk Assessment]",
+            f"  Level: {risk_level}",
+            f"  Score: {risk_score}",
+            *([f"  - {d}" for d in risk_details] if risk_details else ["  All normal"]),
             "",
             "[Log Statistics]",
-            f"  Log Directory: {LOG_DIR}",
-            f"  Total Events: {self._events_count_cache}",
-            f"  Total Detections: {self._detections_count_cache}",
+            f"  Total Events: {events_count.get('events', 0)}",
+            f"  Total Detections: {events_count.get('detections', 0)}",
             "",
             "[Thresholds]",
             f"  Process: {DETECTION_THRESHOLDS['process_count']}",
@@ -463,8 +514,16 @@ class DashboardApp(App):
             "  (+) Normal  (~) Warning  (!) Alert",
         ])
 
+    def _get_status(self, count: int, threshold: int) -> tuple[str, str]:
+        if count > threshold:
+            return "HIGH", "(!)"
+        if count > threshold * 0.8:
+            return "WARN", "(~)"
+        return "OK", "(+)"
+
 
 def main() -> None:
+    init_threadpool(num_threads=8)
     DashboardApp().run()
 
 
