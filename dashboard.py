@@ -6,20 +6,17 @@ This application provides a real-time terminal UI that displays:
 - Agent status and activity log
 """
 from textual.app import App, ComposeResult
-from textual.widgets import Header, Footer, Static, DataTable, Log
-from textual.containers import Container, Horizontal, Vertical
+from textual.widgets import Header, Footer, Static, DataTable
+from textual.containers import Container
 from textual.reactive import reactive
 from textual.timer import Timer
-import threading
-import time
-from pathlib import Path
-import json
+from datetime import datetime
 
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import config
+from config import LOG_DIR
 from core.storage import Storage
 
 
@@ -28,7 +25,6 @@ class DashboardData:
 
     def __init__(self):
         self.storage = Storage()
-        self._lock = threading.Lock()
 
     def get_events(self, count=20):
         return self.storage.get_recent_events(count=count)
@@ -37,21 +33,21 @@ class DashboardData:
         return self.storage.get_recent_detections(count=count)
 
     def get_process_count(self):
-        events = self.get_events(count=100)
+        events = self.get_events(count=200)
         for event in reversed(events):
             if event.get("sensor") == "process_sensor":
                 return event.get("data", {}).get("count", 0)
         return 0
 
     def get_port_count(self):
-        events = self.get_events(count=100)
+        events = self.get_events(count=200)
         for event in reversed(events):
             if event.get("sensor") == "port_sensor":
                 return event.get("data", {}).get("count", 0)
         return 0
 
     def get_file_changes(self):
-        events = self.get_events(count=50)
+        events = self.get_events(count=100)
         for event in reversed(events):
             if event.get("sensor") == "file_sensor":
                 data = event.get("data", {})
@@ -63,197 +59,162 @@ class DashboardData:
                 }
         return {"added": 0, "removed": 0, "modified": 0, "total": 0}
 
-    def get_log_files(self):
-        log_dir = config.LOG_DIR
-        if not log_dir.exists():
-            return []
-        return list(log_dir.glob("*.log"))
-
 
 class SensorPanel(Static):
     """Panel displaying current sensor statistics."""
 
-    process_count = reactive(0)
-    port_count = reactive(0)
-    file_changes = reactive(0)
     dashboard_data = DashboardData()
 
     def compose(self) -> ComposeResult:
-        yield Static("📊 SENSOR STATUS", id="sensor-title")
-
-    def watch_process_count(self, count: int) -> None:
-        self.refresh_panel()
-
-    def watch_port_count(self, count: int) -> None:
-        self.refresh_panel()
-
-    def watch_file_changes(self, count: int) -> None:
-        self.refresh_panel()
-
-    def refresh_panel(self):
-        self.query_one("#sensor-title", Static).update(
-            f"📊 SENSOR STATUS\n"
-            f"───────────────\n"
-            f"Processes: {self.process_count}\n"
-            f"Open Ports: {self.port_count}\n"
-            f"File Changes: {self.file_changes}"
-        )
+        yield Static("SENSOR STATUS", id="sensor-title")
 
     def update_counts(self):
-        self.process_count = self.dashboard_data.get_process_count()
-        self.port_count = self.dashboard_data.get_port_count()
+        proc_count = self.dashboard_data.get_process_count()
+        port_count = self.dashboard_data.get_port_count()
         file_data = self.dashboard_data.get_file_changes()
-        self.file_changes = file_data.get("total", 0)
+
+        self.query_one("#sensor-title", Static).update(
+            f"SENSOR STATUS\n"
+            f"────────────\n"
+            f"Processes: {proc_count}\n"
+            f"Open Ports: {port_count}\n"
+            f"Files Changed: {file_data.get('total', 0)}"
+        )
 
 
 class DetectionsPanel(Static):
     """Panel displaying recent detections."""
 
     dashboard_data = DashboardData()
-    detections = reactive([])
 
     def compose(self) -> ComposeResult:
-        yield Static("🚨 RECENT DETECTIONS", id="detections-title")
+        yield Static("DETECTIONS", id="detections-title")
         yield DataTable(id="detections-table")
 
     def on_mount(self) -> None:
         table = self.query_one("#detections-table", DataTable)
         table.add_columns("Time", "Rule", "Description")
-        table.cursor_type = "none"
+        table.cursor_type = "row"
 
-    def watch_detections(self, detections: list) -> None:
-        self.update_table()
-
-    def update_table(self):
+    def refresh(self):
         table = self.query_one("#detections-table", DataTable)
         table.clear()
-        for det in self.detections[:15]:
-            timestamp = det.get("timestamp", "")[:19]
-            rule = det.get("rule", "")
-            desc = det.get("description", "")[:40]
-            table.add_row(timestamp, rule, desc)
+        detections = self.dashboard_data.get_detections(count=15)
 
-    def refresh_detections(self):
-        self.detections = self.dashboard_data.get_detections(count=20)
+        for det in detections:
+            timestamp = det.get("timestamp", "")[11:19]
+            rule = det.get("rule", "")
+            desc = det.get("description", "")[:45]
+            table.add_row(timestamp, rule, desc)
 
 
 class EventsPanel(Static):
     """Panel displaying recent events log."""
 
     dashboard_data = DashboardData()
-    events = reactive([])
 
     def compose(self) -> ComposeResult:
-        yield Static("📋 ACTIVITY LOG", id="events-title")
+        yield Static("ACTIVITY LOG", id="events-title")
         yield DataTable(id="events-table")
 
     def on_mount(self) -> None:
         table = self.query_one("#events-table", DataTable)
-        table.add_columns("Time", "Sensor", "Summary")
-        table.cursor_type = "none"
+        table.add_columns("Time", "Sensor", "Data")
+        table.cursor_type = "row"
 
-    def watch_events(self, events: list) -> None:
-        self.update_table()
-
-    def update_table(self):
+    def refresh(self):
         table = self.query_one("#events-table", DataTable)
         table.clear()
-        for event in self.events[:15]:
-            timestamp = event.get("timestamp", "")[:19]
+        events = self.dashboard_data.get_events(count=20)
+
+        for event in events:
+            timestamp = event.get("timestamp", "")[11:19]
             sensor = event.get("sensor", "")
             data = event.get("data", {})
+
             if sensor == "process_sensor":
                 summary = f"{data.get('count', 0)} processes"
             elif sensor == "port_sensor":
                 summary = f"{data.get('count', 0)} ports"
             elif sensor == "file_sensor":
-                summary = f"{data.get('change_count', 0)} changes"
+                total = data.get("change_count", 0)
+                added = len(data.get("added", []))
+                removed = len(data.get("removed", []))
+                modified = len(data.get("modified", []))
+                summary = f"+{added} -{removed} ~{modified}"
+            elif sensor == "vulnerability_check":
+                summary = "vulnerability check"
             else:
-                summary = str(data)[:30]
-            table.add_row(timestamp, sensor, summary)
+                summary = str(list(data.keys())[:2])
 
-    def refresh_events(self):
-        self.events = self.dashboard_data.get_events(count=30)
+            table.add_row(timestamp, sensor, summary)
 
 
 class StatusPanel(Static):
     """Panel displaying agent status."""
 
-    status = reactive("Running")
-    last_update = reactive("")
-
     def compose(self) -> ComposeResult:
-        yield Static("✅ AGENT STATUS", id="status-title")
+        yield Static("AGENT STATUS", id="status-title")
 
-    def watch_status(self, status: str) -> None:
-        self.refresh_status()
+    def update_status(self):
+        log_dir = LOG_DIR
+        log_exists = log_dir.exists()
+        events_file = log_dir / "events.log"
+        detections_file = log_dir / "detections.log"
 
-    def watch_last_update(self, last_update: str) -> None:
-        self.refresh_status()
+        events_count = 0
+        detections_count = 0
 
-    def refresh_status(self):
+        if events_file.exists():
+            try:
+                events_count = sum(1 for _ in events_file.open())
+            except:
+                pass
+
+        if detections_file.exists():
+            try:
+                detections_count = sum(1 for _ in detections_file.open())
+            except:
+                pass
+
         self.query_one("#status-title", Static).update(
-            f"✅ AGENT STATUS\n"
-            f"───────────────\n"
-            f"Status: {self.status}\n"
-            f"Last Update: {self.last_update}"
+            f"AGENT STATUS\n"
+            f"───────────\n"
+            f"Log Dir: {log_dir}\n"
+            f"Events: {events_count}\n"
+            f"Detections: {detections_count}\n"
+            f"Updated: {datetime.now().strftime('%H:%M:%S')}"
         )
-
-    def update_status(self, status: str, last_update: str):
-        self.status = status
-        self.last_update = last_update
 
 
 class DashboardApp(App):
     """Main TUI Dashboard Application."""
 
     CSS = """
-    Screen {
-        layout: grid;
-        grid-size: 3 2;
-        grid-columns: 1fr 2fr 1fr;
-        grid-rows: 1fr 2fr;
-    }
+    Screen { layout: grid; grid-size: 3 2; }
 
     #sensor-panel {
-        column-span: 1;
-        row-span: 1;
-        border: solid green;
-        padding: 1;
-        margin: 1;
+        column-span: 1; row-span: 1;
+        border: solid green; padding: 1; margin: 1;
     }
 
     #detections-panel {
-        column-span: 2;
-        row-span: 1;
-        border: solid red;
-        padding: 1;
-        margin: 1;
+        column-span: 2; row-span: 1;
+        border: solid red; padding: 1; margin: 1;
     }
 
     #events-panel {
-        column-span: 2;
-        row-span: 1;
-        border: solid blue;
-        padding: 1;
-        margin: 1;
+        column-span: 2; row-span: 1;
+        border: solid blue; padding: 1; margin: 1;
     }
 
     #status-panel {
-        column-span: 1;
-        row-span: 1;
-        border: solid yellow;
-        padding: 1;
-        margin: 1;
+        column-span: 1; row-span: 1;
+        border: solid yellow; padding: 1; margin: 1;
     }
 
-    Static {
-        text-style: bold;
-    }
-
-    DataTable {
-        height: 100%;
-    }
+    Static { text-style: bold; }
+    DataTable { height: 100%; }
     """
 
     BINDINGS = [
@@ -263,7 +224,6 @@ class DashboardApp(App):
 
     def __init__(self):
         super().__init__()
-        self.dashboard_data = DashboardData()
         self._update_timer: Timer | None = None
 
     def compose(self) -> ComposeResult:
@@ -284,19 +244,10 @@ class DashboardApp(App):
         self.refresh_data()
 
     def refresh_data(self):
-        from datetime import datetime
-
-        sensor_panel = self.query_one("#sensor-panel", SensorPanel)
-        sensor_panel.update_counts()
-
-        detections_panel = self.query_one("#detections-panel", DetectionsPanel)
-        detections_panel.refresh_detections()
-
-        events_panel = self.query_one("#events-panel", EventsPanel)
-        events_panel.refresh_events()
-
-        status_panel = self.query_one("#status-panel", StatusPanel)
-        status_panel.update_status("Running", datetime.now().strftime("%H:%M:%S"))
+        self.query_one("#sensor-panel", SensorPanel).update_counts()
+        self.query_one("#detections-panel", DetectionsPanel).refresh()
+        self.query_one("#events-panel", EventsPanel).refresh()
+        self.query_one("#status-panel", StatusPanel).update_status()
 
     def action_quit(self) -> None:
         if self._update_timer:

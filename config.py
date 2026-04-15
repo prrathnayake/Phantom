@@ -6,7 +6,7 @@ environment variables for convenience (see below).
 import os
 from pathlib import Path
 
-LOG_DIR = Path(os.environ.get("AGENT_LOG_DIR", Path.home() / "agent_logs"))
+LOG_DIR = Path(os.environ.get("AGENT_LOG_DIR", Path(__file__).parent / "logs"))
 
 # Default polling intervals (in seconds) for each sensor.  You can add
 # additional sensor names here and register them in `main.py`.
