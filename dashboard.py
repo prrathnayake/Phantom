@@ -149,7 +149,7 @@ class DashboardApp(App):
         with Container(id="right-panel"):
             with Vertical():
                 yield Static("CHAT", classes="panel-title")
-                yield Static(id="chat-messages", classes="panel")
+                yield ChatDisplay(id="chat-messages", classes="panel")
             with Vertical():
                 yield Static("COMMAND", classes="panel-title")
                 yield TextArea(id="command-input", placeholder="Enter command or message...")
@@ -175,7 +175,7 @@ class DashboardApp(App):
         self.detections_content = self.query_one("#detections-content", Static)
         self.events_content = self.query_one("#events-content", Static)
         self.status_content = self.query_one("#status-content", Static)
-        self.chat_display = self.query_one("#chat-messages", Static)
+        self.chat_display = self.query_one("#chat-messages", ChatDisplay)
         self.command_input = self.query_one("#command-input", TextArea)
         self._refresh_log_counts_if_needed()
         self.set_interval(3.0, self.do_refresh)
