@@ -86,3 +86,5 @@ PORT_CLASSIFICATIONS = {
     6379: "Redis",
     27017: "MongoDB",
 }
+
+DEBUG_MODE = os.environ.get("AGENT_DEBUG", "false").lower() == "true"

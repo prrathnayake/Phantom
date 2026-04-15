@@ -17,6 +17,7 @@ import config
 from core import Scheduler, Storage, OpenRouterClient
 from analysis import detection
 from skills import risk_assessment, vulnerability_check
+from utils.debug_log import debug_logger
 
 
 class Colors:
@@ -61,7 +62,7 @@ def make_sensor_task(sensor_module_name: str, storage: Storage) -> Callable[[Dic
     def task(context: Dict[str, Any]) -> None:
         payload = module.collect(context)
         storage.log_event(sensor_module_name, payload)
-        # Store last payload in context so detection rules can access it
+        debug_logger.sensor(sensor_module_name, payload)
         context[f"{sensor_module_name}_last"] = payload
     return task
 
@@ -69,6 +70,7 @@ def make_sensor_task(sensor_module_name: str, storage: Storage) -> Callable[[Dic
 def detection_task(context: Dict[str, Any], storage: Storage) -> None:
     anomalies = detection.detect(context, storage)
     if anomalies:
+        debug_logger.detection("anomaly_check", f"Detected {len(anomalies)} anomalies", {"count": len(anomalies), "anomalies": anomalies})
         context.setdefault("recent_anomalies", []).extend(anomalies)
         print(f"\n{Colors.RED}{'!' * 40}")
         print(f"  {Colors.BOLD}ANOMALIES DETECTED{Colors.END}")
@@ -78,6 +80,8 @@ def detection_task(context: Dict[str, Any], storage: Storage) -> None:
             desc = a.get("description", "no description")
             print(f"  {Colors.YELLOW}*{Colors.END} {Colors.BOLD}{rule}:{Colors.END} {desc}")
         print()
+    else:
+        debug_logger.detection("anomaly_check", "No anomalies detected")
 
 
 def print_section(title: str, content: str) -> None:
@@ -90,15 +94,19 @@ def print_section(title: str, content: str) -> None:
 
 
 def risk_assessment_task(context: Dict[str, Any], storage: Storage, client: OpenRouterClient) -> None:
+    debug_logger.task("risk_assessment", "Starting risk assessment")
     risk_assessment.run(context, storage, client)
     summary = context.get("last_summary")
+    debug_logger.task("risk_assessment", "Risk assessment completed", {"summary": summary})
     if summary:
         print_section("RISK ASSESSMENT SUMMARY", summary)
 
 
 def vulnerability_check_task(context: Dict[str, Any], storage: Storage, client: OpenRouterClient) -> None:
+    debug_logger.task("vulnerability_check", "Starting vulnerability check")
     vulnerability_check.run(context, storage, client)
     result = context.get("last_vulnerability_assessment")
+    debug_logger.task("vulnerability_check", "Vulnerability check completed", {"result": result})
     if result:
         print_section("VULNERABILITY ASSESSMENT", result)
 
@@ -150,32 +158,34 @@ def start_webhook_server(scheduler: Scheduler, storage: Storage, client: OpenRou
 
 
 def main() -> None:
+    debug_logger.info("Agent starting", {"config": "loading"})
     storage = Storage()
     scheduler = Scheduler()
     client = OpenRouterClient()
 
-    # Register sensor tasks based on configuration
     for sensor_name, interval in config.POLL_INTERVALS.items():
         task = make_sensor_task(sensor_name, storage)
         scheduler.add_task(sensor_name, interval, task)
+        debug_logger.info(f"Registered sensor: {sensor_name}", {"interval": interval})
 
-    # Detection task runs every 30 seconds
     scheduler.add_task("detection", 30, lambda ctx: detection_task(ctx, storage))
+    debug_logger.info("Registered detection task", {"interval": 30})
 
-    # Risk assessment summary every 10 minutes (600 seconds)
     scheduler.add_task("risk_assessment", 600, lambda ctx: risk_assessment_task(ctx, storage, client))
+    debug_logger.info("Registered risk_assessment task", {"interval": 600})
 
-    # Optionally run vulnerability check every hour
     scheduler.add_task("vulnerability_check", 3600, lambda ctx: vulnerability_check_task(ctx, storage, client))
+    debug_logger.info("Registered vulnerability_check task", {"interval": 3600})
 
-    # Start webhook server
     start_webhook_server(scheduler, storage, client, port=8000)
 
     print("Agent started. Press Ctrl+C to stop.")
+    debug_logger.info("Agent started successfully")
     try:
         scheduler.run_forever()
     except KeyboardInterrupt:
         print("Stopping agent...")
+        debug_logger.info("Agent stopped by user")
         scheduler.stop()
 
 
