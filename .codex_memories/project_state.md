@@ -9,10 +9,13 @@ architecture: "Python-based agent with sensors (process, port, file), detection 
 
 ## ACTIVE CONTEXT
 active_threads: {
-  "threadpool": "created, singleton with mutex, available for parallel task execution",
-  "tui_dashboard": "working, displays sensor data and detections",
+  "threadpool": "created, singleton with 8 threads, available for parallel task execution",
+  "soc_dashboard": "Full SOC TUI: Top Bar, Left (Process/Ports/Files/Timeline/Risk), Center (Detections/Incidents/Activity), Right (Chat/Tools/Memory/Actions)",
   "agent_core": "working, sensors collect and write to local logs folder",
-  "logs_folder": "using ./logs/ instead of C:\\Users\\cybor\\agent_logs"
+  "logs_folder": "using ./logs/ instead of C:\\Users\\cybor\\agent_logs",
+  "timeline": "attack flow visualization with persistence",
+  "memory": "agent knowledge storage with TTL",
+  "tool_executor": "tool execution logging with persistence"
 }
 
 ## NOTES
