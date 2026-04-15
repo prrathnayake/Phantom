@@ -20,7 +20,7 @@ POLL_INTERVALS = {
 }
 
 # Directory to watch for file changes.  Override via `AGENT_WATCH_DIR`.
-WATCH_DIRECTORY = Path(os.environ.get("AGENT_WATCH_DIR", str(Path.home())))
+WATCH_DIRECTORY = Path(os.environ.get("AGENT_WATCH_DIR", str(Path(__file__).parent)))
 
 # OpenRouter API configuration.  The key should be supplied via environment
 # variable `OPENROUTER_API_KEY` because embedding secrets in code is unsafe.
