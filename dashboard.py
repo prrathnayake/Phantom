@@ -5,222 +5,67 @@ This application provides a real-time terminal UI that displays:
 - Recent detections and anomalies
 - Agent status and activity log
 """
+import asyncio
 from textual.app import App, ComposeResult
 from textual.widgets import Header, Footer, Static, DataTable
 from textual.containers import Container
-from textual.reactive import reactive
-from textual.timer import Timer
 from datetime import datetime
+from pathlib import Path
 
 import sys
 import os
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from config import LOG_DIR
 from core.storage import Storage
 
 
-class DashboardData:
-    """Fetches and caches data from the agent's storage."""
+def get_log_counts():
+    events_count = 0
+    detections_count = 0
+    events_file = LOG_DIR / "events.log"
+    detections_file = LOG_DIR / "detections.log"
 
-    def __init__(self):
-        self.storage = Storage()
+    if events_file.exists():
+        try:
+            with events_file.open("r", encoding="utf-8") as f:
+                events_count = sum(1 for _ in f)
+        except:
+            pass
 
-    def get_events(self, count=20):
-        return self.storage.get_recent_events(count=count)
+    if detections_file.exists():
+        try:
+            with detections_file.open("r", encoding="utf-8") as f:
+                detections_count = sum(1 for _ in f)
+        except:
+            pass
 
-    def get_detections(self, count=20):
-        return self.storage.get_recent_detections(count=count)
-
-    def get_process_count(self):
-        events = self.get_events(count=200)
-        for event in reversed(events):
-            if event.get("sensor") == "process_sensor":
-                return event.get("data", {}).get("count", 0)
-        return 0
-
-    def get_port_count(self):
-        events = self.get_events(count=200)
-        for event in reversed(events):
-            if event.get("sensor") == "port_sensor":
-                return event.get("data", {}).get("count", 0)
-        return 0
-
-    def get_file_changes(self):
-        events = self.get_events(count=100)
-        for event in reversed(events):
-            if event.get("sensor") == "file_sensor":
-                data = event.get("data", {})
-                return {
-                    "added": len(data.get("added", [])),
-                    "removed": len(data.get("removed", [])),
-                    "modified": len(data.get("modified", [])),
-                    "total": data.get("change_count", 0),
-                }
-        return {"added": 0, "removed": 0, "modified": 0, "total": 0}
-
-
-class SensorPanel(Static):
-    """Panel displaying current sensor statistics."""
-
-    dashboard_data = DashboardData()
-
-    def compose(self) -> ComposeResult:
-        yield Static("SENSOR STATUS", id="sensor-title")
-
-    def update_counts(self):
-        proc_count = self.dashboard_data.get_process_count()
-        port_count = self.dashboard_data.get_port_count()
-        file_data = self.dashboard_data.get_file_changes()
-
-        self.query_one("#sensor-title", Static).update(
-            f"SENSOR STATUS\n"
-            f"────────────\n"
-            f"Processes: {proc_count}\n"
-            f"Open Ports: {port_count}\n"
-            f"Files Changed: {file_data.get('total', 0)}"
-        )
-
-
-class DetectionsPanel(Static):
-    """Panel displaying recent detections."""
-
-    dashboard_data = DashboardData()
-
-    def compose(self) -> ComposeResult:
-        yield Static("DETECTIONS", id="detections-title")
-        yield DataTable(id="detections-table")
-
-    def on_mount(self) -> None:
-        table = self.query_one("#detections-table", DataTable)
-        table.add_columns("Time", "Rule", "Description")
-        table.cursor_type = "row"
-
-    def refresh_detections(self):
-        table = self.query_one("#detections-table", DataTable)
-        table.clear()
-        detections = self.dashboard_data.get_detections(count=15)
-
-        for det in detections:
-            timestamp = det.get("timestamp", "")[11:19]
-            rule = det.get("rule", "")
-            desc = det.get("description", "")[:45]
-            table.add_row(timestamp, rule, desc)
-
-    def refresh_data(self):
-        self.refresh_detections()
-
-
-class EventsPanel(Static):
-    """Panel displaying recent events log."""
-
-    dashboard_data = DashboardData()
-
-    def compose(self) -> ComposeResult:
-        yield Static("ACTIVITY LOG", id="events-title")
-        yield DataTable(id="events-table")
-
-    def on_mount(self) -> None:
-        table = self.query_one("#events-table", DataTable)
-        table.add_columns("Time", "Sensor", "Data")
-        table.cursor_type = "row"
-
-    def refresh_events(self):
-        table = self.query_one("#events-table", DataTable)
-        table.clear()
-        events = self.dashboard_data.get_events(count=20)
-
-        for event in events:
-            timestamp = event.get("timestamp", "")[11:19]
-            sensor = event.get("sensor", "")
-            data = event.get("data", {})
-
-            if sensor == "process_sensor":
-                summary = f"{data.get('count', 0)} processes"
-            elif sensor == "port_sensor":
-                summary = f"{data.get('count', 0)} ports"
-            elif sensor == "file_sensor":
-                total = data.get("change_count", 0)
-                added = len(data.get("added", []))
-                removed = len(data.get("removed", []))
-                modified = len(data.get("modified", []))
-                summary = f"+{added} -{removed} ~{modified}"
-            elif sensor == "vulnerability_check":
-                summary = "vulnerability check"
-            else:
-                summary = str(list(data.keys())[:2])
-
-            table.add_row(timestamp, sensor, summary)
-
-    def refresh_data(self):
-        self.refresh_events()
-
-
-class StatusPanel(Static):
-    """Panel displaying agent status."""
-
-    def compose(self) -> ComposeResult:
-        yield Static("AGENT STATUS", id="status-title")
-
-    def update_status(self):
-        log_dir = LOG_DIR
-        log_exists = log_dir.exists()
-        events_file = log_dir / "events.log"
-        detections_file = log_dir / "detections.log"
-
-        events_count = 0
-        detections_count = 0
-
-        if events_file.exists():
-            try:
-                events_count = sum(1 for _ in events_file.open())
-            except:
-                pass
-
-        if detections_file.exists():
-            try:
-                detections_count = sum(1 for _ in detections_file.open())
-            except:
-                pass
-
-        self.query_one("#status-title", Static).update(
-            f"AGENT STATUS\n"
-            f"───────────\n"
-            f"Log Dir: {log_dir}\n"
-            f"Events: {events_count}\n"
-            f"Detections: {detections_count}\n"
-            f"Updated: {datetime.now().strftime('%H:%M:%S')}"
-        )
+    return events_count, detections_count
 
 
 class DashboardApp(App):
     """Main TUI Dashboard Application."""
 
     CSS = """
-    Screen { layout: grid; grid-size: 3 2; }
-
-    #sensor-panel {
-        column-span: 1; row-span: 1;
-        border: solid green; padding: 1; margin: 1;
+    Screen {
+        layout: grid;
+        grid-size: 2 2;
     }
 
-    #detections-panel {
-        column-span: 2; row-span: 1;
-        border: solid red; padding: 1; margin: 1;
+    .panel {
+        height: 100%;
+        padding: 1;
+        border: solid green;
     }
 
-    #events-panel {
-        column-span: 2; row-span: 1;
-        border: solid blue; padding: 1; margin: 1;
-    }
-
-    #status-panel {
-        column-span: 1; row-span: 1;
-        border: solid yellow; padding: 1; margin: 1;
-    }
+    #sensor-panel { border-color: green; }
+    #detections-panel { border-color: red; }
+    #events-panel { border-color: blue; }
+    #status-panel { border-color: yellow; }
 
     Static { text-style: bold; }
-    DataTable { height: 100%; }
+    DataTable { height: 100%; margin-top: 1; }
     """
 
     BINDINGS = [
@@ -230,34 +75,110 @@ class DashboardApp(App):
 
     def __init__(self):
         super().__init__()
-        self._update_timer: Timer | None = None
+        self.storage = Storage()
+        self._refresh_count = 0
 
     def compose(self) -> ComposeResult:
         yield Header()
         yield Container(
-            SensorPanel(id="sensor-panel"),
-            DetectionsPanel(id="detections-panel"),
-            EventsPanel(id="events-panel"),
-            StatusPanel(id="status-panel"),
+            Static("SENSOR STATUS", id="sensor-content"),
+            Static("DETECTIONS", id="detections-content"),
+            Static("ACTIVITY LOG", id="events-content"),
+            Static("AGENT STATUS", id="status-content"),
+            id="main-container"
         )
         yield Footer()
 
     def on_mount(self) -> None:
-        self._update_timer = self.set_interval(2.0, self.refresh_data)
-        self.refresh_data()
+        self.set_interval(2.0, self.do_refresh)
 
     def action_refresh(self) -> None:
-        self.refresh_data()
+        self.do_refresh()
 
-    def refresh_data(self):
-        self.query_one("#sensor-panel", SensorPanel).update_counts()
-        self.query_one("#detections-panel", DetectionsPanel).refresh_data()
-        self.query_one("#events-panel", EventsPanel).refresh_data()
-        self.query_one("#status-panel", StatusPanel).update_status()
+    def do_refresh(self):
+        self._refresh_count += 1
+
+        sensor_content = self.query_one("#sensor-content", Static)
+        detections_content = self.query_one("#detections-content", Static)
+        events_content = self.query_one("#events-content", Static)
+        status_content = self.query_one("#status-content", Static)
+
+        try:
+            events = self.storage.get_recent_events(count=100)
+        except Exception as e:
+            events = []
+
+        try:
+            detections = self.storage.get_recent_detections(count=20)
+        except Exception as e:
+            detections = []
+
+        proc_count = 0
+        port_count = 0
+        file_total = 0
+
+        for event in reversed(events):
+            sensor = event.get("sensor", "")
+            data = event.get("data", {})
+            if sensor == "process_sensor" and proc_count == 0:
+                proc_count = data.get("count", 0)
+            elif sensor == "port_sensor" and port_count == 0:
+                port_count = data.get("count", 0)
+            elif sensor == "file_sensor" and file_total == 0:
+                file_total = data.get("change_count", 0)
+
+        sensor_content.update(
+            f"SENSOR STATUS\n"
+            f"────────────\n"
+            f"Processes: {proc_count}\n"
+            f"Open Ports: {port_count}\n"
+            f"Files Changed: {file_total}"
+        )
+
+        det_lines = ["DETECTIONS", "──────────"]
+        if detections:
+            for det in detections[:8]:
+                ts = det.get("timestamp", "")[11:19]
+                rule = det.get("rule", "")
+                desc = det.get("description", "")[:30]
+                det_lines.append(f"{ts} {rule}")
+                det_lines.append(f"  {desc}")
+        else:
+            det_lines.append("No detections yet")
+        detections_content.update("\n".join(det_lines))
+
+        event_lines = ["ACTIVITY LOG", "───────────"]
+        if events:
+            for event in events[:8]:
+                ts = event.get("timestamp", "")[11:19]
+                sensor = event.get("sensor", "")
+                data = event.get("data", {})
+                if sensor == "process_sensor":
+                    summary = f"{data.get('count', 0)} procs"
+                elif sensor == "port_sensor":
+                    summary = f"{data.get('count', 0)} ports"
+                elif sensor == "file_sensor":
+                    total = data.get("change_count", 0)
+                    summary = f"{total} changes"
+                else:
+                    summary = str(list(data.keys())[:2])
+                event_lines.append(f"{ts} {sensor}: {summary}")
+        else:
+            event_lines.append("No events yet")
+        events_content.update("\n".join(event_lines))
+
+        events_count, detections_count = get_log_counts()
+        status_content.update(
+            f"AGENT STATUS\n"
+            f"───────────\n"
+            f"Log Dir: {LOG_DIR}\n"
+            f"Events: {events_count}\n"
+            f"Detections: {detections_count}\n"
+            f"Refresh: #{self._refresh_count}\n"
+            f"Updated: {datetime.now().strftime('%H:%M:%S')}"
+        )
 
     def action_quit(self) -> None:
-        if self._update_timer:
-            self._update_timer.stop()
         self.exit()
 
 
