@@ -52,3 +52,37 @@ DETECTION_THRESHOLDS = {
 def ensure_log_dir():
     """Ensure that the log directory exists."""
     LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+
+TIMELINE_MAX_EVENTS = int(os.environ.get("AGENT_TIMELINE_MAX_EVENTS", 50))
+
+MEMORY_MAX_ENTRIES = int(os.environ.get("AGENT_MEMORY_MAX_ENTRIES", 100))
+
+RISK_SCORE_MAX = int(os.environ.get("AGENT_RISK_SCORE_MAX", 100))
+
+RISK_TREND_WINDOW = int(os.environ.get("AGENT_RISK_TREND_WINDOW", 5))
+
+AGENT_MODES = ["PASSIVE", "ACTIVE", "AUTONOMOUS"]
+
+DEFAULT_AGENT_MODE = os.environ.get("AGENT_DEFAULT_MODE", "PASSIVE")
+
+KNOWN_SYSTEM_PATHS = [
+    "C:\\Windows\\System32",
+    "C:\\Windows\\SysWOW64",
+    "/usr/bin",
+    "/usr/sbin",
+    "/bin",
+    "/sbin",
+]
+
+PORT_CLASSIFICATIONS = {
+    80: "HTTP",
+    443: "HTTPS",
+    22: "SSH",
+    21: "FTP",
+    25: "SMTP",
+    3306: "MySQL",
+    5432: "PostgreSQL",
+    6379: "Redis",
+    27017: "MongoDB",
+}
