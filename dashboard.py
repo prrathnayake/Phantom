@@ -30,7 +30,7 @@ from utils.agent_state import AgentState, create_agent_state
 from utils.timeline import Timeline, create_timeline
 from utils.memory import AgentMemory, create_memory
 from utils.tool_executor import ToolLogger, create_tool_logger
-from utils.threadpool import init_threadpool
+from utils.threadpool import init_threadpool, ThreadPool
 
 
 CHAT_COLORS = {
@@ -146,6 +146,7 @@ class DashboardApp(App):
     #tools-panel { border-title-color: $accent; }
     #memory-panel { border-title-color: $accent; }
     #actions-panel { border-title-color: $error; }
+    #background-panel { border-title-color: $warning; }
     """
 
     BINDINGS = [
@@ -209,6 +210,7 @@ class DashboardApp(App):
             yield self._panel("DETECTIONS", "detections")
             yield self._panel("INCIDENTS", "incidents")
             yield self._panel("ACTIVITY LOG", "activity")
+            yield self._panel("BACKGROUND TASKS", "background")
         
         with Vertical(id="right-panel"):
             with Vertical():
@@ -251,6 +253,7 @@ class DashboardApp(App):
         self.detections_content = self.query_one("#detections-content", Static)
         self.incidents_content = self.query_one("#incidents-content", Static)
         self.activity_content = self.query_one("#activity-content", Static)
+        self.background_content = self.query_one("#background-content", Static)
         self.tools_content = self.query_one("#tools-content", Static)
         self.memory_content = self.query_one("#memory-content", Static)
         self.actions_content = self.query_one("#actions-content", Static)
@@ -478,6 +481,7 @@ class DashboardApp(App):
         self.detections_content.update(self._render_detections_panel())
         self.incidents_content.update(self._render_incidents_panel())
         self.activity_content.update(self._render_activity_panel())
+        self.background_content.update(self._render_background_panel())
         self.tools_content.update(self._render_tools_panel())
         self.memory_content.update(self._render_memory_panel())
         self.actions_content.update(self._render_actions_panel())
@@ -673,6 +677,42 @@ class DashboardApp(App):
             lines.append(f"Last: [{ts}] {sensor}")
         
         return "\n".join(lines)
+
+    def _render_background_panel(self) -> str:
+        try:
+            pool = ThreadPool.get_instance()
+            active = pool.get_active_tasks()
+            pending = pool.get_pending_tasks()
+            errors = pool.get_errors()
+            
+            lines = []
+            lines.append(f"Active Tasks: [yellow]{active}[/yellow]")
+            lines.append(f"Pending: [cyan]{pending}[/cyan]")
+            
+            if errors:
+                lines.append(f"[red]Errors: {len(errors)}[/red]")
+                for err in errors[-2:]:
+                    lines.append(f"  • {str(err)[:40]}")
+            
+            recent_logs = []
+            if config.DEBUG_MODE:
+                debug_file = config.LOG_DIR / "debug.log"
+                if debug_file.exists():
+                    with open(debug_file, "r") as f:
+                        lines_file = f.readlines()
+                        for line in lines_file[-10:]:
+                            if line.strip():
+                                recent_logs.append(line.strip()[:60])
+            
+            if recent_logs:
+                lines.append("")
+                lines.append("[dim]Recent Debug Logs:[/dim]")
+                for log in recent_logs[-5:]:
+                    lines.append(f"[dim]{log}[/dim]")
+            
+            return "\n".join(lines) if lines else "[No background activity]"
+        except Exception as e:
+            return f"[Background panel error: {e}]"
 
     def _render_tools_panel(self) -> str:
         logs = self._tool_logger.get_logs(5)
