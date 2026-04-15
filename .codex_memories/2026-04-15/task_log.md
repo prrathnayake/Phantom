@@ -2,6 +2,7 @@
 
 | Timestamp | Status | Summary | Files Touched | Blockers |
 | --- | --- | --- | --- | --- |
+| 2026-04-15 03:15 | Done | Added comprehensive tests for existing components: sensors (13 tests), core modules (14 tests), detection (11 tests), config (14 tests). Fixed port_sensor.py psutil API bug. Total 51 tests. | tests/*.py, sensors/port_sensor.py | None |
 | 2026-04-15 12:00 | Done | Created TUI dashboard application for monitoring agent findings. Displays real-time sensor data, detections, and activity log. Uses Textual library. | dashboard.py, requirements.txt | None |
 | 2026-04-15 13:00 | Done | Fixed logs folder: changed LOG_DIR from C:\Users\cybor\agent_logs to local ./logs/ folder. Also updated config.py and dashboard.py. | config.py, dashboard.py | None |
 | 2026-04-15 14:00 | Done | Rewrote TUI dashboard with simpler design - removed complex DataTable widgets, used Static panels with text content, fixed refresh timer issues. Now works with local logs folder. | dashboard.py | None |
