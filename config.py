@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-LOG_DIR = Path(os.environ.get("AGENT_LOG_DIR", Path(__file__).parent / "logs"))
+LOG_DIR = Path(os.environ.get("AGENT_LOG_DIR", Path(__file__).parent / ".logs"))
 
 # Default polling intervals (in seconds) for each sensor.  You can add
 # additional sensor names here and register them in `main.py`.
