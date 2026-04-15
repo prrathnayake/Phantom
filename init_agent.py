@@ -1,4 +1,4 @@
-"""Initialization CLI for the monitoring agent.
+"""Initialization CLI for Monica - the security monitoring agent.
 
 Usage:
     python init_agent.py scan       - Scan system for OS and requirements

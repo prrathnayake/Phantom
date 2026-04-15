@@ -1,4 +1,4 @@
-"""Entry point for the monitoring agent.
+"""Entry point for Monica - the security monitoring agent.
 
 This script wires together the sensors, scheduler, detection engine
 and skills.  It sets up periodic tasks, starts an optional webhook

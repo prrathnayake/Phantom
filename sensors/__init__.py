@@ -1,4 +1,4 @@
-"""Sensor modules for the monitoring agent.
+"""Sensor modules for Monica - the security monitoring agent.
 
 Each sensor exposes a single callable `collect` that accepts a `context`
 dictionary and returns a payload describing the current state of that

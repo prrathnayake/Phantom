@@ -1,4 +1,4 @@
-"""Global configuration values for the monitoring agent.
+"""Global configuration values for Monica - the security monitoring agent.
 
 The agent reads these values at start‑up.  They may be overridden by
 environment variables for convenience (see below).

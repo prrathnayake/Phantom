@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: monitoring-agent
+    container_name: monica-agent
     environment:
       - AGENT_LOG_DIR=/app/.logs
       - AGENT_WATCH_DIR=/app
@@ -22,13 +22,13 @@ services:
       - "8000:8000"
     restart: unless-stopped
     networks:
-      - monitoring-net
+      - monica-net
 
   dashboard:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: monitoring-dashboard
+    container_name: monica-dashboard
     command: ["python", "-m", "dashboard"]
     environment:
       - AGENT_LOG_DIR=/app/.logs
@@ -40,11 +40,11 @@ services:
       - agent
     restart: unless-stopped
     networks:
-      - monitoring-net
+      - monica-net
 
 volumes:
   agent-logs:
 
 networks:
-  monitoring-net:
+  monica-net:
     driver: bridge

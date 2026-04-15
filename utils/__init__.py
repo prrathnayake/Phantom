@@ -1,1 +1,1 @@
-"""Utility modules for the monitoring agent."""
+"""Utility modules for Monica - the security monitoring agent."""

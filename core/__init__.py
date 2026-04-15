@@ -1,4 +1,4 @@
-"""Core framework for the monitoring agent.
+"""Core framework for Monica - the security monitoring agent.
 
 This package provides the building blocks used by the agent.  It includes
 the scheduler responsible for running recurring tasks, a storage layer for
