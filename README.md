@@ -27,53 +27,61 @@ summarise or explain detected anomalies.
 
 ```
 agent_project/
-├── README.md           – This file
-├── requirements.txt     – Optional Python dependencies
-├── config.py            – Central configuration values
-├── main.py              – Entry point for the agent
-├── dashboard.py         – TUI dashboard for real-time monitoring
-├── core/                – Framework components
+├── README.md             – This file
+├── requirements.txt     – Python dependencies
+├── config.py            – Central configuration
+├── main.py              – Agent entry point
+├── dashboard.py         – Unified TUI dashboard (monitoring + chat + commands)
+├── init_agent.py        – CLI initialization tool
+├── core/              – Framework components
 │   ├── __init__.py
-│   ├── scheduler.py     – Simple scheduler for recurring tasks
-│   ├── storage.py       – Local event logging API
-│   └── openrouter_client.py – Thin wrapper around the OpenRouter API
-├── sensors/             – Telemetry collection modules
+│   ├── scheduler.py     – Task scheduler
+│   ├── storage.py       – Event logging
+│   └── openrouter_client.py – OpenRouter API wrapper
+├── sensors/            – Telemetry collection
 │   ├── __init__.py
-│   ├── process_sensor.py  – Collects the current process list
-│   ├── port_sensor.py     – Collects open TCP/UDP ports
-│   └── file_sensor.py     – Monitors a directory for changes
-├── analysis/            – Detection and summarisation
+│   ├── process_sensor.py
+│   ├── port_sensor.py
+│   └── file_sensor.py
+├── analysis/           – Detection engine
 │   ├── __init__.py
-│   ├── detection.py      – Rule–based anomaly detection
-│   └── summariser.py     – Uses LLM to summarise recent events
-└── skills/              – Example high‑level skills
-    ├── __init__.py
-    ├── risk_assessment.py   – Aggregates risk signals
-    └── vulnerability_check.py – Placeholder for scanning vulnerabilities
+│   ├── detection.py
+│   └── summariser.py
+├── skills/             – Agent skills
+│   ├── __init__.py
+│   ├── risk_assessment.py
+│   └── vulnerability_check.py
+├── utils/              – Utility modules
+│   ├── __init__.py
+│   ├── system_scanner.py – OS and dependency scanner
+│   ├── installer.py    – Package installer
+│   └── threadpool.py  – Thread pool singleton
+└── .logs/            – Event and detection logs
+## Quick Start
+
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Initialize the agent (scans OS, checks requirements, installs missing packages)
+python init_agent.py check
+
+# Run the agent
+python main.py
+
+# Or run the unified TUI dashboard (in separate terminal)
+python dashboard.py
 ```
-agent_project/
-├── README.md           – This file
-├── requirements.txt     – Optional Python dependencies
-├── config.py            – Central configuration values
-├── main.py              – Entry point for the agent
-├── core/                – Framework components
-│   ├── __init__.py
-│   ├── scheduler.py     – Simple scheduler for recurring tasks
-│   ├── storage.py       – Local event logging API
-│   └── openrouter_client.py – Thin wrapper around the OpenRouter API
-├── sensors/             – Telemetry collection modules
-│   ├── __init__.py
-│   ├── process_sensor.py  – Collects the current process list
-│   ├── port_sensor.py     – Collects open TCP/UDP ports
-│   └── file_sensor.py     – Monitors a directory for changes
-├── analysis/            – Detection and summarisation
-│   ├── __init__.py
-│   ├── detection.py      – Rule–based anomaly detection
-│   └── summariser.py     – Uses LLM to summarise recent events
-└── skills/              – Example high‑level skills
-    ├── __init__.py
-    ├── risk_assessment.py   – Aggregates risk signals
-    └── vulnerability_check.py – Placeholder for scanning vulnerabilities
+
+## Initialization CLI
+
+The `init_agent.py` tool handles system setup:
+
+```bash
+python init_agent.py scan     # Scan system for OS and requirements
+python init_agent.py install # Install missing dependencies
+python init_agent.py check   # Full system check (scan + install)
+python init_agent.py status  # Show agent status
 ```
 
 To start the agent, run:
@@ -98,20 +106,37 @@ agent will still run but will skip LLM calls.
   OSQuery and treat the LLM as a summariser rather than an authoritative
   decision maker.
 
-## Running the Dashboard
+## Unified Dashboard
 
-To monitor the agent in real-time, run the TUI dashboard in a separate terminal:
+The dashboard provides real-time monitoring + chat + command interface:
 
 ```bash
 python dashboard.py
 ```
 
-The dashboard displays:
-- **Sensor Status** - Process count, open ports, file changes
-- **Recent Detections** - Anomalies triggered by detection rules
+### Left Panel (Monitoring)
+- **Processes** - Running process count and top consumers
+- **Network Ports** - Listening TCP/UDP ports
+- **File Changes** - Directory change tracking
+- **Detections** - Anomaly alerts
 - **Activity Log** - Recent sensor events
-- **Agent Status** - Running state and last update time
+- **Agent Status** - Uptime, stats, thresholds
 
-The dashboard auto-refreshes every 2 seconds. Press `R` to refresh manually, `Q` to quit.
+### Right Panel (Chat + Commands)
+- **Chat Display** - Shows messages and system responses
+- **Command Input** - Text field for commands
+- **Buttons** - Send, Clear, Scan, Status
+
+### Available Commands
+- `scan` - Run system scan
+- `status` - Check agent readiness
+- `clear` - Clear chat history
+- `help` - Show help
+
+### Keybindings
+- `R` - Refresh data
+- `C` - Focus chat input
+- `Ctrl+Enter` - Send message
+- `Q` - Quit
 
 Enjoy exploring and modifying this codebase!
