@@ -1,0 +1,50 @@
+version: "3.8"
+
+services:
+  agent:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: suraksha-agent
+    environment:
+      - AGENT_LOG_DIR=/app/.logs
+      - AGENT_WATCH_DIR=/app
+      - AGENT_DEBUG=${AGENT_DEBUG:-false}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - OPENROUTER_MODEL=${OPENROUTER_MODEL:-openrouter-gpt-3.5-turbo}
+      - AGENT_THRESHOLD_PROCESS_COUNT=${AGENT_THRESHOLD_PROCESS_COUNT:-400}
+      - AGENT_THRESHOLD_OPEN_PORTS=${AGENT_THRESHOLD_OPEN_PORTS:-100}
+      - AGENT_THRESHOLD_FILE_CHANGES=${AGENT_THRESHOLD_FILE_CHANGES:-500}
+    volumes:
+      - ./:/app:ro
+      - agent-logs:/app/.logs
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+    networks:
+      - suraksha-net
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: suraksha-dashboard
+    command: ["python", "-m", "dashboard"]
+    environment:
+      - AGENT_LOG_DIR=/app/.logs
+    volumes:
+      - agent-logs:/app/.logs:ro
+    ports:
+      - "8001:8001"
+    depends_on:
+      - agent
+    restart: unless-stopped
+    networks:
+      - suraksha-net
+
+volumes:
+  agent-logs:
+
+networks:
+  suraksha-net:
+    driver: bridge
