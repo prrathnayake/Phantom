@@ -96,7 +96,7 @@ class DetectionsPanel(Static):
         table.add_columns("Time", "Rule", "Description")
         table.cursor_type = "row"
 
-    def refresh(self):
+    def refresh_detections(self):
         table = self.query_one("#detections-table", DataTable)
         table.clear()
         detections = self.dashboard_data.get_detections(count=15)
@@ -106,6 +106,9 @@ class DetectionsPanel(Static):
             rule = det.get("rule", "")
             desc = det.get("description", "")[:45]
             table.add_row(timestamp, rule, desc)
+
+    def refresh_data(self):
+        self.refresh_detections()
 
 
 class EventsPanel(Static):
@@ -122,7 +125,7 @@ class EventsPanel(Static):
         table.add_columns("Time", "Sensor", "Data")
         table.cursor_type = "row"
 
-    def refresh(self):
+    def refresh_events(self):
         table = self.query_one("#events-table", DataTable)
         table.clear()
         events = self.dashboard_data.get_events(count=20)
@@ -148,6 +151,9 @@ class EventsPanel(Static):
                 summary = str(list(data.keys())[:2])
 
             table.add_row(timestamp, sensor, summary)
+
+    def refresh_data(self):
+        self.refresh_events()
 
 
 class StatusPanel(Static):
@@ -245,8 +251,8 @@ class DashboardApp(App):
 
     def refresh_data(self):
         self.query_one("#sensor-panel", SensorPanel).update_counts()
-        self.query_one("#detections-panel", DetectionsPanel).refresh()
-        self.query_one("#events-panel", EventsPanel).refresh()
+        self.query_one("#detections-panel", DetectionsPanel).refresh_data()
+        self.query_one("#events-panel", EventsPanel).refresh_data()
         self.query_one("#status-panel", StatusPanel).update_status()
 
     def action_quit(self) -> None:
