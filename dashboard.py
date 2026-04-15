@@ -86,8 +86,8 @@ class DashboardApp(App):
         self._last_port_data: dict[str, Any] = {}
         self._last_file_data: dict[str, Any] = {}
 
-        self._events_count_cache = 0
-        self._detections_count_cache = 0
+        self._events_count_cache = safe_tail_line_count(LOG_DIR / "events.log")
+        self._detections_count_cache = safe_tail_line_count(LOG_DIR / "detections.log")
         self._last_count_refresh = 0
 
     def compose(self) -> ComposeResult:
@@ -119,6 +119,7 @@ class DashboardApp(App):
         self.events_content = self.query_one("#events-content", Static)
         self.status_content = self.query_one("#status-content", Static)
 
+        self._refresh_log_counts_if_needed()
         self.set_interval(3.0, self.do_refresh)
         self.do_refresh()
 
@@ -343,6 +344,11 @@ class DashboardApp(App):
         hours, remainder = divmod(total_seconds, 3600)
         minutes, seconds = divmod(remainder, 60)
 
+        latest_event_time = "N/A"
+        events = self._safe_get_events()
+        if events:
+            latest_event_time = events[0].get("timestamp", "")[:19]
+
         return "\n".join(
             [
                 "[Agent Information]",
@@ -350,6 +356,7 @@ class DashboardApp(App):
                 f"  Uptime: {hours}h {minutes}m {seconds}s",
                 f"  Refresh: #{self._refresh_count}",
                 f"  Last Update: {datetime.now().strftime('%H:%M:%S')}",
+                f"  Latest Event: {latest_event_time}",
                 "",
                 "[Log Statistics]",
                 f"  Log Directory: {LOG_DIR}",
