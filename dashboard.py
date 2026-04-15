@@ -1,4 +1,4 @@
-"""TUI Dashboard for the Suraksha Monitoring Agent.
+"""TUI Dashboard for the SMA - Secure Monitoring Agent.
 
 This application provides a real-time terminal UI that displays:
 - Current sensor readings (processes, ports, files)
