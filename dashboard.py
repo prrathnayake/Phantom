@@ -56,16 +56,9 @@ class DashboardApp(App):
     .panel {
         height: 100%;
         padding: 1;
-        border: solid green;
     }
 
-    #sensor-panel { border-color: green; }
-    #detections-panel { border-color: red; }
-    #events-panel { border-color: blue; }
-    #status-panel { border-color: yellow; }
-
     Static { text-style: bold; }
-    DataTable { height: 100%; margin-top: 1; }
     """
 
     BINDINGS = [
