@@ -1,0 +1,6 @@
+# Optional dependencies for richer telemetry.  These are not strictly required
+# but will improve collection fidelity.  If you install them the agent will
+# automatically use the faster, more precise implementations.
+psutil>=5.9
+watchdog>=3.0
+requests>=2.31
