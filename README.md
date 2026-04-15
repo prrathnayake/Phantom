@@ -31,6 +31,31 @@ agent_project/
 ├── requirements.txt     – Optional Python dependencies
 ├── config.py            – Central configuration values
 ├── main.py              – Entry point for the agent
+├── dashboard.py         – TUI dashboard for real-time monitoring
+├── core/                – Framework components
+│   ├── __init__.py
+│   ├── scheduler.py     – Simple scheduler for recurring tasks
+│   ├── storage.py       – Local event logging API
+│   └── openrouter_client.py – Thin wrapper around the OpenRouter API
+├── sensors/             – Telemetry collection modules
+│   ├── __init__.py
+│   ├── process_sensor.py  – Collects the current process list
+│   ├── port_sensor.py     – Collects open TCP/UDP ports
+│   └── file_sensor.py     – Monitors a directory for changes
+├── analysis/            – Detection and summarisation
+│   ├── __init__.py
+│   ├── detection.py      – Rule–based anomaly detection
+│   └── summariser.py     – Uses LLM to summarise recent events
+└── skills/              – Example high‑level skills
+    ├── __init__.py
+    ├── risk_assessment.py   – Aggregates risk signals
+    └── vulnerability_check.py – Placeholder for scanning vulnerabilities
+```
+agent_project/
+├── README.md           – This file
+├── requirements.txt     – Optional Python dependencies
+├── config.py            – Central configuration values
+├── main.py              – Entry point for the agent
 ├── core/                – Framework components
 │   ├── __init__.py
 │   ├── scheduler.py     – Simple scheduler for recurring tasks
@@ -72,5 +97,21 @@ agent will still run but will skip LLM calls.
   Serious deployments should integrate mature security tools like Wazuh or
   OSQuery and treat the LLM as a summariser rather than an authoritative
   decision maker.
+
+## Running the Dashboard
+
+To monitor the agent in real-time, run the TUI dashboard in a separate terminal:
+
+```bash
+python dashboard.py
+```
+
+The dashboard displays:
+- **Sensor Status** - Process count, open ports, file changes
+- **Recent Detections** - Anomalies triggered by detection rules
+- **Activity Log** - Recent sensor events
+- **Agent Status** - Running state and last update time
+
+The dashboard auto-refreshes every 2 seconds. Press `R` to refresh manually, `Q` to quit.
 
 Enjoy exploring and modifying this codebase!
