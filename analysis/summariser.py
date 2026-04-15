@@ -9,6 +9,7 @@ from typing import Dict, Any, List
 
 from core.openrouter_client import OpenRouterClient
 from core.storage import Storage
+from utils.debug_log import debug_logger
 
 
 def summarise(context: Dict[str, Any], storage: Storage, client: OpenRouterClient) -> None:
@@ -19,19 +20,18 @@ def summarise(context: Dict[str, Any], storage: Storage, client: OpenRouterClien
     context under `last_summary` for later access.  If no LLM is
     available or there are no new detections, nothing happens.
     """
-    # Retrieve recent detections
+    debug_logger.info("Summariser starting")
     detections = storage.get_recent_detections(count=5)
     if not detections:
+        debug_logger.info("Summariser: no detections to summarise")
         return
-    # Construct conversation messages
     system_prompt = (
         "You are an assistant summarising security anomalies detected by a local agent. "
         "Provide a concise, user friendly summary of the anomalies described. "
         "Mention only what is necessary and avoid speculation."
     )
-    # Build human message summarising detections
     events_text = []
-    for det in reversed(detections):  # chronological order
+    for det in reversed(detections):
         rule = det.get("rule")
         desc = det.get("description")
         events_text.append(f"Rule {rule}: {desc} (at {det.get('timestamp')})")
@@ -44,9 +44,9 @@ def summarise(context: Dict[str, Any], storage: Storage, client: OpenRouterClien
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_prompt},
     ]
-    # Call the LLM
     response = client.chat_completion(messages, max_tokens=200)
     if response:
-        # Store summary in context
         context["last_summary"] = response
-    # If the response is None, we silently skip storing a summary
+        debug_logger.info("Summariser: summary generated")
+    else:
+        debug_logger.warning("Summariser: failed to generate summary")

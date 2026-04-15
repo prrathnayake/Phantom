@@ -7,6 +7,8 @@ falls back to parsing the output of `netstat`.
 from typing import Dict, Any, List
 import logging
 
+from utils.debug_log import debug_logger
+
 logger = logging.getLogger(__name__)
 
 
@@ -54,9 +56,14 @@ def _collect_with_netstat() -> Dict[str, Any]:
 
 
 def collect(context: Dict[str, Any]) -> Dict[str, Any]:
+    debug_logger.sensor("port_sensor", "Collecting port data", {})
     try:
         import psutil  # noqa: F401
-        return _collect_with_psutil()
+        result = _collect_with_psutil()
+        debug_logger.sensor("port_sensor", "Collected with psutil", {"count": result.get("count")})
+        return result
     except ImportError:
         logger.debug("psutil not available; falling back to netstat")
-        return _collect_with_netstat()
+        result = _collect_with_netstat()
+        debug_logger.sensor("port_sensor", "Collected with netstat fallback", {"count": result.get("count")})
+        return result

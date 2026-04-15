@@ -8,6 +8,8 @@ the `ps` command.
 from typing import Dict, Any, List
 import logging
 
+from utils.debug_log import debug_logger
+
 logger = logging.getLogger(__name__)
 
 
@@ -91,9 +93,14 @@ def collect(context: Dict[str, Any]) -> Dict[str, Any]:
     :param context: Shared context dictionary.
     :return: A payload describing the current process list.
     """
+    debug_logger.sensor("process_sensor", "Collecting process data", {})
     try:
         import psutil  # noqa: F401
-        return _collect_with_psutil()
+        result = _collect_with_psutil()
+        debug_logger.sensor("process_sensor", "Collected with psutil", {"count": result.get("count")})
+        return result
     except ImportError:
         logger.debug("psutil not available; falling back to ps command")
-        return _collect_with_ps()
+        result = _collect_with_ps()
+        debug_logger.sensor("process_sensor", "Collected with ps fallback", {"count": result.get("count")})
+        return result

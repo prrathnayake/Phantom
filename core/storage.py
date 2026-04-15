@@ -20,6 +20,7 @@ from typing import Dict, List, Optional
 from datetime import datetime
 
 import config
+from utils.debug_log import debug_logger
 
 
 class Storage:
@@ -46,6 +47,7 @@ class Storage:
             "data": payload,
         }
         self._write_record(self.events_file, record)
+        debug_logger.info("Event logged", {"sensor": sensor})
 
     def log_detection(self, rule: str, description: str, details: Dict[str, any]):
         """Record a detection event.
@@ -61,6 +63,7 @@ class Storage:
             "details": details,
         }
         self._write_record(self.detections_file, record)
+        debug_logger.detection(rule, description, details)
 
     def get_recent_events(
         self, count: int = 20, sensor: Optional[str] = None

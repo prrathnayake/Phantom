@@ -12,6 +12,7 @@ from typing import List, Dict, Optional
 import requests
 
 import config
+from utils.debug_log import debug_logger
 
 
 logger = logging.getLogger(__name__)
@@ -32,8 +33,10 @@ class OpenRouterClient:
         :return: The generated assistant response, or None if there was an
             error or API key is missing.
         """
+        debug_logger.info("OpenRouter request", {"model": self.model, "message_count": len(messages)})
         if not self.api_key:
             logger.warning("OpenRouter API key not found; skipping chat completion")
+            debug_logger.warning("OpenRouter API key missing")
             return None
         url = f"{self.base_url}/chat/completions"
         payload = {
@@ -51,12 +54,12 @@ class OpenRouterClient:
             response.raise_for_status()
         except Exception as exc:
             logger.error(f"OpenRouter request failed: {exc}")
+            debug_logger.error("OpenRouter request failed", {"error": str(exc)})
             return None
         try:
             data = response.json()
-            # According to OpenAI compatible API spec, the top level contains
-            # a list under 'choices'.
             return data["choices"][0]["message"]["content"]
         except Exception as exc:
             logger.error(f"Unexpected response from OpenRouter: {exc}")
+            debug_logger.error("OpenRouter response parse failed", {"error": str(exc)})
             return None

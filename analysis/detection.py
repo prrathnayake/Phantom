@@ -7,6 +7,7 @@ record to the storage layer and returns a description of the anomaly.
 from typing import Dict, Any, List
 import config
 from core.storage import Storage
+from utils.debug_log import debug_logger
 
 
 def detect(context: Dict[str, Any], storage: Storage) -> List[Dict[str, Any]]:
@@ -17,9 +18,9 @@ def detect(context: Dict[str, Any], storage: Storage) -> List[Dict[str, Any]]:
     saved).  If the rule triggers a record is appended to the detections
     log and an entry is added to the returned list.
     """
+    debug_logger.detection("detection_engine", "Running detection rules")
     anomalies: List[Dict[str, Any]] = []
 
-    # Rule: number of processes exceeds threshold
     proc_payload = context.get("process_sensor_last")
     if proc_payload:
         count = proc_payload.get("count", 0)
@@ -29,8 +30,8 @@ def detect(context: Dict[str, Any], storage: Storage) -> List[Dict[str, Any]]:
             details = {"count": count, "top_processes": proc_payload.get("top_processes", [])}
             storage.log_detection("process_count", description, details)
             anomalies.append({"rule": "process_count", "description": description})
+            debug_logger.detection("process_count", "Rule triggered", details)
 
-    # Rule: number of open ports exceeds threshold
     port_payload = context.get("port_sensor_last")
     if port_payload:
         count = port_payload.get("count", 0)
@@ -40,8 +41,8 @@ def detect(context: Dict[str, Any], storage: Storage) -> List[Dict[str, Any]]:
             details = {"count": count, "ports": port_payload.get("listening", [])}
             storage.log_detection("open_ports", description, details)
             anomalies.append({"rule": "open_ports", "description": description})
+            debug_logger.detection("open_ports", "Rule triggered", details)
 
-    # Rule: number of file changes exceeds threshold
     file_payload = context.get("file_sensor_last")
     if file_payload:
         change_count = file_payload.get("change_count", 0)
@@ -55,5 +56,7 @@ def detect(context: Dict[str, Any], storage: Storage) -> List[Dict[str, Any]]:
             }
             storage.log_detection("file_changes", description, details)
             anomalies.append({"rule": "file_changes", "description": description})
+            debug_logger.detection("file_changes", "Rule triggered", details)
 
+    debug_logger.detection("detection_engine", f"Detection complete: {len(anomalies)} anomalies found")
     return anomalies

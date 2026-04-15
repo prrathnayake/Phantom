@@ -8,6 +8,7 @@ from typing import Dict, Any
 from core.storage import Storage
 from core.openrouter_client import OpenRouterClient
 from analysis.summariser import summarise
+from utils.debug_log import debug_logger
 
 
 def run(context: Dict[str, Any], storage: Storage, client: OpenRouterClient) -> None:
@@ -17,4 +18,6 @@ def run(context: Dict[str, Any], storage: Storage, client: OpenRouterClient) -> 
     anomalies and produces a summary.  The summary is stored in the
     context and can be used by other components (e.g. UI).
     """
+    debug_logger.task("risk_assessment", "Starting risk assessment")
     summarise(context, storage, client)
+    debug_logger.task("risk_assessment", "Risk assessment complete")

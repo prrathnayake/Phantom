@@ -12,6 +12,7 @@ from threading import Lock
 from typing import Any, Optional
 
 import config
+from utils.debug_log import debug_logger
 
 
 @dataclass
@@ -88,6 +89,7 @@ class AgentMemory:
             tags: Optional tags for categorization
             ttl: Time-to-live in seconds (None = no expiry)
         """
+        debug_logger.info("Memory: storing entry", {"key": key, "tags": tags})
         entry = MemoryEntry(
             key=key,
             value=value,
@@ -118,10 +120,12 @@ class AgentMemory:
         with self._lock:
             entry = self._entries.get(key)
             if entry and not entry.is_expired():
+                debug_logger.info("Memory: retrieved entry", {"key": key, "found": True})
                 return entry.value
             elif entry:
                 del self._entries[key]
-            return None
+        debug_logger.info("Memory: retrieved entry", {"key": key, "found": False})
+        return None
     
     def get_entry(self, key: str) -> Optional[MemoryEntry]:
         """Get full memory entry.

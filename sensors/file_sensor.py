@@ -16,6 +16,7 @@ from typing import Dict, Any, Tuple, List
 from pathlib import Path
 
 import config
+from utils.debug_log import debug_logger
 
 logger = logging.getLogger(__name__)
 
@@ -51,20 +52,18 @@ def _compare_snapshots(old: Dict[str, float], new: Dict[str, float]) -> Tuple[Li
 
 
 def collect(context: Dict[str, Any]) -> Dict[str, Any]:
-    # Determine directory to watch
+    debug_logger.sensor("file_sensor", "Collecting file changes", {})
     watch_dir = config.WATCH_DIRECTORY
-    # Compute current snapshot
     current = _snapshot(watch_dir)
-    # Retrieve previous snapshot from context
     prev = context.get("file_sensor_snapshot", {})
     added, removed, modified = _compare_snapshots(prev, current)
-    # Update context with current snapshot
     context["file_sensor_snapshot"] = current
-    # Build payload
-    return {
+    result = {
         "directory": str(watch_dir),
         "added": added,
         "removed": removed,
         "modified": modified,
         "change_count": len(added) + len(removed) + len(modified),
     }
+    debug_logger.sensor("file_sensor", "File changes collected", result)
+    return result
