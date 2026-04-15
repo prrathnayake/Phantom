@@ -3,13 +3,20 @@
 Rolling state for the current working day.
 
 ## Active Tasks
-_(List current in-progress tasks here)_
+- None currently
 
 ## Recent Completions
-_(List recently completed tasks here)_
+- Created singleton ThreadPool (utils/threadpool.py) with mutex-based error handling, worker queue, exception catching, graceful shutdown
+- Created TUI dashboard (dashboard.py) using Textual library
+- Fixed logs folder to use local ./logs/ instead of C:\Users\cybor\agent_logs
+- Fixed Textual method naming conflict (refresh -> refresh_detections/refresh_events)
+- Committed all changes to git
 
 ## Blockers
-_(List current blockers here)_
+- None
 
 ## Notes
-_(Additional notes for today's session)_
+- Dashboard and agent both write to same local logs folder
+- Press R to refresh dashboard, Q to quit
+- Agent runs via: python -m main
+- Dashboard runs via: python -m dashboard
