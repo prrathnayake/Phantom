@@ -19,6 +19,38 @@ from analysis import detection
 from skills import risk_assessment, vulnerability_check
 
 
+class Colors:
+    BLUE = '\033[94m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    RED = '\033[91m'
+    CYAN = '\033[96m'
+    BOLD = '\033[1m'
+    END = '\033[0m'
+
+
+def format_summary(text: str) -> str:
+    """Format summary text for better readability."""
+    lines = text.strip().split('\n')
+    formatted = []
+    for line in lines:
+        line = line.strip()
+        if not line:
+            formatted.append("")
+            continue
+        if line.startswith('**') and line.endswith('**'):
+            formatted.append(f"\n{Colors.BOLD}{line}{Colors.END}")
+        elif line.startswith('###'):
+            formatted.append(f"\n{Colors.YELLOW}{line}{Colors.END}")
+        elif line.startswith('- ') or line.startswith('* '):
+            formatted.append(f"  {Colors.CYAN}•{Colors.END} {line[2:]}")
+        elif any(marker in line for marker in ['Risk', 'Concern', 'Issue', 'Critical', 'Warning']):
+            formatted.append(f"\n{Colors.RED}{line}{Colors.END}")
+        else:
+            formatted.append(line)
+    return '\n'.join(formatted)
+
+
 def make_sensor_task(sensor_module_name: str, storage: Storage) -> Callable[[Dict[str, Any]], None]:
     """Return a function that collects data from the given sensor.
 
@@ -35,28 +67,40 @@ def make_sensor_task(sensor_module_name: str, storage: Storage) -> Callable[[Dic
 
 
 def detection_task(context: Dict[str, Any], storage: Storage) -> None:
-    # Run rule based detection; anomalies are logged to storage
     anomalies = detection.detect(context, storage)
     if anomalies:
-        # Store last anomalies in context for UI or summarisation
         context.setdefault("recent_anomalies", []).extend(anomalies)
+        print(f"\n{Colors.RED}{'!' * 40}")
+        print(f"  {Colors.BOLD}ANOMALIES DETECTED{Colors.END}")
+        print(f"{Colors.RED}{'!' * 40}{Colors.END}")
+        for a in anomalies:
+            rule = a.get("rule", "unknown")
+            desc = a.get("description", "no description")
+            print(f"  {Colors.YELLOW}*{Colors.END} {Colors.BOLD}{rule}:{Colors.END} {desc}")
+        print()
+
+
+def print_section(title: str, content: str) -> None:
+    """Print formatted section with title and colored content."""
+    separator = "=" * 50
+    print(f"\n{Colors.BOLD}{separator}")
+    print(f"  {title}")
+    print(f"{separator}{Colors.END}")
+    print(format_summary(content))
 
 
 def risk_assessment_task(context: Dict[str, Any], storage: Storage, client: OpenRouterClient) -> None:
     risk_assessment.run(context, storage, client)
-    # Optionally print summary to console
     summary = context.get("last_summary")
     if summary:
-        print("[Risk Assessment Summary]")
-        print(summary)
+        print_section("RISK ASSESSMENT SUMMARY", summary)
 
 
 def vulnerability_check_task(context: Dict[str, Any], storage: Storage, client: OpenRouterClient) -> None:
     vulnerability_check.run(context, storage, client)
     result = context.get("last_vulnerability_assessment")
     if result:
-        print("[Vulnerability Assessment]")
-        print(result)
+        print_section("VULNERABILITY ASSESSMENT", result)
 
 
 class WebhookHandler(BaseHTTPRequestHandler):
