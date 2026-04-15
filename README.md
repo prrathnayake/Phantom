@@ -1,4 +1,4 @@
-# System Monitoring Agent Project
+# Monica - System Monitoring Agent
 
 This project implements a lightweight, local security and monitoring agent.  It is **not** intended
 to completely secure a machine, but instead serves as a template and reference for building

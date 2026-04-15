@@ -195,7 +195,7 @@ class DashboardApp(App):
         yield Header(show_clock=False)
         
         with Vertical(id="top-bar"):
-            yield Static("SECURE MONITORING AGENT", id="top-title", classes="top-text")
+            yield Static("MONICA", id="top-title", classes="top-text")
             yield Static(id="top-stats", classes="top-text")
         
         with Container(id="left-panel"):
