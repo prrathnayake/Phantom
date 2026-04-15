@@ -4,15 +4,19 @@ This script wires together the sensors, scheduler, detection engine
 and skills.  It sets up periodic tasks, starts an optional webhook
 listener, and runs the scheduler loop indefinitely.
 """
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from typing import Dict, Any, Callable
 import importlib
 
-from . import config
-from .core import Scheduler, Storage, OpenRouterClient
-from .analysis import detection
-from .skills import risk_assessment, vulnerability_check
+import config
+from core import Scheduler, Storage, OpenRouterClient
+from analysis import detection
+from skills import risk_assessment, vulnerability_check
 
 
 def make_sensor_task(sensor_module_name: str, storage: Storage) -> Callable[[Dict[str, Any]], None]:

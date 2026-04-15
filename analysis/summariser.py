@@ -7,8 +7,8 @@ silently if no API key is provided or the API call fails.
 """
 from typing import Dict, Any, List
 
-from ..core.openrouter_client import OpenRouterClient
-from ..core.storage import Storage
+from core.openrouter_client import OpenRouterClient
+from core.storage import Storage
 
 
 def summarise(context: Dict[str, Any], storage: Storage, client: OpenRouterClient) -> None:

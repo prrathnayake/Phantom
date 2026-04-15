@@ -11,24 +11,29 @@ point it at a relatively small directory (e.g. your home config folder)
 or increase the interval accordingly.
 """
 import os
+import logging
 from typing import Dict, Any, Tuple, List
 from pathlib import Path
-import hashlib
 
-from .. import config
+import config
+
+logger = logging.getLogger(__name__)
 
 
 def _snapshot(directory: Path) -> Dict[str, float]:
     """Return a mapping from file path to modification time (timestamp)."""
     snapshot: Dict[str, float] = {}
-    for root, _, files in os.walk(directory):
-        for fname in files:
-            try:
-                path = Path(root) / fname
-                stat = path.stat()
-                snapshot[str(path)] = stat.st_mtime
-            except (FileNotFoundError, PermissionError):
-                continue
+    try:
+        for root, _, files in os.walk(directory):
+            for fname in files:
+                try:
+                    path = Path(root) / fname
+                    stat = path.stat()
+                    snapshot[str(path)] = stat.st_mtime
+                except (FileNotFoundError, PermissionError, OSError):
+                    continue
+    except (PermissionError, OSError) as e:
+        logger.warning(f"Cannot access directory {directory}: {e}")
     return snapshot
 
 

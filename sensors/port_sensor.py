@@ -28,18 +28,21 @@ def _collect_with_psutil() -> Dict[str, Any]:
 
 def _collect_with_netstat() -> Dict[str, Any]:
     import subprocess
+    import platform
     ports: List[Dict[str, Any]] = []
-    # Use -tuln to list both TCP and UDP listening ports
-    result = subprocess.run(["netstat", "-tuln"], capture_output=True, text=True)
+    
+    if platform.system() == "Windows":
+        result = subprocess.run(["netstat", "-ano"], capture_output=True, text=True)
+    else:
+        result = subprocess.run(["netstat", "-tuln"], capture_output=True, text=True)
+    
     lines = result.stdout.strip().splitlines()
     for line in lines:
-        # Lines start with protocol (tcp, udp) followed by recv-q, send-q, local address
         if line.startswith("tcp") or line.startswith("udp"):
             parts = line.split()
             if len(parts) >= 4:
                 proto = parts[0]
                 laddr = parts[3]
-                # Only include lines with state 'LISTEN' for TCP.  UDP lines may not have a state column.
                 if proto.startswith("tcp"):
                     if "LISTEN" not in line and "ESTABLISHED" in line:
                         continue

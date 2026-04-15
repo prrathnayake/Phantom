@@ -5,9 +5,9 @@ produce a human readable summary of the system's state.  It runs at a
 slower cadence (e.g. every 10 minutes) because it calls the LLM.
 """
 from typing import Dict, Any
-from ..core.storage import Storage
-from ..core.openrouter_client import OpenRouterClient
-from ..analysis.summariser import summarise
+from core.storage import Storage
+from core.openrouter_client import OpenRouterClient
+from analysis.summariser import summarise
 
 
 def run(context: Dict[str, Any], storage: Storage, client: OpenRouterClient) -> None:

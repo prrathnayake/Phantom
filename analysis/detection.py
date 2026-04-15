@@ -5,8 +5,8 @@ the scheduler context.  When a rule triggers it writes a detection
 record to the storage layer and returns a description of the anomaly.
 """
 from typing import Dict, Any, List
-from .. import config
-from ..core.storage import Storage
+import config
+from core.storage import Storage
 
 
 def detect(context: Dict[str, Any], storage: Storage) -> List[Dict[str, Any]]:
