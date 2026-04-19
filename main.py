@@ -48,51 +48,42 @@ def start_web_dashboard():
     
     flask_process = subprocess.Popen(
         [sys.executable, "-m", "flask", "--app", "apps.web.app:create_app", "run", 
-         "--host", "127.0.0.1", "--port", "5000", "--no-debug", "--no-worker-guard"],
+         "--host", "127.0.0.1", "--port", "5000", "--no-debug"],
         cwd=os.path.dirname(os.path.abspath(__file__)),
         stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0
+        stderr=subprocess.DEVNULL
     )
     
     import time
-    time.sleep(2)
-    
-    import psutil
-    parent = psutil.Process(flask_process.pid)
-    for child in parent.children(recursive=True):
-        try:
-            child.kill()
-        except:
-            pass
+    time.sleep(3)
     
     print("Flask started.")
 
 
 def stop_web_dashboard():
     """Stop the Flask web dashboard."""
-    global flask_process, flask_pid
+    global flask_process
     print("Stopping Flask server...")
     
     if flask_process:
         try:
-            parent = psutil.Process(flask_process.pid)
-            for child in parent.children(recursive=True):
-                try:
-                    child.kill()
-                except:
-                    pass
-            parent.kill()
-        except:
+            flask_process.terminate()
+            flask_process.wait(timeout=2)
+        except subprocess.TimeoutExpired:
+            try:
+                flask_process.kill()
+            except:
+                pass
+        except Exception:
             pass
     
     import subprocess
     try:
-        result = subprocess.run(
+        subprocess.run(
             ['powershell', '-Command', 
-             f"Get-NetTCPConnection -LocalPort 5000 -ErrorAction SilentlyContinue | "
-             f"Select-Object -ExpandProperty OwningProcess | ForEach-Object {{ "
-             f"Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }}"],
+             'Get-NetTCPConnection -LocalPort 5000 -ErrorAction SilentlyContinue | '
+             'Select-Object -ExpandProperty OwningProcess -Unique | '
+             'ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }'],
             capture_output=True,
             timeout=3
         )
