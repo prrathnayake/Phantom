@@ -17,6 +17,11 @@ from central_agent import create_central_agent
 from gateway import create_gateway
 from utils.debug_log import debug_logger
 
+try:
+    import psutil
+except ImportError:
+    psutil = None
+
 
 class Colors:
     BLUE = '\033[94m'
@@ -30,11 +35,12 @@ class Colors:
 web_server = None
 shutdown_event = None
 flask_process = None
+flask_pid = None
 
 
 def start_web_dashboard():
     """Start the Flask web dashboard as subprocess."""
-    global flask_process
+    global flask_process, flask_pid
     import subprocess
     import os
     
@@ -42,35 +48,58 @@ def start_web_dashboard():
     
     flask_process = subprocess.Popen(
         [sys.executable, "-m", "flask", "--app", "apps.web.app:create_app", "run", 
-         "--host", "127.0.0.1", "--port", "5000", "--no-debug"],
+         "--host", "127.0.0.1", "--port", "5000", "--no-debug", "--no-worker-guard"],
         cwd=os.path.dirname(os.path.abspath(__file__)),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        creationflags=subprocess.CREATE_NEW_PROCESS_GROUP if os.name == 'nt' else 0
     )
+    
+    import time
+    time.sleep(2)
+    
+    import psutil
+    parent = psutil.Process(flask_process.pid)
+    for child in parent.children(recursive=True):
+        try:
+            child.kill()
+        except:
+            pass
+    
+    print("Flask started.")
 
 
 def stop_web_dashboard():
     """Stop the Flask web dashboard."""
-    global flask_process
+    global flask_process, flask_pid
     print("Stopping Flask server...")
     
     if flask_process:
-        flask_process.terminate()
         try:
-            flask_process.wait(timeout=3)
-        except subprocess.TimeoutExpired:
-            flask_process.kill()
-    else:
-        import socket
-        import urllib.request
-        try:
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            result = sock.connect_ex(('127.0.0.1', 5000))
-            sock.close()
-            if result == 0:
-                urllib.request.urlopen('http://127.0.0.1:5000/shutdown', timeout=2)
-        except Exception:
+            parent = psutil.Process(flask_process.pid)
+            for child in parent.children(recursive=True):
+                try:
+                    child.kill()
+                except:
+                    pass
+            parent.kill()
+        except:
             pass
+    
+    import subprocess
+    try:
+        result = subprocess.run(
+            ['powershell', '-Command', 
+             f"Get-NetTCPConnection -LocalPort 5000 -ErrorAction SilentlyContinue | "
+             f"Select-Object -ExpandProperty OwningProcess | ForEach-Object {{ "
+             f"Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }}"],
+            capture_output=True,
+            timeout=3
+        )
+    except:
+        pass
+    
+    print("Flask stopped.")
 
 
 def main() -> None:
