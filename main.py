@@ -29,52 +29,48 @@ class Colors:
 
 web_server = None
 shutdown_event = None
+flask_process = None
 
 
 def start_web_dashboard():
-    """Start the Flask web dashboard in a background thread."""
-    global web_server, shutdown_event
-    try:
-        from apps.web.app import init_app, app
-        init_app()
-        print("Starting Flask server...")
-        
-        shutdown_event = threading.Event()
-        
-        def run_server():
-            global web_server
-            web_server = app.run(
-                host="127.0.0.1",
-                port=5000,
-                debug=False,
-                use_reloader=False,
-                threaded=True
-            )
-        
-        server_thread = threading.Thread(target=run_server, daemon=True)
-        server_thread.start()
-        
-        shutdown_event.wait()
-        
-    except Exception as e:
-        print(f"Flask error: {e}")
-        import traceback
-        traceback.print_exc()
+    """Start the Flask web dashboard as subprocess."""
+    global flask_process
+    import subprocess
+    import os
+    
+    print("Starting Flask server...")
+    
+    flask_process = subprocess.Popen(
+        [sys.executable, "-m", "flask", "--app", "apps.web.app:create_app", "run", 
+         "--host", "127.0.0.1", "--port", "5000", "--no-debug"],
+        cwd=os.path.dirname(os.path.abspath(__file__)),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
 
 
 def stop_web_dashboard():
     """Stop the Flask web dashboard."""
-    try:
-        if web_server:
-            print("Stopping Flask server...")
-            from apps.web.app import app
-            func = request.environ.get('werkzeug.server.shutdown')
-            if func:
-                func()
-        if shutdown_event:
-            shutdown_event.set()
-    except Exception:
-        pass
+    global flask_process
+    print("Stopping Flask server...")
+    
+    if flask_process:
+        flask_process.terminate()
+        try:
+            flask_process.wait(timeout=3)
+        except subprocess.TimeoutExpired:
+            flask_process.kill()
+    else:
+        import socket
+        import urllib.request
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            result = sock.connect_ex(('127.0.0.1', 5000))
+            sock.close()
+            if result == 0:
+                urllib.request.urlopen('http://127.0.0.1:5000/shutdown', timeout=2)
+        except Exception:
+            pass
 
 
 def main() -> None:

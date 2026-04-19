@@ -29,6 +29,12 @@ schedule_manager = None
 storage = None
 
 
+def create_app():
+    """Create and return Flask app for Flask CLI."""
+    init_app()
+    return app
+
+
 def init_app():
     """Initialize application components."""
     global agent, schedule_manager, storage
@@ -38,6 +44,21 @@ def init_app():
     schedule_manager = ScheduleManager()
     
     return agent, schedule_manager, storage
+
+
+@app.route("/shutdown", methods=["POST"])
+def shutdown():
+    """Shutdown endpoint."""
+    func = request.environ.get('werkzeug.server.shutdown')
+    if func:
+        func()
+    return "OK"
+
+
+@app.route("/health")
+def health():
+    """Health check."""
+    return "OK"
 
 
 @app.route("/")
