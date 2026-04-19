@@ -17,6 +17,10 @@ POLL_INTERVALS = {
     "process_sensor": 60,  # every minute
     "port_sensor": 120,    # every two minutes
     "file_sensor": 30,     # watch file changes more frequently
+    "network_sensor": 60,  # every minute - connections and traffic
+    "memory_sensor": 60,  # every minute - RAM/swap usage
+    "disk_io_sensor": 120,  # every two minutes - disk usage
+    "auth_sensor": 30,     # every 30 seconds - login attempts
 }
 
 # Directory to watch for file changes.  Override via `AGENT_WATCH_DIR`.
@@ -47,6 +51,16 @@ DETECTION_THRESHOLDS = {
     # Number of file changes within the watch interval that constitutes
     # abnormal activity.
     "file_changes": int(os.environ.get("AGENT_THRESHOLD_FILE_CHANGES", 100)),
+    # Network sensor thresholds
+    "established_connections": int(os.environ.get("AGENT_THRESHOLD_ESTABLISHED_CONNS", 100)),
+    "external_ips": int(os.environ.get("AGENT_THRESHOLD_EXTERNAL_IPS", 10)),
+    # Memory sensor thresholds (% usage)
+    "memory_percent": int(os.environ.get("AGENT_THRESHOLD_MEMORY_PERCENT", 90)),
+    "swap_percent": int(os.environ.get("AGENT_THRESHOLD_SWAP_PERCENT", 50)),
+    # Disk I/O sensor thresholds
+    "disk_percent": int(os.environ.get("AGENT_THRESHOLD_DISK_PERCENT", 90)),
+    # Auth sensor thresholds (failed logins per interval)
+    "failed_logins": int(os.environ.get("AGENT_THRESHOLD_FAILED_LOGINS", 5)),
 }
 
 def ensure_log_dir():
