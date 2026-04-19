@@ -51,9 +51,14 @@ def init_app():
     from analysis.approval_manager import create_approval_manager
     from analysis.alert_manager import create_alert_manager
     from analysis.response_actions import create_response_engine
-    approval_manager = create_approval_manager()
-    alert_manager = create_alert_manager()
-    response_engine = create_response_engine()
+    approval_mgr = create_approval_manager()
+    alert_mgr = create_alert_manager()
+    resp_engine = create_response_engine()
+    
+    # Assign to global variables
+    approval_manager = approval_mgr
+    alert_manager = alert_mgr
+    response_engine = resp_engine
     
     return agent, schedule_manager, storage, approval_manager, alert_manager, response_engine
 
