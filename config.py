@@ -21,6 +21,13 @@ POLL_INTERVALS = {
     "memory_sensor": 60,  # every minute - RAM/swap usage
     "disk_io_sensor": 120,  # every two minutes - disk usage
     "auth_sensor": 30,     # every 30 seconds - login attempts
+    # New sensors (Phase 4)
+    "service_sensor": 60,     # every minute - critical services
+    "registry_sensor": 300,  # every 5 minutes - registry/audit
+    "dns_sensor": 30,      # every 30 seconds - DNS queries
+    "driver_sensor": 120,   # every 2 minutes - drivers/modules
+    "certificate_sensor": 3600,  # every hour - TLS certificates
+    "hardware_sensor": 60,  # every minute - USB/hardware
 }
 
 # Directory to watch for file changes.  Override via `AGENT_WATCH_DIR`.
@@ -102,3 +109,67 @@ PORT_CLASSIFICATIONS = {
 }
 
 DEBUG_MODE = os.environ.get("AGENT_DEBUG", "false").lower() == "true"
+
+# Alert Manager Configuration
+ALERT_THROTTLE_SECONDS = int(os.environ.get("AGENT_ALERT_THROTTLE_SECONDS", 60))
+ALERT_TIMEOUT_MINUTES = int(os.environ.get("AGENT_ALERT_TIMEOUT_MINUTES", 30))
+
+# Risk Scoring Configuration
+RISK_WEIGHTS = {
+    "process_count": 10,
+    "open_ports": 15,
+    "file_changes": 20,
+    "established_connections": 15,
+    "external_ips": 20,
+    "memory_percent": 10,
+    "swap_percent": 10,
+    "disk_percent": 10,
+    "failed_logins": 25,
+    "privilege_escalation": 40,
+    "brute_force": 35,
+    "lateral_movement": 50,
+    "data_exfiltration": 45,
+    "malware": 50,
+    "dns_tunneling": 30,
+}
+
+# Correlation Engine Configuration
+CORRELATION_WINDOW_MINUTES = int(os.environ.get("AGENT_CORRELATION_WINDOW", 5))
+CORRELATION_MIN_CONFIDENCE = float(os.environ.get("AGENT_CORRELATION_MIN_CONFIDENCE", 0.6))
+
+# Statistical Anomaly Detection
+STATISTICAL_WINDOW = int(os.environ.get("AGENT_STATISTICAL_WINDOW", 20))
+STATISTICAL_THRESHOLD = float(os.environ.get("AGENT_STATISTICAL_THRESHOLD", 2.5))
+
+# External Integrations Configuration
+# Slack
+SLACK_WEBHOOK_URL = os.environ.get("SLACK_WEBHOOK_URL")
+
+# Microsoft Teams
+TEAMS_WEBHOOK_URL = os.environ.get("TEAMS_WEBHOOK_URL")
+
+# PagerDuty
+PAGERDUTY_KEY = os.environ.get("PAGERDUTY_KEY")
+
+# SIEM Configuration
+SIEM_TYPE = os.environ.get("AGENT_SIEM_TYPE", "splunk")
+SIEM_URL = os.environ.get("AGENT_SIEM_URL")
+SIEM_API_KEY = os.environ.get("AGENT_SIEM_API_KEY")
+SIEM_INDEX = os.environ.get("AGENT_SIEM_INDEX")
+
+# Elasticsearch
+ELASTIC_URL = os.environ.get("ELASTIC_URL")
+ELASTIC_API_KEY = os.environ.get("ELASTIC_API_KEY")
+ELASTIC_INDEX_PREFIX = os.environ.get("ELASTIC_INDEX_PREFIX", "suraksha")
+
+# AWS CloudWatch
+CLOUDWATCH_REGION = os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
+AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
+
+# Approval Settings
+AUTO_APPROVE_LOW_RISK = os.environ.get("AGENT_AUTO_APPROVE_LOW_RISK", "false").lower() == "true"
+APPROVAL_REQUIRED_RISK_LEVEL = int(os.environ.get("AGENT_APPROVAL_RISK_THRESHOLD", 50))
+
+# Response Actions
+ENABLE_AUTO_RESPONSE = os.environ.get("AGENT_ENABLE_AUTO_RESPONSE", "false").lower() == "true"

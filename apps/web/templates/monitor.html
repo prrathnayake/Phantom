@@ -45,6 +45,28 @@
     </div>
 </div>
 
+<!-- Real-time Graph Placeholder -->
+<div class="row g-3 mb-4">
+    <div class="col-lg-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-graph-up"></i>
+                Event Activity (Last Hour)
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-end gap-1" id="activityGraph" style="height: 100px;">
+                    <!-- Populated by JS -->
+                </div>
+                <div class="d-flex justify-content-between mt-2 text-muted small">
+                    <span>Now</span>
+                    <span>30m ago</span>
+                    <span>1h ago</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Logs -->
 <div class="row g-3">
     <div class="col-lg-6">
@@ -91,15 +113,15 @@
 
 {% block scripts %}
 <script>
+let activityHistory = [];
+
 function loadActivity() {
     fetch('/api/activity?count=50')
         .then(r => r.json())
         .then(data => {
-            // Stats
             document.getElementById('totalEvents').textContent = data.events.length;
             document.getElementById('totalDetections').textContent = data.detections.length;
             
-            // Events
             const eventsDiv = document.getElementById('eventsList');
             if (data.events && data.events.length > 0) {
                 eventsDiv.innerHTML = data.events.slice(0, 30).map(e => {
@@ -112,7 +134,6 @@ function loadActivity() {
                 }).join('');
             }
             
-            // Detections
             const detectionsDiv = document.getElementById('detectionsList');
             if (data.detections && data.detections.length > 0) {
                 detectionsDiv.innerHTML = data.detections.slice(0, 30).map(d => {
@@ -123,8 +144,37 @@ function loadActivity() {
                     </div>`;
                 }).join('');
             }
+            
+            activityHistory = data.events || [];
+            updateActivityGraph();
         })
         .catch(err => console.error('Activity load error:', err));
+}
+
+function updateActivityGraph() {
+    const graph = document.getElementById('activityGraph');
+    const now = Date.now();
+    const buckets = 20;
+    const bucketSize = (60 * 60 * 1000) / buckets;
+    
+    const counts = new Array(buckets).fill(0);
+    
+    activityHistory.forEach(e => {
+        const eventTime = new Date(e.timestamp).getTime();
+        const age = now - eventTime;
+        if (age < 60 * 60 * 1000) {
+            const bucket = Math.floor(age / bucketSize);
+            counts[buckets - 1 - bucket]++;
+        }
+    });
+    
+    const maxCount = Math.max(...counts, 1);
+    
+    graph.innerHTML = counts.map(c => {
+        const height = Math.max(10, (c / maxCount) * 100);
+        const color = c > 0 ? 'var(--accent)' : 'var(--border)';
+        return `<div style="flex: 1; height: ${height}%; background: ${color}; border-radius: 2px 2px 0 0; min-height: 4px; transition: height 0.3s ease;" title="${c} events"></div>`;
+    }).join('');
 }
 
 function loadStatus() {
@@ -137,10 +187,10 @@ function loadStatus() {
         .catch(err => console.error('Status load error:', err));
 }
 
-// Initial load and auto-refresh
 loadActivity();
 loadStatus();
 setInterval(loadActivity, 3000);
 setInterval(loadStatus, 10000);
+setInterval(updateActivityGraph, 10000);
 </script>
 {% endblock %}

@@ -26,31 +26,39 @@
             </div>
             
             <div class="sidebar-section">
-                <div class="sidebar-title">System Status</div>
+                <div class="sidebar-title">System Information</div>
                 <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
-                    <span class="text-secondary">Status</span>
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="status-dot online" id="statusDot"></span>
-                        <span class="fw-semibold text-success">Online</span>
-                    </div>
+                    <span class="text-secondary">Platform</span>
+                    <span class="fw-bold small" id="sysPlatform">-</span>
                 </div>
                 <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
-                    <span class="text-secondary">Events</span>
-                    <span class="fw-bold" id="statEvents">-</span>
+                    <span class="text-secondary">Python</span>
+                    <span class="fw-bold text-info" id="sysPython">-</span>
                 </div>
                 <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
-                    <span class="text-secondary">Detections</span>
-                    <span class="fw-bold text-warning" id="statDetections">-</span>
+                    <span class="text-secondary">Uptime</span>
+                    <span class="fw-bold text-accent" id="sysUptime">-</span>
                 </div>
                 <div class="d-flex justify-content-between align-items-center py-2">
-                    <span class="text-secondary">Schedules</span>
-                    <span class="fw-bold text-info" id="statSchedules">-</span>
+                    <span class="text-secondary">Last Activity</span>
+                    <span class="fw-bold text-muted small" id="lastActivity">-</span>
                 </div>
             </div>
             
             <div class="sidebar-section">
-                <div class="sidebar-title">Uptime</div>
-                <div class="fs-4 fw-bold text-accent" id="uptime">00:00:00</div>
+                <div class="sidebar-title">Security Summary</div>
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
+                    <span class="text-secondary">Events (24h)</span>
+                    <span class="fw-bold" id="statEventsDay">-</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
+                    <span class="text-secondary">Detections (24h)</span>
+                    <span class="fw-bold text-warning" id="statDetectionsDay">-</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2">
+                    <span class="text-secondary">Active Sensors</span>
+                    <span class="fw-bold text-success" id="statSensors">-</span>
+                </div>
             </div>
         </div>
     </div>
@@ -168,16 +176,7 @@
 
 {% block scripts %}
 <script>
-let startTime = Date.now();
 let activityInterval;
-
-function formatUptime() {
-    const elapsed = Math.floor((Date.now() - startTime) / 1000);
-    const hrs = Math.floor(elapsed / 3600).toString().padStart(2, '0');
-    const mins = Math.floor((elapsed % 3600) / 60).toString().padStart(2, '0');
-    const secs = (elapsed % 60).toString().padStart(2, '0');
-    document.getElementById('uptime').textContent = `${hrs}:${mins}:${secs}`;
-}
 
 function loadActivity() {
     showActivity();
@@ -224,7 +223,21 @@ function loadStatus() {
             document.getElementById('statDetections').textContent = data.detections || 0;
             document.getElementById('statSchedules').textContent = data.schedules || 0;
             
-            // Update reports count
+            document.getElementById('sysUptime').textContent = data.uptime || '-';
+            document.getElementById('lastActivity').textContent = data.last_activity ? new Date(data.last_activity).toLocaleTimeString() : '-';
+            
+            document.getElementById('statEventsDay').textContent = data.events_24h || 0;
+            document.getElementById('statDetectionsDay').textContent = data.detections_24h || 0;
+            document.getElementById('statSensors').textContent = data.active_sensors || 0;
+            
+            fetch('/api/system/info')
+                .then(r => r.json())
+                .then(sys => {
+                    document.getElementById('sysPlatform').textContent = sys.platform || '-';
+                    document.getElementById('sysPython').textContent = sys.python_version || '-';
+                })
+                .catch(() => {});
+            
             fetch('/api/reports/count')
                 .then(r => r.json())
                 .then(r => document.getElementById('reportsCount').textContent = r.count || 0)
@@ -236,7 +249,6 @@ function loadStatus() {
 // Initial load
 loadActivity();
 loadStatus();
-setInterval(formatUptime, 1000);
 setInterval(loadActivity, 5000);
 setInterval(loadStatus, 10000);
 </script>

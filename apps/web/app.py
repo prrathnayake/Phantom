@@ -3,6 +3,7 @@
 A web-based dashboard for interacting with the Monica agent."""
 import os
 import sys
+import platform
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
@@ -21,12 +22,16 @@ from diagnostics import process_sensor, port_sensor, file_sensor
 app = Flask(__name__)
 app.secret_key = "monica-mission-control-key"
 
+start_time = datetime.utcnow()
 chat_history = []
 chat_lock = Lock()
 
 agent = None
 schedule_manager = None
 storage = None
+approval_manager = None
+alert_manager = None
+response_engine = None
 
 
 def create_app():
@@ -37,13 +42,20 @@ def create_app():
 
 def init_app():
     """Initialize application components."""
-    global agent, schedule_manager, storage
+    global agent, schedule_manager, storage, approval_manager, alert_manager, response_engine
     
     storage = Storage()
     agent = create_central_agent()
     schedule_manager = ScheduleManager()
     
-    return agent, schedule_manager, storage
+    from analysis.approval_manager import create_approval_manager
+    from analysis.alert_manager import create_alert_manager
+    from analysis.response_actions import create_response_engine
+    approval_manager = create_approval_manager()
+    alert_manager = create_alert_manager()
+    response_engine = create_response_engine()
+    
+    return agent, schedule_manager, storage, approval_manager, alert_manager, response_engine
 
 
 @app.route("/shutdown", methods=["POST"])
@@ -104,6 +116,18 @@ def reports_page():
                     })
     
     return render_template("reports.html", reports=reports)
+
+
+@app.route("/approvals")
+def approvals_page():
+    """Approval requests page."""
+    return render_template("approvals.html")
+
+
+@app.route("/alerts")
+def alerts_page():
+    """Alerts page."""
+    return render_template("alerts.html")
 
 
 @app.route("/api/chat", methods=["POST"])
@@ -335,6 +359,8 @@ def update_schedule_interval_api(name):
 @app.route("/api/status", methods=["GET"])
 def status_api():
     """Get system status."""
+    global start_time
+    
     event_count = 0
     detection_count = 0
     
@@ -343,14 +369,161 @@ def status_api():
         detections = storage.get_recent_detections(count=1000)
         event_count = len(events)
         detection_count = len(detections)
+        
+        one_day_ago = datetime.utcnow() - timedelta(hours=24)
+        events_24h = sum(1 for e in events if datetime.fromisoformat(e.get('timestamp', '2020-01-01')) > one_day_ago)
+        detections_24h = sum(1 for d in detections if datetime.fromisoformat(d.get('timestamp', '2020-01-01')) > one_day_ago)
+    else:
+        events_24h = 0
+        detections_24h = 0
+    
+    uptime_seconds = (datetime.utcnow() - start_time).total_seconds()
+    hrs = int(uptime_seconds // 3600)
+    mins = int((uptime_seconds % 3600) // 60)
+    secs = int(uptime_seconds % 60)
+    uptime_str = f"{hrs:02d}:{mins:02d}:{secs:02d}"
+    
+    last_activity = storage.get_recent_events(count=1)
+    last_activity_time = last_activity[0].get('timestamp') if last_activity else None
     
     return jsonify({
         "status": "running",
         "timestamp": datetime.utcnow().isoformat(),
+        "uptime": uptime_str,
         "events_logged": event_count,
         "detections": detection_count,
+        "events_24h": events_24h,
+        "detections_24h": detections_24h,
+        "active_sensors": 3,
+        "last_activity": last_activity_time,
         "schedules": len(schedule_manager._schedules) if schedule_manager else 0
     })
+
+
+@app.route("/api/system/info", methods=["GET"])
+def system_info_api():
+    """Get system information."""
+    return jsonify({
+        "platform": platform.system() + " " + platform.release(),
+        "python_version": platform.python_version(),
+        "hostname": platform.node(),
+        "processor": platform.processor()
+    })
+
+
+@app.route("/api/approvals", methods=["GET"])
+def approvals_api():
+    """Get approval requests."""
+    global approval_manager
+    if approval_manager:
+        approvals = approval_manager.get_pending_approvals()
+        return jsonify({
+            "approvals": [approval_manager.get_action_summary(a) for a in approvals],
+            "count": len(approvals)
+        })
+    return jsonify({"approvals": [], "count": 0})
+
+
+@app.route("/api/approvals/<approval_id>/approve", methods=["POST"])
+def approve_api(approval_id):
+    """Approve an action request."""
+    global approval_manager
+    global alert_manager
+    global response_engine
+    
+    if approval_manager:
+        request = approval_manager.approve_request(approval_id, "web-ui")
+        if request:
+            if response_engine:
+                params = {p.name: p.value for p in request.action_parameters}
+                result = response_engine.execute(request.action_type, params)
+                approval_manager.mark_executed(approval_id, str(result))
+            
+            if alert_manager:
+                alert_manager.create_alert(
+                    title=f"Action Approved: {request.action_type}",
+                    description=request.reason,
+                    severity=request.risk_level,
+                    source="approval",
+                    recommended_action=request.action_type,
+                    affected_assets=[p.value for p in request.action_parameters if p.name in ["ip_address", "username", "file_path"]],
+                    risk_score=request.risk_score
+                )
+            
+            return jsonify({"status": "approved", "approval_id": approval_id})
+    return jsonify({"error": "Approval not found"}), 404
+
+
+@app.route("/api/approvals/<approval_id>/deny", methods=["POST"])
+def deny_api(approval_id):
+    """Deny an action request."""
+    global approval_manager
+    
+    if approval_manager:
+        request = approval_manager.deny_request(approval_id, "web-ui")
+        if request:
+            return jsonify({"status": "denied", "approval_id": approval_id})
+    return jsonify({"error": "Approval not found"}), 404
+
+
+@app.route("/api/alerts", methods=["GET"])
+def alerts_api():
+    """Get alerts."""
+    global alert_manager
+    if alert_manager:
+        alerts = alert_manager.get_alerts(limit=50)
+        return jsonify({
+            "alerts": [
+                {
+                    "alert_id": a.alert_id,
+                    "title": a.title,
+                    "severity": a.severity,
+                    "status": a.status,
+                    "created": a.timestamp,
+                    "source": a.source
+                } for a in alerts
+            ],
+            "count": len(alerts)
+        })
+    return jsonify({"alerts": [], "count": 0})
+
+
+@app.route("/api/alerts/<alert_id>/acknowledge", methods=["POST"])
+def acknowledge_alert_api(alert_id):
+    """Acknowledge an alert."""
+    global alert_manager
+    if alert_manager:
+        if alert_manager.acknowledge_alert(alert_id):
+            return jsonify({"status": "acknowledged", "alert_id": alert_id})
+    return jsonify({"error": "Alert not found"}), 404
+
+
+@app.route("/api/alerts/<alert_id>/resolve", methods=["POST"])
+def resolve_alert_api(alert_id):
+    """Resolve an alert."""
+    global alert_manager
+    if alert_manager:
+        if alert_manager.resolve_alert(alert_id):
+            return jsonify({"status": "resolved", "alert_id": alert_id})
+    return jsonify({"error": "Alert not found"}), 404
+
+
+@app.route("/api/alert-stats", methods=["GET"])
+def alert_stats_api():
+    """Get alert statistics."""
+    global alert_manager
+    if alert_manager:
+        return jsonify(alert_manager.get_alert_stats())
+    return jsonify({})
+
+
+@app.route("/api/approval-stats", methods=["GET"])
+def approval_stats_api():
+    """Get approval statistics."""
+    global approval_manager
+    if approval_manager:
+        return jsonify(approval_manager.get_approval_stats())
+    return jsonify({})
 
 
 def _get_recent_context():

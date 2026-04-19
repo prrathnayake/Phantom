@@ -266,13 +266,24 @@
         /* Activity indicator */
         .activity-pulse {
             position: fixed;
-            bottom: 1.5rem;
-            right: 1.5rem;
-            width: 12px;
-            height: 12px;
+            top: 4.5rem;
+            left: 1.5rem;
+            width: 10px;
+            height: 10px;
             background: var(--accent);
             border-radius: 50%;
             animation: activity-pulse 1.5s infinite;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .activity-pulse::after {
+            content: 'Activity';
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-left: 0.75rem;
+            white-space: nowrap;
         }
         
         @keyframes activity-pulse {
@@ -383,6 +394,285 @@
         }
         
         {% block extra_styles %}{% endblock %}
+
+        /* Floating Chat Widget */
+        .chat-widget-btn {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--bg-dark);
+            box-shadow: 0 4px 20px rgba(34, 197, 94, 0.4);
+            transition: all 0.3s ease;
+            z-index: 9999;
+        }
+
+        .chat-widget-btn .notification-badge {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            background: var(--danger);
+            color: white;
+            font-size: 0.65rem;
+            font-weight: bold;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--bg-dark);
+            animation: notifPulse 2s infinite;
+        }
+
+        .chat-widget-btn .notification-badge.show {
+            display: flex;
+        }
+
+        @keyframes notifPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .chat-widget-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 30px rgba(34, 197, 94, 0.5);
+        }
+
+        .chat-widget-btn::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: var(--accent);
+            animation: chatPulse 2s infinite;
+            z-index: -1;
+        }
+
+        @keyframes chatPulse {
+            0% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.3); opacity: 0; }
+            100% { transform: scale(1); opacity: 0; }
+        }
+
+        .chat-widget-btn .bi {
+            transition: transform 0.3s ease;
+        }
+
+        .chat-widget-btn:hover .bi {
+            transform: rotate(10deg);
+        }
+
+        .chat-widget-btn .bi-chat-dots-fill {
+            display: block;
+        }
+
+        .chat-widget-btn .bi-x-lg {
+            display: none;
+        }
+
+        .chat-widget-btn.open .bi-chat-dots-fill {
+            display: none;
+        }
+
+        .chat-widget-btn.open .bi-x-lg {
+            display: block;
+        }
+
+        .chat-widget-popup {
+            position: fixed;
+            bottom: 5.5rem;
+            right: 1.5rem;
+            width: 380px;
+            height: 500px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            z-index: 9998;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            animation: chatSlideUp 0.3s ease-out;
+        }
+
+        .chat-widget-popup.show {
+            display: flex;
+        }
+
+        @keyframes chatSlideUp {
+            from { opacity: 0; transform: translateY(20px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .chat-widget-header {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%);
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .chat-widget-header i {
+            font-size: 1.5rem;
+            color: var(--bg-dark);
+        }
+
+        .chat-widget-header div {
+            color: var(--bg-dark);
+            font-weight: 600;
+        }
+
+        .chat-widget-header small {
+            opacity: 0.8;
+            font-weight: 400;
+        }
+
+        .chat-widget-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .chat-widget-msg {
+            max-width: 85%;
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            animation: msgFadeIn 0.2s ease-out;
+        }
+
+        @keyframes msgFadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .chat-widget-msg.user {
+            background: var(--accent);
+            color: var(--bg-dark);
+            align-self: flex-end;
+            border-bottom-right-radius: 0.25rem;
+        }
+
+        .chat-widget-msg.assistant {
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            align-self: flex-start;
+            border-bottom-left-radius: 0.25rem;
+        }
+
+        .chat-widget-input {
+            padding: 0.75rem;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .chat-widget-input input {
+            flex: 1;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+
+        .chat-widget-input input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .chat-widget-input button {
+            background: var(--accent);
+            border: none;
+            border-radius: 0.5rem;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .chat-widget-input button:hover {
+            background: var(--accent-dim);
+            transform: scale(1.05);
+        }
+
+        .chat-widget-typing {
+            display: flex;
+            gap: 0.25rem;
+            padding: 0.75rem 1rem;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            width: fit-content;
+            align-self: flex-start;
+        }
+
+        .chat-widget-typing span {
+            width: 6px;
+            height: 6px;
+            background: var(--text-muted);
+            border-radius: 50%;
+            animation: widgetTyping 1.4s infinite;
+        }
+
+        .chat-widget-typing span:nth-child(2) { animation-delay: 0.2s; }
+        .chat-widget-typing span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes widgetTyping {
+            0%, 100% { opacity: 0.3; transform: translateY(0); }
+            50% { opacity: 1; transform: translateY(-3px); }
+        }
+
+        .timer-widget {
+            position: fixed;
+            top: 4.5rem;
+            right: 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 0.375rem 0.75rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            color: var(--accent);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            animation: timerFadeIn 0.3s ease-out;
+        }
+
+        .timer-widget .timer-date {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            border-right: 1px solid var(--border);
+            padding-right: 0.5rem;
+            margin-right: 0.25rem;
+        }
+
+        @keyframes timerFadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
@@ -419,6 +709,22 @@
                         <i class="bi bi-file-earmark-ruled"></i> Reports
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link position-relative" href="/approvals" id="nav-approvals">
+                        <i class="bi bi-check-circle"></i> Approvals
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning" id="approvalsBadge" style="display: none; font-size: 0.6rem;">
+                            0
+                        </span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link position-relative" href="/alerts" id="nav-alerts">
+                        <i class="bi bi-bell"></i> Alerts
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="alertsBadge" style="display: none; font-size: 0.6rem;">
+                            0
+                        </span>
+                    </a>
+                </li>
             </ul>
             
             <div class="status-badge ms-4">
@@ -433,6 +739,41 @@
     </div>
 
     <div class="activity-pulse" id="activityIndicator" style="display: none;"></div>
+
+    <!-- Floating Timer -->
+    <div class="timer-widget">
+        <span class="timer-date" id="timerDate"></span>
+        <i class="bi bi-clock"></i>
+        <span id="floatingTimer">00:00:00</span>
+    </div>
+
+    <!-- Chat Widget Button -->
+    <button class="chat-widget-btn" id="chatWidgetBtn" onclick="toggleChatWidget()">
+        <i class="bi bi-chat-dots-fill"></i>
+        <i class="bi bi-x-lg"></i>
+        <span class="notification-badge" id="chatNotifBadge">0</span>
+    </button>
+
+    <!-- Chat Widget Popup -->
+    <div class="chat-widget-popup" id="chatWidgetPopup">
+        <div class="chat-widget-header">
+            <i class="bi bi-robot"></i>
+            <div>
+                Monica Assistant
+                <small class="d-block">AI Security Agent</small>
+            </div>
+        </div>
+        <div class="chat-widget-messages" id="chatWidgetMessages">
+            <div class="chat-widget-msg assistant">Hello! How can I help you with security monitoring today?</div>
+        </div>
+        <div class="chat-widget-input">
+            <input type="text" id="chatWidgetInput" placeholder="Ask me anything..." 
+                   onkeypress="if(event.key === 'Enter') sendWidgetMessage()">
+            <button onclick="sendWidgetMessage()">
+                <i class="bi bi-send" style="color: var(--bg-dark);"></i>
+            </button>
+        </div>
+    </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
@@ -485,6 +826,148 @@
                 scheduleReconnect();
             });
         }, 30000);
+
+        // Floating timer
+        let timerStart = Date.now();
+        function updateFloatingTimer() {
+            const elapsed = Math.floor((Date.now() - timerStart) / 1000);
+            const hrs = String(Math.floor(elapsed / 3600)).padStart(2, '0');
+            const mins = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
+            const secs = String(elapsed % 60).padStart(2, '0');
+            const timerEl = document.getElementById('floatingTimer');
+            if (timerEl) timerEl.textContent = `${hrs}:${mins}:${secs}`;
+            
+            const dateEl = document.getElementById('timerDate');
+            if (dateEl && !dateEl.textContent) {
+                dateEl.textContent = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            }
+        }
+        setInterval(updateFloatingTimer, 1000);
+        updateFloatingTimer();
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Chat Widget
+        function toggleChatWidget() {
+            const btn = document.getElementById('chatWidgetBtn');
+            const popup = document.getElementById('chatWidgetPopup');
+            btn.classList.toggle('open');
+            popup.classList.toggle('show');
+        }
+
+        function sendWidgetMessage() {
+            const input = document.getElementById('chatWidgetInput');
+            const msg = input.value.trim();
+            if (!msg) return;
+            input.value = '';
+            const container = document.getElementById('chatWidgetMessages');
+            container.innerHTML += `<div class="chat-widget-msg user">${escapeHtml(msg)}</div>`;
+            container.scrollTop = container.scrollHeight;
+            const typing = document.createElement('div');
+            typing.className = 'chat-widget-typing';
+            typing.id = 'widgetTyping';
+            typing.innerHTML = '<span></span><span></span><span></span>';
+            container.appendChild(typing);
+            container.scrollTop = container.scrollHeight;
+            fetch('/api/chat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({message: msg})
+            })
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('widgetTyping')?.remove();
+                if (data.response) {
+                    container.innerHTML += `<div class="chat-widget-msg assistant">${escapeHtml(data.response)}</div>`;
+                }
+                container.scrollTop = container.scrollHeight;
+                hideChatNotification();
+            })
+            .catch(() => {
+                document.getElementById('widgetTyping')?.remove();
+                container.innerHTML += `<div class="chat-widget-msg assistant">Sorry, I encountered an error.</div>`;
+            });
+        }
+
+        // Chat notification
+        let unreadCount = 0;
+        function showChatNotification(count) {
+            const badge = document.getElementById('chatNotifBadge');
+            if (count > 0 && !document.getElementById('chatWidgetPopup').classList.contains('show')) {
+                unreadCount = count;
+                badge.textContent = count > 9 ? '9+' : count;
+                badge.classList.add('show');
+            }
+        }
+
+        function hideChatNotification() {
+            unreadCount = 0;
+            document.getElementById('chatNotifBadge').classList.remove('show');
+        }
+
+        // Poll for notifications
+        setInterval(() => {
+            fetch('/api/alerts')
+                .then(r => r.json())
+                .then(data => {
+                    const unacknowledged = data.alerts?.filter(a => a.status === 'open').length || 0;
+                    showChatNotification(unacknowledged);
+                    
+                    const badge = document.getElementById('alertsBadge');
+                    if (unacknowledged > 0) {
+                        badge.textContent = unacknowledged > 9 ? '9+' : unacknowledged;
+                        badge.style.display = 'block';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                })
+                .catch(() => {});
+            
+            // Also poll for pending approvals
+            fetch('/api/approvals')
+                .then(r => r.json())
+                .then(data => {
+                    const pending = data.count || 0;
+                    const badge = document.getElementById('approvalsBadge');
+                    if (pending > 0) {
+                        badge.textContent = pending > 9 ? '9+' : pending;
+                        badge.style.display = 'block';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                })
+                .catch(() => {});
+        }, 30000);
+        
+        fetch('/api/alerts')
+            .then(r => r.json())
+            .then(data => {
+                const unacknowledged = data.alerts?.filter(a => a.status === 'open').length || 0;
+                const badge = document.getElementById('alertsBadge');
+                if (unacknowledged > 0) {
+                    badge.textContent = unacknowledged > 9 ? '9+' : unacknowledged;
+                    badge.style.display = 'block';
+                }
+            })
+            .catch(() => {});
+        
+        // Initial check for approvals
+        fetch('/api/approvals')
+            .then(r => r.json())
+            .then(data => {
+                const pending = data.count || 0;
+                const badge = document.getElementById('approvalsBadge');
+                if (pending > 0) {
+                    badge.textContent = pending > 9 ? '9+' : pending;
+                    badge.style.display = 'block';
+                }
+            })
+            .catch(() => {});
     </script>
     {% block scripts %}{% endblock %}
 </body>
