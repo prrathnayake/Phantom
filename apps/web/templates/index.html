@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Monica Mission Control{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Sidebar -->
+    <div class="col-lg-3 mb-4">
+        <div class="sidebar" style="border-radius: 1rem;">
+            <div class="sidebar-section">
+                <div class="sidebar-title">Quick Actions</div>
+                <div class="d-grid gap-2">
+                    <a href="/chat" class="btn btn-outline-accent">
+                        <i class="bi bi-chat-dots me-2"></i> Start Chat
+                    </a>
+                    <a href="/diagnostics" class="btn btn-outline-accent">
+                        <i class="bi bi-lightning me-2"></i> Run Diagnostics
+                    </a>
+                    <a href="/monitor" class="btn btn-outline-accent">
+                        <i class="bi bi-realtime me-2"></i> View Activity
+                    </a>
+                    <a href="/reports" class="btn btn-outline-accent">
+                        <i class="bi bi-files me-2"></i> View Reports
+                    </a>
+                </div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">System Status</div>
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
+                    <span class="text-secondary">Status</span>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="status-dot online" id="statusDot"></span>
+                        <span class="fw-semibold text-success">Online</span>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
+                    <span class="text-secondary">Events</span>
+                    <span class="fw-bold" id="statEvents">-</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
+                    <span class="text-secondary">Detections</span>
+                    <span class="fw-bold text-warning" id="statDetections">-</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center py-2">
+                    <span class="text-secondary">Schedules</span>
+                    <span class="fw-bold text-info" id="statSchedules">-</span>
+                </div>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">Uptime</div>
+                <div class="fs-4 fw-bold text-accent" id="uptime">00:00:00</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="col-lg-9">
+        <!-- Stats Row -->
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-lg-3">
+                <div class="card stat-card green">
+                    <div class="stat-value" id="eventsCount">-</div>
+                    <div class="stat-label">Total Events</div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="card stat-card yellow">
+                    <div class="stat-value" id="detectionsCount">-</div>
+                    <div class="stat-label">Detections</div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="card stat-card blue">
+                    <div class="stat-value" id="schedulesCount">-</div>
+                    <div class="stat-label">Active Schedules</div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="card stat-card green">
+                    <div class="stat-value" id="reportsCount">-</div>
+                    <div class="stat-label">Reports</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+                <a href="/chat" class="text-decoration-none">
+                    <div class="card action-card">
+                        <i class="bi bi-robot"></i>
+                        <h6>AI Chat</h6>
+                        <p>Chat with the agent</p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-6 col-md-3">
+                <a href="/diagnostics" class="text-decoration-none">
+                    <div class="card action-card">
+                        <i class="bi bi-terminal"></i>
+                        <h6>Diagnostics</h6>
+                        <p>Run system scans</p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-6 col-md-3">
+                <a href="/monitor" class="text-decoration-none">
+                    <div class="card action-card">
+                        <i class="bi bi-realtime"></i>
+                        <h6>Live Monitor</h6>
+                        <p>Real-time activity</p>
+                    </div>
+                </a>
+            </div>
+            <div class="col-6 col-md-3">
+                <a href="/reports" class="text-decoration-none">
+                    <div class="card action-card">
+                        <i class="bi bi-journal-text"></i>
+                        <h6>Reports</h6>
+                        <p>Security reports</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Activity & Detections -->
+        <div class="row g-3">
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-lightning-charge"></i>
+                        Recent Activity
+                        <button class="btn btn-sm btn-link text-secondary" onclick="loadActivity()">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </div>
+                    <div class="log-container" id="activityLog">
+                        <div class="empty-state">
+                            <i class="bi bi-inbox"></i>
+                            <p>No recent activity</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-shield-exclamation"></i>
+                        Recent Detections
+                        <button class="btn btn-sm btn-link text-secondary" onclick="loadActivity()">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </div>
+                    <div class="log-container" id="detectionsLog">
+                        <div class="empty-state">
+                            <i class="bi bi-shield-check"></i>
+                            <p>No detections</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let startTime = Date.now();
+let activityInterval;
+
+function formatUptime() {
+    const elapsed = Math.floor((Date.now() - startTime) / 1000);
+    const hrs = Math.floor(elapsed / 3600).toString().padStart(2, '0');
+    const mins = Math.floor((elapsed % 3600) / 60).toString().padStart(2, '0');
+    const secs = (elapsed % 60).toString().padStart(2, '0');
+    document.getElementById('uptime').textContent = `${hrs}:${mins}:${secs}`;
+}
+
+function loadActivity() {
+    showActivity();
+    fetch('/api/activity?count=30')
+        .then(r => r.json())
+        .then(data => {
+            // Update activity log
+            const activityDiv = document.getElementById('activityLog');
+            if (data.events && data.events.length > 0) {
+                activityDiv.innerHTML = data.events.slice(0, 15).map(e => {
+                    const type = e.sensor || 'unknown';
+                    return `<div class="log-entry">
+                        <span class="log-timestamp">${new Date(e.timestamp).toLocaleTimeString()}</span>
+                        <span class="log-badge ${type.replace('_sensor', '')}">${type}</span>
+                        <span class="text-light">${JSON.stringify(e.data).substring(0, 50)}</span>
+                    </div>`;
+                }).join('');
+            }
+            
+            // Update detections log
+            const detectionsDiv = document.getElementById('detectionsLog');
+            if (data.detections && data.detections.length > 0) {
+                detectionsDiv.innerHTML = data.detections.slice(0, 15).map(d => {
+                    return `<div class="log-entry">
+                        <span class="log-timestamp">${new Date(d.timestamp).toLocaleTimeString()}</span>
+                        <span class="log-badge detection">${d.rule}</span>
+                        <span class="text-light">${d.description || ''}</span>
+                    </div>`;
+                }).join('');
+            }
+        })
+        .catch(err => console.error('Activity load error:', err));
+}
+
+function loadStatus() {
+    fetch('/api/status')
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('eventsCount').textContent = data.events_logged || 0;
+            document.getElementById('detectionsCount').textContent = data.detections || 0;
+            document.getElementById('schedulesCount').textContent = data.schedules || 0;
+            
+            document.getElementById('statEvents').textContent = data.events_logged || 0;
+            document.getElementById('statDetections').textContent = data.detections || 0;
+            document.getElementById('statSchedules').textContent = data.schedules || 0;
+            
+            // Update reports count
+            fetch('/api/reports/count')
+                .then(r => r.json())
+                .then(r => document.getElementById('reportsCount').textContent = r.count || 0)
+                .catch(() => document.getElementById('reportsCount').textContent = '0');
+        })
+        .catch(err => console.error('Status load error:', err));
+}
+
+// Initial load
+loadActivity();
+loadStatus();
+setInterval(formatUptime, 1000);
+setInterval(loadActivity, 5000);
+setInterval(loadStatus, 10000);
+</script>
+{% endblock %}

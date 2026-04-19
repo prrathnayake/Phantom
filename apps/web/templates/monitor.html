@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}Monitor - Monica Mission Control{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-12">
+        <h4 class="mb-4">
+            <i class="bi bi-graph-up-arrow text-accent"></i>
+            Activity Monitor
+        </h4>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card stat-card green">
+            <div class="stat-value" id="totalEvents">-</div>
+            <div class="stat-label">Total Events</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card stat-card yellow">
+            <div class="stat-value" id="totalDetections">-</div>
+            <div class="stat-label">Detections</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card stat-card blue">
+            <div class="stat-value" id="totalSchedules">-</div>
+            <div class="stat-label">Active Schedules</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card">
+            <div class="card-body d-flex align-items-center justify-content-center gap-3">
+                <div>
+                    <div class="stat-value text-success" id="systemStatus">Running</div>
+                    <div class="stat-label">System Status</div>
+                </div>
+                <div class="status-dot online" style="width: 12px; height: 12px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Logs -->
+<div class="row g-3">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="bi bi-lightning-charge"></i>
+                    Recent Events
+                </div>
+                <button class="btn btn-sm btn-link text-secondary" onclick="loadActivity()">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
+            <div class="log-container" id="eventsList" style="max-height: 500px;">
+                <div class="empty-state">
+                    <i class="bi bi-inbox"></i>
+                    <p>No events recorded</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="bi bi-shield-exclamation"></i>
+                    Recent Detections
+                </div>
+                <button class="btn btn-sm btn-link text-secondary" onclick="loadActivity()">
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+            </div>
+            <div class="log-container" id="detectionsList" style="max-height: 500px;">
+                <div class="empty-state">
+                    <i class="bi bi-shield-check"></i>
+                    <p>No detections recorded</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function loadActivity() {
+    fetch('/api/activity?count=50')
+        .then(r => r.json())
+        .then(data => {
+            // Stats
+            document.getElementById('totalEvents').textContent = data.events.length;
+            document.getElementById('totalDetections').textContent = data.detections.length;
+            
+            // Events
+            const eventsDiv = document.getElementById('eventsList');
+            if (data.events && data.events.length > 0) {
+                eventsDiv.innerHTML = data.events.slice(0, 30).map(e => {
+                    const type = (e.sensor || 'unknown').replace('_sensor', '');
+                    return `<div class="log-entry">
+                        <span class="log-timestamp">${new Date(e.timestamp).toLocaleTimeString()}</span>
+                        <span class="log-badge ${type}">${type}</span>
+                        <span class="text-light">${JSON.stringify(e.data).substring(0, 60)}...</span>
+                    </div>`;
+                }).join('');
+            }
+            
+            // Detections
+            const detectionsDiv = document.getElementById('detectionsList');
+            if (data.detections && data.detections.length > 0) {
+                detectionsDiv.innerHTML = data.detections.slice(0, 30).map(d => {
+                    return `<div class="log-entry">
+                        <span class="log-timestamp">${new Date(d.timestamp).toLocaleTimeString()}</span>
+                        <span class="log-badge detection">${d.rule}</span>
+                        <span class="text-light">${d.description || ''}</span>
+                    </div>`;
+                }).join('');
+            }
+        })
+        .catch(err => console.error('Activity load error:', err));
+}
+
+function loadStatus() {
+    fetch('/api/status')
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('totalSchedules').textContent = data.schedules || 0;
+            document.getElementById('systemStatus').textContent = data.status === 'running' ? 'Running' : 'Stopped';
+        })
+        .catch(err => console.error('Status load error:', err));
+}
+
+// Initial load and auto-refresh
+loadActivity();
+loadStatus();
+setInterval(loadActivity, 3000);
+setInterval(loadStatus, 10000);
+</script>
+{% endblock %}

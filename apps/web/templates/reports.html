@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Reports - Monica Mission Control{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-12">
+        <h4 class="mb-4">
+            <i class="bi bi-file-earmark-ruled text-accent"></i>
+            Security Reports
+        </h4>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-lg-12">
+        <div class="input-group">
+            <span class="input-group-text" style="background: var(--bg-card); border: 1px solid var(--border);">
+                <i class="bi bi-search"></i>
+            </span>
+            <input type="text" id="searchReports" class="form-control" 
+                   placeholder="Search reports by name..." 
+                   style="background: var(--bg-card); border: 1px solid var(--border); color: var(--text-primary);"
+                   onkeyup="filterReports()">
+        </div>
+    </div>
+</div>
+
+<!-- Reports Grid -->
+<div class="row g-3" id="reportsGrid">
+    {% if reports|length == 0 %}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-file-earmark-text" style="font-size: 4rem; color: var(--text-muted);"></i>
+                <h5 class="mt-3">No Reports Yet</h5>
+                <p class="text-muted">Run diagnostics or wait for scheduled runs to generate reports.</p>
+                <a href="/diagnostics" class="btn btn-accent mt-2">
+                    <i class="bi bi-lightning me-2"></i>Run Diagnostics
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    {% for report in reports %}
+    <div class="col-md-6 col-lg-4 report-item" data-name="{{ report.name }}">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span class="text-truncate" style="max-width: 200px;">{{ report.name }}</span>
+                <button class="btn btn-sm btn-link text-accent" onclick="viewReport('{{ report.path }}')">
+                    <i class="bi bi-eye"></i>
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center text-secondary small">
+                    <span><i class="bi bi-calendar me-1"></i>{{ report.date }}</span>
+                    <span><i class="bi bi-clock me-1"></i>{{ report.modified[:16] }}</span>
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-top border-secondary">
+                <button class="btn btn-sm btn-outline-accent w-100" onclick="viewReport('{{ report.path }}')">
+                    <i class="bi bi-file-earmark-text me-2"></i>View Report
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Report Modal -->
+<div class="modal fade" id="reportModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content" style="background: var(--bg-card); border: 1px solid var(--border);">
+            <div class="modal-header">
+                <h5 class="modal-title">Report Viewer</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                <pre id="reportContent" style="white-space: pre-wrap; word-wrap: break-word; font-size: 0.85rem;"></pre>
+            </div>
+            <div class="modal-footer bg-transparent border-top border-secondary">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function filterReports() {
+    const search = document.getElementById('searchReports').value.toLowerCase();
+    document.querySelectorAll('.report-item').forEach(item => {
+        const name = item.dataset.name.toLowerCase();
+        item.style.display = name.includes(search) ? 'block' : 'none';
+    });
+}
+
+function viewReport(path) {
+    document.getElementById('reportContent').innerHTML = '<div class="text-center py-4"><div class="spinner-border text-accent"></div></div>';
+    const modal = new bootstrap.Modal(document.getElementById('reportModal'));
+    modal.show();
+    
+    fetch('/api/report/' + encodeURIComponent(path))
+        .then(r => r.text())
+        .then(content => {
+            document.getElementById('reportContent').textContent = content;
+        })
+        .catch(err => {
+            document.getElementById('reportContent').textContent = 'Error loading report: ' + err.message;
+        });
+}
+</script>
+{% endblock %}

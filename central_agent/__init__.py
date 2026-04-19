@@ -1,6 +1,6 @@
 """Central Agent package.
 
-The central intelligence layer for Suraksha.
+The central intelligence layer for Monica.
 Analyzes diagnostic payloads and generates security reports.
 """
 from central_agent.agent import CentralAgent, create_central_agent

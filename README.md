@@ -1,4 +1,4 @@
-# Suraksha - Secure Monitoring Agent
+# Monica - Secure Monitoring Agent Harness System
 
 A centralized security monitoring system with Gateway + Central Agent architecture.
 

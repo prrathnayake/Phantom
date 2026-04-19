@@ -1,4 +1,4 @@
-"""Gateway package for Suraksha.
+"""Gateway package for Monica.
 
 Handles input interfaces and scheduled diagnostic runs.
 Sends payloads to Central Agent for analysis.
