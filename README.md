@@ -1,142 +1,128 @@
-# Monica - System Monitoring Agent
+# Suraksha - Secure Monitoring Agent
 
-This project implements a lightweight, local security and monitoring agent.  It is **not** intended
-to completely secure a machine, but instead serves as a template and reference for building
-a self‑contained monitoring system.  The agent collects telemetry about the host, applies
-simple detection rules, and can call out to a language model (via OpenRouter) to
-summarise or explain detected anomalies.
+A centralized security monitoring system with Gateway + Central Agent architecture.
 
-## Design Goals
+## Architecture
 
-* **Local execution** – The agent is designed to run as a long‑lived process on your
-  machine.  It should not require a cloud control plane and does not attempt to
-  update or rewrite itself.
-* **Modular** – Each sensor, analysis routine, and skill lives in its own module under
-  the `sensors/`, `analysis/` and `skills/` packages.  This makes it easy to add
-  new capabilities without editing core logic.
-* **Safe boundaries** – The agent never executes arbitrary code from the language
-  model.  The only connection to the LLM is via the `OpenRouterClient` which
-  performs inference on your behalf.  New plugins must be explicitly added to
-  the codebase.
-* **Minimal dependencies** – The core depends only on the Python standard library.
-  Optional extras (like `psutil` or `watchdog`) can be installed via the
-  provided `requirements.txt`.  If they are unavailable the agent falls back
-  to slower, shell–based queries.
+```
+                    ┌─────────────────────────────┐
+                    │         GATEWAY              │
+                    │  ┌─────────────────────┐  │
+                    │  │  Input Interfaces   │  │
+                    │  │ HTTP | CLI | Queue   │  │
+                    │  │ File | WebSocket   │  │
+                    │  └─────────────────────┘  │
+                    │  ┌─────────────────────┐  │
+                    │  │  Schedule Manager    │  │
+                    │  │  (autonomous runs)   │  │
+                    │  └─────────────────────┘  │
+                    └──────────────┬──────────────┘
+                                   │ Payload
+                                   ▼
+                    ┌─────────────────────────────┐
+                    │      CENTRAL AGENT           │
+                    │  ┌─────────────────────┐    │
+                    │  │  System Prompt      │    │
+                    │  │  Context Manager   │    │
+                    │  │  Memory Manager    │    │
+                    │  └─────────────────────┘    │
+                    │  ┌─────────────────────┐    │
+                    │  │  Analysis Loop      │    │
+                    │  │  (LLM powered)      │    │
+                    │  └─────────────────────┘    │
+                    │  ┌─────────────────────┐    │
+                    │  │  Reports Storage   │    │
+                    │  └─────────────────────┘    │
+                    └─────────────────────────────┘
+```
 
 ## Directory Layout
 
 ```
-agent_project/
-├── README.md             – This file
-├── requirements.txt     – Python dependencies
-├── config.py            – Central configuration
-├── main.py              – Agent entry point
-├── dashboard.py         – Unified TUI dashboard (monitoring + chat + commands)
-├── init_agent.py        – CLI initialization tool
-├── core/              – Framework components
+suraksha/
+├── main.py              # Entry point
+├── config.py           # Configuration
+├── central_agent/      # Central intelligence
 │   ├── __init__.py
-│   ├── scheduler.py     – Task scheduler
-│   ├── storage.py       – Event logging
-│   └── openrouter_client.py – OpenRouter API wrapper
-├── sensors/            – Telemetry collection
+│   ├── system_prompt.md
+│   ├── context.py     # Session context manager
+│   ├── memory.py     # Session memory with TTL
+│   ├── agent.py      # Central Agent with LLM loop
+│   ├── reports_storage.py
+│   └── reports/      # Generated reports
+├── gateway/           # Input interfaces + scheduler
+│   ├── __init__.py
+│   ├── server.py
+│   ├── schedule_manager.py
+│   ├── payload_sender.py
+│   └── interfaces/  # HTTP, CLI, Queue, File, WebSocket
+├── diagnostics/      # Diagnostic collectors
 │   ├── __init__.py
 │   ├── process_sensor.py
 │   ├── port_sensor.py
 │   └── file_sensor.py
-├── analysis/           – Detection engine
+├── analysis/         # Detection engine
 │   ├── __init__.py
 │   ├── detection.py
 │   └── summariser.py
-├── skills/             – Agent skills
+├── skills/           # Agent skills
 │   ├── __init__.py
 │   ├── risk_assessment.py
 │   └── vulnerability_check.py
-├── utils/              – Utility modules
+├── core/            # Framework components
 │   ├── __init__.py
-│   ├── system_scanner.py – OS and dependency scanner
-│   ├── installer.py    – Package installer
-│   └── threadpool.py  – Thread pool singleton
-└── .logs/            – Event and detection logs
+│   ├── storage.py
+│   └── openrouter_client.py
+└── utils/          # Utilities
+```
+
 ## Quick Start
 
 ```bash
 # Install dependencies
 pip install -r requirements.txt
 
-# Initialize the agent (scans OS, checks requirements, installs missing packages)
-python init_agent.py check
-
 # Run the agent
 python main.py
-
-# Or run the unified TUI dashboard (in separate terminal)
-python dashboard.py
 ```
 
-## Initialization CLI
+## Environment Variables
 
-The `init_agent.py` tool handles system setup:
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `OPENROUTER_API_KEY` | - | LLM API key (optional) |
+| `AGENT_LOG_DIR` | `./.logs` | Log directory |
+
+## Testing
 
 ```bash
-python init_agent.py scan     # Scan system for OS and requirements
-python init_agent.py install # Install missing dependencies
-python init_agent.py check   # Full system check (scan + install)
-python init_agent.py status  # Show agent status
+# Run all tests
+pytest tests/
 ```
 
-To start the agent, run:
+## Reports
 
+Generated reports stored in:
 ```
-pip install -r requirements.txt
-python3 -m agent_project.main
-```
-
-If you want to utilise OpenRouter for summarisation or other LLM calls, set the
-`OPENROUTER_API_KEY` environment variable to your API key.  Without the key the
-agent will still run but will skip LLM calls.
-
-## Important Notes
-
-* **Not self‑modifying** – This agent does **not** rewrite its own code or download
-  new modules from the internet.  This is by design; autonomous self‑modifying
-  code is extremely risky.  Extensions must be added manually under the
-  `skills/` or `sensors/` directories.
-* **Analysis pipeline** – The built‑in detection engine is intentionally simple.
-  Serious deployments should integrate mature security tools like Wazuh or
-  OSQuery and treat the LLM as a summariser rather than an authoritative
-  decision maker.
-
-## Unified Dashboard
-
-The dashboard provides real-time monitoring + chat + command interface:
-
-```bash
-python dashboard.py
+central_agent/reports/YYYY-MM-DD/report_{session_id}_{timestamp}.md
 ```
 
-### Left Panel (Monitoring)
-- **Processes** - Running process count and top consumers
-- **Network Ports** - Listening TCP/UDP ports
-- **File Changes** - Directory change tracking
-- **Detections** - Anomaly alerts
-- **Activity Log** - Recent sensor events
-- **Agent Status** - Uptime, stats, thresholds
+## Key Features
 
-### Right Panel (Chat + Commands)
-- **Chat Display** - Shows messages and system responses
-- **Command Input** - Text field for commands
-- **Buttons** - Send, Clear, Scan, Status
+- **Context Management**: Session-based context with TTL
+- **Memory Management**: Session memory with tag-based search
+- **Autonomous Scheduling**: Diagnostic runs at configured intervals
+- **Multiple Interfaces**: HTTP (8000), CLI, Redis/RabbitMQ, File triggers, WebSocket (8001)
+- **LLM Analysis**: Single LLM loop for security analysis
+- **Report Generation**: Markdown reports with metadata
 
-### Available Commands
-- `scan` - Run system scan
-- `status` - Check agent readiness
-- `clear` - Clear chat history
-- `help` - Show help
+## API Endpoints
 
-### Keybindings
-- `R` - Refresh data
-- `C` - Focus chat input
-- `Ctrl+Enter` - Send message
-- `Q` - Quit
+### HTTP (port 8000)
+- `POST /analyze` - Submit payload for analysis
+- `GET /schedules` - Get schedule status
+- `POST /schedules/{name}/run` - Run specific schedule
+- `GET /status` - Gateway status
 
-Enjoy exploring and modifying this codebase!
+### WebSocket (port 8001)
+Real-time analysis updates and notifications.

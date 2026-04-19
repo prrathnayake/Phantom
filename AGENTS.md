@@ -16,19 +16,48 @@ Do not create or use any alternate memory root.
 
 ## Project Identity
 
-_(Project name and description - fill in for your project)_
+**Project**: Suraksha - Secure Monitoring Agent
+**Focus**: Centralized security monitoring with Gateway + Central Agent architecture
 
 ## Project Structure & Important Directories
 
-_(List important directories for your project)_
+```
+central_agent/     # Central intelligence (LLM analysis loop)
+  system_prompt.md  # Single system prompt
+  context.py      # Session context manager
+  memory.py       # Session memory with TTL
+  agent.py        # Central Agent with LLM loop
+  reports/        # Generated reports (YYYY-MM-DD/)
+
+gateway/          # Input interfaces + schedule manager
+  schedule_manager.py  # Autonomous diagnostic runs
+  payload_sender.py   # Sends payloads to Central Agent
+  interfaces/     # HTTP, CLI, Queue, File, WebSocket
+
+diagnostics/      # Diagnostic collectors
+```
 
 ## Build, Setup, and Run Commands
 
-_(Commands to build, test, and run your project)_
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the agent
+python main.py
+
+# Run tests
+pytest tests/
+```
 
 ## Testing Commands & Conventions
 
 - Preferred test root: `tests/`
+- Test Central Agent: `tests/test_central_agent.py`
+- Test Gateway: `tests/test_gateway.py`
+- Test Diagnostics: `tests/test_diagnostics.py`
+- Test Integration: `tests/test_integration.py`
+- Test Core: `tests/test_core.py`
 
 ## Comments & Docstrings
 
@@ -37,5 +66,5 @@ _(Commands to build, test, and run your project)_
 
 ## Documentation Sync Expectations
 
-- Update local docs in `docs/` when architecture or workflow changes
+- Update local docs when architecture or workflow changes
 - Keep docs aligned with meaningful code changes
