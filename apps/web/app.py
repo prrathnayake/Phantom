@@ -8,7 +8,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import Flask, render_template, request, jsonify, session
 from threading import Lock
 
@@ -165,66 +165,7 @@ def reports_count_api():
     count = 0
     if reports_dir.exists():
         count = len(list(reports_dir.glob("**/*.md")))
-    return jsonify({"count": count})
-
-
-@app.route("/api/chat", methods=["POST"])
-def chat_api():
-    """Chat with the agent."""
-    data = request.get_json()
-    user_message = data.get("message", "")
-    
-    if not user_message:
-        return jsonify({"error": "Empty message"}), 400
-    
-    with chat_lock:
-        chat_history.append({
-            "role": "user",
-            "content": user_message,
-            "timestamp": datetime.utcnow().isoformat()
-        })
-    
-    context_summary = _get_recent_context()
-    memory_summary = _get_recent_memory()
-    
-    prompt = f"""You are the Monica Security Agent. 
-User wants to chat with you about security monitoring.
-
-Recent Context:
-{context_summary}
-
-Recent Memory:
-{memory_summary}
-
-Chat History:
-{chr(10).join([f"{m['role']}: {m['content']}" for m in chat_history[-5:]])}
-
-User: {user_message}
-
-Respond as a helpful security assistant."""
-
-    llm_client = OpenRouterClient()
-    messages = [
-        {"role": "system", "content": "You are Monica, a helpful security monitoring assistant."},
-        {"role": "user", "content": prompt}
-    ]
-    
-    response = llm_client.chat_completion(messages, max_tokens=512)
-    
-    if not response:
-        response = "I apologize, but I'm unable to process your request right now. Please ensure the OPENROUTER_API_KEY is configured."
-    
-    with chat_lock:
-        chat_history.append({
-            "role": "assistant",
-            "content": response,
-            "timestamp": datetime.utcnow().isoformat()
-        })
-    
-    return jsonify({
-        "response": response,
-        "history": chat_history[-10:]
-    })
+    return jsonify({"count": count    })
 
 
 @app.route("/api/chat/history", methods=["GET"])
@@ -314,6 +255,60 @@ def schedules_api():
     if schedule_manager:
         return jsonify(schedule_manager.get_all_schedules())
     return jsonify({})
+
+
+@app.route("/api/schedules/<name>/enable", methods=["POST"])
+def enable_schedule_api(name):
+    """Enable a schedule."""
+    if schedule_manager and schedule_manager.enable_schedule(name):
+        return jsonify({"success": True, "message": f"Schedule {name} enabled"})
+    return jsonify({"success": False, "error": "Schedule not found"}), 404
+
+
+@app.route("/api/schedules/<name>/disable", methods=["POST"])
+def disable_schedule_api(name):
+    """Disable a schedule."""
+    if schedule_manager and schedule_manager.disable_schedule(name):
+        return jsonify({"success": True, "message": f"Schedule {name} disabled"})
+    return jsonify({"success": False, "error": "Schedule not found"}), 404
+
+
+@app.route("/api/schedules/<name>/remove", methods=["POST"])
+def remove_schedule_api(name):
+    """Remove a schedule."""
+    if schedule_manager and schedule_manager.remove_schedule(name):
+        return jsonify({"success": True, "message": f"Schedule {name} removed"})
+    return jsonify({"success": False, "error": "Schedule not found"}), 404
+
+
+@app.route("/api/schedules/<name>/run", methods=["POST"])
+def run_schedule_api(name):
+    """Run a schedule manually."""
+    if schedule_manager:
+        result = schedule_manager.run_schedule(name)
+        if result:
+            return jsonify({"success": True, "result": result})
+        return jsonify({"success": False, "error": "Schedule not found"}), 404
+    return jsonify({"success": False, "error": "No schedule manager"}), 500
+
+
+@app.route("/api/schedules/<name>/interval", methods=["POST"])
+def update_schedule_interval_api(name):
+    """Update schedule interval."""
+    data = request.get_json()
+    new_interval = data.get("interval")
+    if not new_interval or new_interval < 10:
+        return jsonify({"success": False, "error": "Invalid interval (min 10 seconds)"}), 400
+    
+    if schedule_manager:
+        with schedule_manager._lock:
+            schedule = schedule_manager._schedules.get(name)
+            if schedule:
+                schedule.interval = new_interval
+                schedule.next_run = datetime.utcnow() + timedelta(seconds=new_interval)
+                return jsonify({"success": True, "message": f"Interval updated to {new_interval}s"})
+        return jsonify({"success": False, "error": "Schedule not found"}), 404
+    return jsonify({"success": False, "error": "No schedule manager"}), 500
 
 
 @app.route("/api/status", methods=["GET"])

@@ -89,11 +89,12 @@
                             <th>Module</th>
                             <th>Status</th>
                             <th>Next Run</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody id="scheduleTable">
                         <tr>
-                            <td colspan="5" class="text-center text-muted py-4">
+                            <td colspan="6" class="text-center text-muted py-4">
                                 <i class="bi bi-hourglass-split me-2"></i>Loading schedules...
                             </td>
                         </tr>
@@ -160,19 +161,91 @@ function loadSchedules() {
             const entries = Object.entries(data);
             
             if (entries.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No schedules configured</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No schedules configured</td></tr>';
                 return;
             }
             
-            tbody.innerHTML = entries.map(([name, info]) => `
+            tbody.innerHTML = entries.map(([name, info]) => {
+                const nextRun = info.next_run ? new Date(info.next_run).toLocaleString() : '-';
+                return `
                 <tr>
                     <td><strong>${name}</strong></td>
-                    <td>${info.interval}s</td>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <input type="number" class="form-control form-control-sm" 
+                                   style="width: 80px; background: var(--bg-dark); border: 1px solid var(--border); color: var(--text-primary);"
+                                   value="${info.interval}" min="10" id="interval-${name}">
+                            <span class="small text-muted">s</span>
+                            <button class="btn btn-sm btn-link text-accent" onclick="updateInterval('${name}')" title="Update">
+                                <i class="bi bi-check"></i>
+                            </button>
+                        </div>
+                    </td>
                     <td><code>${info.module}</code></td>
                     <td><span class="badge ${info.enabled ? 'bg-success' : 'bg-secondary'}">${info.enabled ? 'Enabled' : 'Disabled'}</span></td>
-                    <td class="text-muted">${info.next_run || '-'}</td>
-                </tr>
-            `).join('');
+                    <td class="text-muted small">${nextRun}</td>
+                    <td>
+                        <div class="d-flex gap-1">
+                            ${info.enabled 
+                                ? `<button class="btn btn-sm btn-outline-warning" onclick="toggleSchedule('${name}', false)" title="Disable"><i class="bi bi-pause"></i></button>`
+                                : `<button class="btn btn-sm btn-outline-success" onclick="toggleSchedule('${name}', true)" title="Enable"><i class="bi bi-play"></i></button>`
+                            }
+                            <button class="btn btn-sm btn-outline-primary" onclick="runSchedule('${name}')" title="Run Now"><i class="bi bi-lightning"></i></button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="removeSchedule('${name}')" title="Remove"><i class="bi bi-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+        });
+}
+
+function toggleSchedule(name, enable) {
+    const endpoint = enable ? `/api/schedules/${name}/enable` : `/api/schedules/${name}/disable`;
+    fetch(endpoint, {method: 'POST'})
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) showActivity();
+            loadSchedules();
+        });
+}
+
+function updateInterval(name) {
+    const input = document.getElementById(`interval-${name}`);
+    const newInterval = parseInt(input.value);
+    if (newInterval < 10) {
+        alert('Minimum interval is 10 seconds');
+        return;
+    }
+    fetch(`/api/schedules/${name}/interval`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({interval: newInterval})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) showActivity();
+        loadSchedules();
+    });
+}
+
+function runSchedule(name) {
+    showActivity();
+    fetch(`/api/schedules/${name}/run`, {method: 'POST'})
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) alert(`Ran ${name}: ` + (data.result ? 'Success' : 'No result'));
+            else if (data.error) alert(data.error);
+            loadSchedules();
+        });
+}
+
+function removeSchedule(name) {
+    if (!confirm(`Remove schedule "${name}"?`)) return;
+    fetch(`/api/schedules/${name}/remove`, {method: 'POST'})
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) showActivity();
+            loadSchedules();
         });
 }
 

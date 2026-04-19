@@ -1,6 +1,5 @@
-# Optional dependencies for richer telemetry.  These are not strictly required
-# but will improve collection fidelity.  If you install them the agent will
-# automatically use the faster, more precise implementations.
+# Optional dependencies for richer telemetry. These are not strictly required
+# but will improve collection fidelity.
 psutil>=5.9
 watchdog>=3.0
 requests>=2.31
@@ -13,4 +12,4 @@ python-dotenv>=1.0
 
 # Web dashboard dependencies
 flask>=3.0
-jquery>=3.6
+werkzeug>=3.0
