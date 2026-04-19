@@ -9,6 +9,7 @@ import sys
 import os
 import time
 import threading
+import signal
 from pathlib import Path
 
 import config
@@ -26,22 +27,69 @@ class Colors:
     BOLD = '\033[1m'
     END = '\033[0m'
 
+web_server = None
+shutdown_event = None
+
 
 def start_web_dashboard():
     """Start the Flask web dashboard in a background thread."""
+    global web_server, shutdown_event
     try:
         from apps.web.app import init_app, app
         init_app()
         print("Starting Flask server...")
-        app.run(host="127.0.0.1", port=5000, debug=False, use_reloader=False, threaded=True)
+        
+        shutdown_event = threading.Event()
+        
+        def run_server():
+            global web_server
+            web_server = app.run(
+                host="127.0.0.1",
+                port=5000,
+                debug=False,
+                use_reloader=False,
+                threaded=True
+            )
+        
+        server_thread = threading.Thread(target=run_server, daemon=True)
+        server_thread.start()
+        
+        shutdown_event.wait()
+        
     except Exception as e:
         print(f"Flask error: {e}")
         import traceback
         traceback.print_exc()
 
 
+def stop_web_dashboard():
+    """Stop the Flask web dashboard."""
+    try:
+        if web_server:
+            print("Stopping Flask server...")
+            from apps.web.app import app
+            func = request.environ.get('werkzeug.server.shutdown')
+            if func:
+                func()
+        if shutdown_event:
+            shutdown_event.set()
+    except Exception:
+        pass
+
+
 def main() -> None:
     """Run the Monica monitoring agent."""
+    global running
+    running = True
+    
+    def signal_handler(signum, frame):
+        global running
+        print("\nReceived interrupt signal...")
+        running = False
+    
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+    
     debug_logger.info("Starting Monica")
     
     central_agent = create_central_agent()
@@ -57,7 +105,7 @@ def main() -> None:
     
     debug_logger.info(f"Registered {len(config.POLL_INTERVALS)} diagnostic schedules")
     
-    web_thread = threading.Thread(target=start_web_dashboard)
+    web_thread = threading.Thread(target=start_web_dashboard, daemon=True)
     web_thread.start()
     
     print("Web Dashboard starting on port 5000...")
@@ -79,7 +127,7 @@ def main() -> None:
     print("    - Chat:      http://127.0.0.1:5000/chat")
     print("    - Diag:      http://127.0.0.1:5000/diagnostics")
     print("    - Monitor:   http://127.0.0.1:5000/monitor")
-    print("    - Reports:   http://127.0.0.1:5000/reports")
+    print("    - Reports:  http://127.0.0.1:5000/reports")
     print("=" * 50)
     print()
     print("Press Ctrl+C to stop.")
@@ -94,19 +142,23 @@ def main() -> None:
         
         print("Gateway started. Waiting for scheduled diagnostics...")
         
-        while True:
+        while running:
             time.sleep(1)
             
     except KeyboardInterrupt:
         print()
         print("Stopping agent...")
-        debug_logger.info("Agent stopped by user")
-        gateway.stop()
     except Exception as e:
         print(f"Gateway error: {e}")
         debug_logger.error(f"Gateway error: {e}")
         import traceback
         traceback.print_exc()
+    
+    print("Stopping...")
+    debug_logger.info("Agent stopped by user")
+    gateway.stop()
+    stop_web_dashboard()
+    print("Done.")
 
 
 if __name__ == "__main__":

@@ -46,4 +46,17 @@ logs/
 .env
 .env.local
 
+# Test & Cache
+.pytest_cache/
+.coverage
+htmlcov/
+*.cache
+
+# Session & Report Data
+central_agent/reports/*.json
+central_agent/reports/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/
+
+# Docker
+
+# Docker
 .kilo/
