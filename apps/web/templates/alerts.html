@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Alerts - Monica Mission Control{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-12">
+        <h4 class="mb-4">
+            <i class="bi bi-bell text-accent"></i>
+            Security Alerts
+        </h4>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card stat-card red">
+            <div class="stat-value" id="criticalCount">0</div>
+            <div class="stat-label">Critical</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card yellow">
+            <div class="stat-value" id="highCount">0</div>
+            <div class="stat-label">High</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card green">
+            <div class="stat-value" id="totalCount">0</div>
+            <div class="stat-label">Total</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-list-ul"></i> Alert History
+            </div>
+            <div class="card-body p-0">
+                <div id="alertsList" class="log-container" style="max-height: 500px;">
+                    <div class="text-center py-4 text-muted">
+                        <i class="bi bi-bell-slash" style="font-size: 2rem;"></i>
+                        <p class="mt-2">No alerts</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function loadAlerts() {
+    fetch('/api/alerts')
+        .then(r => r.json())
+        .then(data => {
+            const list = document.getElementById('alertsList');
+            
+            if (data.count === 0) {
+                list.innerHTML = '<div class="text-center py-4 text-muted"><i class="bi bi-bell-slash" style="font-size: 2rem;"></i><p class="mt-2">No alerts</p></div>';
+                return;
+            }
+            
+            list.innerHTML = data.alerts.map(a => '
+                <div class="log-entry">
+                    <span class="log-badge ' + (a.severity === 'critical' ? 'detection' : a.severity === 'high' ? 'process' : 'file') + '">' + a.severity.toUpperCase() + '</span>
+                    <span class="flex-grow-1"><strong>' + a.title + '</strong></span>
+                    <span class="text-muted small">' + a.created + '</span>
+                    ' + (a.status === 'pending' ? '
+                    <button class="btn btn-sm btn-outline-accent ms-2" onclick="acknowledgeAlert(\'' + a.alert_id + '\')">
+                        <i class="bi bi-check"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-accent ms-1" onclick="resolveAlert(\'' + a.alert_id + '\')">
+                        <i class="bi bi-check-all"></i>
+                    </button>' : '') + '
+                </div>
+            ').join('');
+        })
+        .catch(err => console.error('Error loading alerts:', err));
+    
+    // Load stats
+    fetch('/api/alert-stats')
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('criticalCount').textContent = data.by_severity?.critical || 0;
+            document.getElementById('highCount').textContent = data.by_severity?.high || 0;
+            document.getElementById('totalCount').textContent = data.total || 0;
+        })
+        .catch(err => console.error('Error loading stats:', err));
+}
+
+function acknowledgeAlert(id) {
+    fetch('/api/alerts/' + id + '/acknowledge', {method: 'POST'})
+        .then(r => r.json())
+        .then(data => {
+            loadAlerts();
+        })
+        .catch(err => alert('Error: ' + err.message));
+}
+
+function resolveAlert(id) {
+    fetch('/api/alerts/' + id + '/resolve', {method: 'POST'})
+        .then(r => r.json())
+        .then(data => {
+            loadAlerts();
+        })
+        .catch(err => alert('Error: ' + err.message));
+}
+
+// Load on page load
+loadAlerts();
+
+// Auto-refresh every 15 seconds
+setInterval(loadAlerts, 15000);
+</script>
+{% endblock %}
