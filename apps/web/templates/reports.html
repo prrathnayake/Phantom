@@ -14,58 +14,52 @@
 
 <div class="row g-3 mb-4">
     <div class="col-lg-12">
-        <div class="input-group">
-            <span class="input-group-text" style="background: var(--bg-card); border: 1px solid var(--border);">
-                <i class="bi bi-search"></i>
-            </span>
-            <input type="text" id="searchReports" class="form-control" 
-                   placeholder="Search reports by name..." 
-                   style="background: var(--bg-card); border: 1px solid var(--border); color: var(--text-primary);"
-                   onkeyup="filterReports()">
-        </div>
+        <input type="text" id="searchReports" class="form-control" 
+               placeholder="Search reports by name..." 
+               onkeyup="filterReports()">
     </div>
 </div>
 
-<!-- Reports Grid -->
-<div class="row g-3" id="reportsGrid">
-    {% if reports|length == 0 %}
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body text-center py-5">
-                <i class="bi bi-file-earmark-text" style="font-size: 4rem; color: var(--text-muted);"></i>
-                <h5 class="mt-3">No Reports Yet</h5>
-                <p class="text-muted">Run diagnostics or wait for scheduled runs to generate reports.</p>
-                <a href="/diagnostics" class="btn btn-accent mt-2">
-                    <i class="bi bi-lightning me-2"></i>Run Diagnostics
-                </a>
-            </div>
-        </div>
+<!-- Terminal-style ls -l Table -->
+<div class="card">
+    <div class="card-header">
+        <span class="text-accent">&gt; ls -la reports/</span>
     </div>
-    {% endif %}
-    
-    {% for report in reports %}
-    <div class="col-md-6 col-lg-4 report-item" data-name="{{ report.name }}">
-        <div class="card h-100">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <span class="text-truncate" style="max-width: 200px;">{{ report.name }}</span>
-                <button class="btn btn-sm btn-link text-accent" onclick="viewReport('{{ report.path }}')">
-                    <i class="bi bi-eye"></i>
-                </button>
-            </div>
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center text-secondary small">
-                    <span><i class="bi bi-calendar me-1"></i>{{ report.date }}</span>
-                    <span><i class="bi bi-clock me-1"></i>{{ report.modified[:16] }}</span>
-                </div>
-            </div>
-            <div class="card-footer bg-transparent border-top border-secondary">
-                <button class="btn btn-sm btn-outline-accent w-100" onclick="viewReport('{{ report.path }}')">
-                    <i class="bi bi-file-earmark-text me-2"></i>View Report
-                </button>
-            </div>
+    <div class="card-body p-0">
+        {% if reports|length == 0 %}
+        <div class="p-3 text-muted">
+            <span class="text-warning">No reports found.</span><br>
+            <span class="text-muted">Run diagnostics or wait for scheduled runs.</span>
         </div>
+        {% else %}
+        <!-- Header -->
+        <div class="ls-header">
+            <span class="ls-perms">Permissions</span>
+            <span class="ls-user">User</span>
+            <span class="ls-group">Group</span>
+            <span class="ls-size">Size</span>
+            <span class="ls-date">Date</span>
+            <span class="ls-name">Name</span>
+        </div>
+        <div class="ls-divider">────────────────────────────────────────────────────────────</div>
+        
+        {% for report in reports %}
+        <div class="ls-row report-item" data-name="{{ report.name }}" onclick="viewReport('{{ report.path }}')">
+            <span class="ls-perms">-rw-r--r--</span>
+            <span class="ls-user">monica</span>
+            <span class="ls-group">security</span>
+            <span class="ls-size">{{ ((report.size or 1024) // 1024 }}K</span>
+            <span class="ls-date">{{ report.modified[:16] }}</span>
+            <span class="ls-name text-accent">{{ report.name }}</span>
+        </div>
+        {% endfor %}
+        
+        <div class="ls-divider">────────────────────────────────────────────────────────────</div>
+        <div class="ls-total">
+            <span class="text-muted">total {{ reports|length }} reports</span>
+        </div>
+        {% endif %}
     </div>
-    {% endfor %}
 </div>
 
 <!-- Report Modal -->
@@ -73,11 +67,11 @@
     <div class="modal-dialog modal-dialog-centered modal-xl">
         <div class="modal-content" style="background: var(--bg-card); border: 1px solid var(--border);">
             <div class="modal-header">
-                <h5 class="modal-title">Report Viewer</h5>
+                <h5 class="modal-title text-accent">Report Viewer</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
-                <pre id="reportContent" style="white-space: pre-wrap; word-wrap: break-word; font-size: 0.85rem;"></pre>
+                <pre id="reportContent" style="white-space: pre-wrap; word-wrap: break-word; font-size: 0.85rem; font-family: 'JetBrains Mono', monospace;"></pre>
             </div>
             <div class="modal-footer bg-transparent border-top border-secondary">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
@@ -87,18 +81,68 @@
 </div>
 {% endblock %}
 
+{% block extra_styles %}
+<style>
+.ls-header, .ls-row, .ls-total {
+    display: flex;
+    padding: 0.375rem 1rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+}
+
+.ls-header {
+    color: var(--text-muted);
+    text-transform: uppercase;
+    background: var(--bg-dark);
+}
+
+.ls-row {
+    cursor: pointer;
+    transition: background 0.1s;
+}
+
+.ls-row:hover {
+    background: var(--bg-card-hover);
+}
+
+.ls-row:hover .ls-name {
+    text-decoration: underline;
+    text-shadow: var(--terminal-glow);
+}
+
+.ls-perms { width: 100px; color: var(--text-muted); }
+.ls-user { width: 70px; color: var(--info); }
+.ls-group { width: 80px; color: var(--warning); }
+.ls-size { width: 50px; text-align: right; padding-right: 1rem; }
+.ls-date { width: 120px; }
+.ls-name { flex: 1; }
+
+.ls-divider {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent-dim);
+    padding: 0.25rem 1rem;
+}
+
+.ls-total {
+    padding: 0.5rem 1rem;
+    color: var(--text-muted);
+}
+</style>
+{% endblock %}
+
 {% block scripts %}
 <script>
 function filterReports() {
     const search = document.getElementById('searchReports').value.toLowerCase();
     document.querySelectorAll('.report-item').forEach(item => {
         const name = item.dataset.name.toLowerCase();
-        item.style.display = name.includes(search) ? 'block' : 'none';
+        item.style.display = name.includes(search) ? 'flex' : 'none';
     });
 }
 
 function viewReport(path) {
-    document.getElementById('reportContent').innerHTML = '<div class="text-center py-4"><div class="spinner-border text-accent"></div></div>';
+    document.getElementById('reportContent').innerHTML = '<span class="text-muted">Loading report...</span>';
     const modal = new bootstrap.Modal(document.getElementById('reportModal'));
     modal.show();
     
@@ -108,7 +152,7 @@ function viewReport(path) {
             document.getElementById('reportContent').textContent = content;
         })
         .catch(err => {
-            document.getElementById('reportContent').textContent = 'Error loading report: ' + err.message;
+            document.getElementById('reportContent').textContent = 'Error: ' + err.message;
         });
 }
 </script>

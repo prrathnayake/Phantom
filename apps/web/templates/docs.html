@@ -4,34 +4,34 @@
 
 {% block content %}
 <div class="row">
-    <!-- Documentation Sidebar -->
+    <!-- Documentation Sidebar - Fixed -->
     <div class="col-lg-3 mb-4">
-        <div class="sidebar" style="border-radius: 1rem;">
+        <div class="sidebar" style="position: sticky; top: 80px; height: calc(100vh - 100px); overflow-y: auto;">
             <div class="sidebar-section">
-                <div class="sidebar-title">Contents</div>
-                <nav class="nav flex-column">
-                    <a class="nav-link text-secondary py-1" href="#overview">Overview</a>
-                    <a class="nav-link text-secondary py-1" href="#architecture">Architecture</a>
-                    <a class="nav-link text-secondary py-1" href="#components">Components</a>
-                    <a class="nav-link text-secondary py-1" href="#dataflow">Data Flow</a>
-                    <a class="nav-link text-secondary py-1" href="#sensors">Sensors</a>
-                    <a class="nav-link text-secondary py-1" href="#detection">Detection</a>
-                    <a class="nav-link text-secondary py-1" href="#skills">Skills</a>
-                    <a class="nav-link text-secondary py-1" href="#interfaces">Interfaces</a>
-                    <a class="nav-link text-secondary py-1" href="#configuration">Configuration</a>
-                    <a class="nav-link text-secondary py-1" href="#api">API Reference</a>
-                    <a class="nav-link text-secondary py-1" href="#testing">Testing</a>
+                <div class="sidebar-title">&gt; Contents</div>
+                <nav class="nav flex-column doc-nav">
+                    <a class="nav-link text-secondary py-1" href="#overview">overview</a>
+                    <a class="nav-link text-secondary py-1" href="#architecture">architecture</a>
+                    <a class="nav-link text-secondary py-1" href="#components">components</a>
+                    <a class="nav-link text-secondary py-1" href="#dataflow">dataflow</a>
+                    <a class="nav-link text-secondary py-1" href="#sensors">sensors</a>
+                    <a class="nav-link text-secondary py-1" href="#detection">detection</a>
+                    <a class="nav-link text-secondary py-1" href="#skills">skills</a>
+                    <a class="nav-link text-secondary py-1" href="#interfaces">interfaces</a>
+                    <a class="nav-link text-secondary py-1" href="#configuration">config</a>
+                    <a class="nav-link text-secondary py-1" href="#api">api</a>
+                    <a class="nav-link text-secondary py-1" href="#testing">testing</a>
                 </nav>
             </div>
             
             <div class="sidebar-section">
-                <div class="sidebar-title">Resources</div>
+                <div class="sidebar-title">&gt; Resources</div>
                 <div class="d-grid gap-2">
                     <a href="/" class="btn btn-outline-accent btn-sm">
-                        <i class="bi bi-house me-2"></i> Back to Dashboard
+                        <i class="bi bi-house me-2"></i> Dashboard
                     </a>
                     <a href="/reports" class="btn btn-outline-accent btn-sm">
-                        <i class="bi bi-files me-2"></i> View Reports
+                        <i class="bi bi-files me-2"></i> Reports
                     </a>
                 </div>
             </div>
