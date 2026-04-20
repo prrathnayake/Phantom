@@ -48,7 +48,7 @@
             <span class="ls-perms">-rw-r--r--</span>
             <span class="ls-user">monica</span>
             <span class="ls-group">security</span>
-            <span class="ls-size">{{ ((report.size or 1024) // 1024 }}K</span>
+            <span class="ls-size">{{ ((report.size or 1024) // 1024) }}K</span>
             <span class="ls-date">{{ report.modified[:16] }}</span>
             <span class="ls-name text-accent">{{ report.name }}</span>
         </div>
