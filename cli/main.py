@@ -343,41 +343,50 @@ def cmd_start(args):
 def cmd_stop(args):
     print("Stopping Monica agent...")
 
-    pid_file = Path("monica.pid")
+    import psutil
 
-    if not pid_file.exists():
-        import psutil
+    ports = [5000, 8000, 8001]
+    killed_any = False
+
+    for port in ports:
+        for conn in psutil.net_connections(kind="inet"):
+            if conn.laddr.port == port and conn.status == "LISTEN":
+                try:
+                    proc = psutil.Process(conn.pid)
+                    print(f"Killing process {conn.pid} on port {port} ({proc.name()})...")
+                    proc.kill()
+                    killed_any = True
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    pass
+
+    pid_file = Path("monica.pid")
+    if pid_file.exists():
+        pid = int(pid_file.read_text().strip())
+        try:
+            proc = psutil.Process(pid)
+            proc.kill()
+            killed_any = True
+        except psutil.NoSuchProcess:
+            pass
+        pid_file.unlink()
+
+    if not killed_any:
         for proc in psutil.process_iter(["pid", "name", "cmdline"]):
             try:
                 cmdline = proc.info.get("cmdline") or []
                 if "main.py" in " ".join(cmdline):
                     print(f"Stopping process {proc.pid}...")
-                    proc.terminate()
-                    proc.wait(timeout=5)
-                    print("Agent stopped.")
-                    return 0
+                    proc.kill()
+                    killed_any = True
             except:
                 pass
-        print("Agent not running (no PID file found)")
-        return 1
 
-    pid = int(pid_file.read_text().strip())
-
-    try:
-        import psutil
-        proc = psutil.Process(pid)
-        proc.terminate()
-        proc.wait(timeout=5)
-        pid_file.unlink()
+    if killed_any:
         print("Agent stopped.")
         return 0
-    except psutil.NoSuchProcess:
-        print("Process not found, removing stale PID file.")
-        pid_file.unlink()
-        return 1
-    except Exception as e:
-        print(f"Error stopping agent: {e}")
-        return 1
+    else:
+        print("Agent not running.")
+        return 0
 
 
 def cmd_status(args):
