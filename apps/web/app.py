@@ -135,6 +135,12 @@ def alerts_page():
     return render_template("alerts.html")
 
 
+@app.route("/docs")
+def docs_page():
+    """Documentation page."""
+    return render_template("docs.html")
+
+
 @app.route("/api/chat", methods=["POST"])
 def chat_api():
     """Chat with the agent."""

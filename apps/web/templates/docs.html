@@ -1,0 +1,742 @@
+{% extends "base.html" %}
+
+{% block title %}Documentation - Monica Mission Control{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Documentation Sidebar -->
+    <div class="col-lg-3 mb-4">
+        <div class="sidebar" style="border-radius: 1rem;">
+            <div class="sidebar-section">
+                <div class="sidebar-title">Contents</div>
+                <nav class="nav flex-column">
+                    <a class="nav-link text-secondary py-1" href="#overview">Overview</a>
+                    <a class="nav-link text-secondary py-1" href="#architecture">Architecture</a>
+                    <a class="nav-link text-secondary py-1" href="#components">Components</a>
+                    <a class="nav-link text-secondary py-1" href="#dataflow">Data Flow</a>
+                    <a class="nav-link text-secondary py-1" href="#sensors">Sensors</a>
+                    <a class="nav-link text-secondary py-1" href="#detection">Detection</a>
+                    <a class="nav-link text-secondary py-1" href="#skills">Skills</a>
+                    <a class="nav-link text-secondary py-1" href="#interfaces">Interfaces</a>
+                    <a class="nav-link text-secondary py-1" href="#configuration">Configuration</a>
+                    <a class="nav-link text-secondary py-1" href="#api">API Reference</a>
+                    <a class="nav-link text-secondary py-1" href="#testing">Testing</a>
+                </nav>
+            </div>
+            
+            <div class="sidebar-section">
+                <div class="sidebar-title">Resources</div>
+                <div class="d-grid gap-2">
+                    <a href="/" class="btn btn-outline-accent btn-sm">
+                        <i class="bi bi-house me-2"></i> Back to Dashboard
+                    </a>
+                    <a href="/reports" class="btn btn-outline-accent btn-sm">
+                        <i class="bi bi-files me-2"></i> View Reports
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Documentation Content -->
+    <div class="col-lg-9">
+        <!-- Overview -->
+        <div class="card mb-4" id="overview">
+            <div class="card-header">
+                <i class="bi bi-info-circle"></i>
+                Overview
+            </div>
+            <div class="card-body">
+                <h2 class="h4 text-accent mb-3">Monica - Secure Monitoring Agent Harness System</h2>
+                <p class="text-secondary">
+                    Monica is a centralized security monitoring system with a Gateway + Central Agent architecture. 
+                    It provides autonomous diagnostic runs, real-time threat detection, and AI-powered security analysis.
+                </p>
+                
+                <h5 class="mt-4 mb-3">Key Features</h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <ul class="text-secondary">
+                            <li>Autonomous diagnostic scheduling</li>
+                            <li>Multiple input interfaces (HTTP, CLI, Queue, File, WebSocket)</li>
+                            <li>Rule-based anomaly detection</li>
+                            <li>Statistical anomaly detection</li>
+                            <li>ML-based anomaly detection</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <ul class="text-secondary">
+                            <li>LLM-powered security analysis</li>
+                            <li>Skills framework for extensible capabilities</li>
+                            <li>Tools framework for remediation</li>
+                            <li>Alert and approval management</li>
+                            <li>External integrations (Slack, Teams, PagerDuty, SIEM)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Architecture Diagram -->
+        <div class="card mb-4" id="architecture">
+            <div class="card-header">
+                <i class="bi bi-diagram-3"></i>
+                Architecture
+            </div>
+            <div class="card-body">
+                <div class="text-center my-4">
+                    <svg width="100%" height="280" viewBox="0 0 800 280" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Gateway -->
+                        <rect x="20" y="20" width="220" height="240" fill="#18181b" stroke="#22c55e" stroke-width="2" rx="8"/>
+                        <text x="130" y="50" fill="#22c55e" font-size="16" font-weight="bold" text-anchor="middle">GATEWAY</text>
+                        
+                        <!-- Input Interfaces -->
+                        <rect x="40" y="70" width="180" height="40" fill="#27272a" stroke="#3f3f46" rx="4"/>
+                        <text x="130" y="95" fill="#fafafa" font-size="12" text-anchor="middle">Input Interfaces</text>
+                        <text x="130" y="110" fill="#a1a1aa" font-size="10" text-anchor="middle">HTTP | CLI | Queue | File | WS</text>
+                        
+                        <!-- Schedule Manager -->
+                        <rect x="40" y="130" width="180" height="40" fill="#27272a" stroke="#3f3f46" rx="4"/>
+                        <text x="130" y="155" fill="#fafafa" font-size="12" text-anchor="middle">Schedule Manager</text>
+                        <text x="130" y="170" fill="#a1a1aa" font-size="10" text-anchor="middle">Autonomous Runs</text>
+                        
+                        <!-- Payload Sender -->
+                        <rect x="40" y="190" width="180" height="40" fill="#27272a" stroke="#3f3f46" rx="4"/>
+                        <text x="130" y="215" fill="#fafafa" font-size="12" text-anchor="middle">Payload Sender</text>
+                        <text x="130" y="230" fill="#a1a1aa" font-size="10" text-anchor="middle">To Central Agent</text>
+                        
+                        <!-- Arrow -->
+                        <path d="M 245 140 L 275 140" stroke="#22c55e" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+                        
+                        <!-- Central Agent -->
+                        <rect x="280" y="20" width="220" height="240" fill="#18181b" stroke="#22c55e" stroke-width="2" rx="8"/>
+                        <text x="390" y="50" fill="#22c55e" font-size="16" font-weight="bold" text-anchor="middle">CENTRAL AGENT</text>
+                        
+                        <!-- System Prompt -->
+                        <rect x="300" y="70" width="180" height="30" fill="#27272a" stroke="#3f3f46" rx="4"/>
+                        <text x="390" y="90" fill="#fafafa" font-size="11" text-anchor="middle">System Prompt</text>
+                        
+                        <!-- Context Manager -->
+                        <rect x="300" y="110" width="180" height="30" fill="#27272a" stroke="#3f3f46" rx="4"/>
+                        <text x="390" y="130" fill="#fafafa" font-size="11" text-anchor="middle">Context Manager</text>
+                        
+                        <!-- Memory Manager -->
+                        <rect x="300" y="150" width="180" height="30" fill="#27272a" stroke="#3f3f46" rx="4"/>
+                        <text x="390" y="170" fill="#fafafa" font-size="11" text-anchor="middle">Memory Manager</text>
+                        
+                        <!-- Analysis Loop -->
+                        <rect x="300" y="190" width="180" height="50" fill="#27272a" stroke="#3f3f46" rx="4"/>
+                        <text x="390" y="215" fill="#fafafa" font-size="12" text-anchor="middle">Analysis Loop</text>
+                        <text x="390" y="230" fill="#a1a1aa" font-size="10" text-anchor="middle">LLM Powered</text>
+                        
+                        <!-- Diagnostics -->
+                        <rect x="520" y="20" width="130" height="100" fill="#18181b" stroke="#3b82f6" stroke-width="2" rx="8"/>
+                        <text x="585" y="45" fill="#3b82f6" font-size="14" font-weight="bold" text-anchor="middle">DIAGNOSTICS</text>
+                        
+                        <rect x="535" y="60" width="100" height="25" fill="#27272a" stroke="#3f3f46" rx="4"/>
+                        <text x="585" y="77" fill="#fafafa" font-size="10" text-anchor="middle">Process Sensor</text>
+                        
+                        <rect x="535" y="90" width="100" height="25" fill="#27272a" stroke="#3f3f46" rx="4"/>
+                        <text x="585" y="107" fill="#fafafa" font-size="10" text-anchor="middle">Port Sensor</text>
+                        
+                        <!-- Skills -->
+                        <rect x="520" y="130" width="130" height="130" fill="#18181b" stroke="#a855f7" stroke-width="2" rx="8"/>
+                        <text x="585" y="155" fill="#a855f7" font-size="14" font-weight="bold" text-anchor="middle">SKILLS</text>
+                        
+                        <rect x="535" y="170" width="100" height="20" fill="#27272a" stroke="#3f3f46" rx="4"/>
+                        <text x="585" y="184" fill="#fafafa" font-size="9" text-anchor="middle">Network Analysis</text>
+                        
+                        <rect x="535" y="195" width="100" height="20" fill="#27272a" stroke="#3f3f46" rx="4"/>
+                        <text x="585" y="209" fill="#fafafa" font-size="9" text-anchor="middle">Process Analysis</text>
+                        
+                        <rect x="535" y="220" width="100" height="20" fill="#27272a" stroke="#3f3f46" rx="4"/>
+                        <text x="585" y="234" fill="#fafafa" font-size="9" text-anchor="middle">Security Analysis</text>
+                        
+                        <!-- Analysis -->
+                        <rect x="670" y="20" width="110" height="100" fill="#18181b" stroke="#ef4444" stroke-width="2" rx="8"/>
+                        <text x="725" y="45" fill="#ef4444" font-size="14" font-weight="bold" text-anchor="middle">ANALYSIS</text>
+                        
+                        <rect x="685" y="60" width="80" height="20" fill="#27272a" stroke="#3f3f46" rx="4"/>
+                        <text x="725" y="74" fill="#fafafa" font-size="9" text-anchor="middle">Detection Rules</text>
+                        
+                        <rect x="685" y="85" width="80" height="20" fill="#27272a" stroke="#3f3f46" rx="4"/>
+                        <text x="725" y="99" fill="#fafafa" font-size="9" text-anchor="middle">Statistical</text>
+                        
+                        <!-- Storage -->
+                        <rect x="670" y="130" width="110" height="130" fill="#18181b" stroke="#eab308" stroke-width="2" rx="8"/>
+                        <text x="725" y="155" fill="#eab308" font-size="14" font-weight="bold" text-anchor="middle">STORAGE</text>
+                        
+                        <rect x="685" y="170" width="80" height="20" fill="#27272a" stroke="#3f3f46" rx="4"/>
+                        <text x="725" y="184" fill="#fafafa" font-size="9" text-anchor="middle">Events Log</text>
+                        
+                        <rect x="685" y="195" width="80" height="20" fill="#27272a" stroke="#3f3f46" rx="4"/>
+                        <text x="725" y="209" fill="#fafafa" font-size="9" text-anchor="middle">Detections</text>
+                        
+                        <rect x="685" y="220" width="80" height="20" fill="#27272a" stroke="#3f3f46" rx="4"/>
+                        <text x="725" y="234" fill="#fafafa" font-size="9" text-anchor="middle">Reports</text>
+                        
+                        <!-- Arrow Markers -->
+                        <defs>
+                            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                                <polygon points="0 0, 10 3.5, 0 7" fill="#22c55e"/>
+                            </marker>
+                        </defs>
+                    </svg>
+                </div>
+                
+                <h5 class="mt-4 mb-3">System Components</h5>
+                <table class="table table-dark table-sm">
+                    <thead>
+                        <tr>
+                            <th>Component</th>
+                            <th>Location</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="text-accent">Gateway</span></td>
+                            <td><code>gateway/</code></td>
+                            <td>Input interfaces + Schedule Manager</td>
+                        </tr>
+                        <tr>
+                            <td><span class="text-accent">Central Agent</span></td>
+                            <td><code>central_agent/</code></td>
+                            <td>LLM analysis loop + context + memory</td>
+                        </tr>
+                        <tr>
+                            <td><span class="text-accent">Diagnostics</span></td>
+                            <td><code>diagnostics/</code></td>
+                            <td>Sensor collectors</td>
+                        </tr>
+                        <tr>
+                            <td><span class="text-accent">Analysis</span></td>
+                            <td><code>analysis/</code></td>
+                            <td>Detection engine</td>
+                        </tr>
+                        <tr>
+                            <td><span class="text-accent">Skills</span></td>
+                            <td><code>skills/</code></td>
+                            <td>Agent skills</td>
+                        </tr>
+                        <tr>
+                            <td><span class="text-accent">Core</span></td>
+                            <td><code>core/</code></td>
+                            <td>Storage + OpenRouterClient</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Data Flow -->
+        <div class="card mb-4" id="dataflow">
+            <div class="card-header">
+                <i class="bi bi-arrow-left-right"></i>
+                Data Flow
+            </div>
+            <div class="card-body">
+                <div class="text-center my-4">
+                    <svg width="100%" height="180" viewBox="0 0 700 180" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Schedule Manager -->
+                        <rect x="20" y="60" width="100" height="60" fill="#18181b" stroke="#22c55e" rx="8"/>
+                        <text x="70" y="90" fill="#22c55e" font-size="12" font-weight="bold" text-anchor="middle">Schedule</text>
+                        <text x="70" y="105" fill="#a1a1aa" font-size="10" text-anchor="middle">Manager</text>
+                        
+                        <!-- Arrow 1 -->
+                        <path d="M 125 90 L 155 90" stroke="#22c55e" stroke-width="2" fill="none"/>
+                        <polygon points="155,85 165,90 155,95" fill="#22c55e"/>
+                        
+                        <!-- Diagnostics -->
+                        <rect x="160" y="60" width="100" height="60" fill="#18181b" stroke="#3b82f6" rx="8"/>
+                        <text x="210" y="90" fill="#3b82f6" font-size="12" font-weight="bold" text-anchor="middle">Diagnostics</text>
+                        <text x="210" y="105" fill="#a1a1aa" font-size="10" text-anchor="middle">Sensors</text>
+                        
+                        <!-- Arrow 2 -->
+                        <path d="M 265 90 L 295 90" stroke="#22c55e" stroke-width="2" fill="none"/>
+                        <polygon points="295,85 305,90 295,95" fill="#22c55e"/>
+                        
+                        <!-- Payload -->
+                        <rect x="300" y="60" width="100" height="60" fill="#18181b" stroke="#a855f7" rx="8"/>
+                        <text x="350" y="90" fill="#a855f7" font-size="12" font-weight="bold" text-anchor="middle">Payload</text>
+                        <text x="350" y="105" fill="#a1a1aa" font-size="10" text-anchor="middle">Collection</text>
+                        
+                        <!-- Arrow 3 -->
+                        <path d="M 405 90 L 435 90" stroke="#22c55e" stroke-width="2" fill="none"/>
+                        <polygon points="435,85 445,90 435,95" fill="#22c55e"/>
+                        
+                        <!-- Central Agent -->
+                        <rect x="440" y="40" width="100" height="100" fill="#18181b" stroke="#22c55e" rx="8"/>
+                        <text x="490" y="70" fill="#22c55e" font-size="12" font-weight="bold" text-anchor="middle">Central</text>
+                        <text x="490" y="85" fill="#a1a1aa" font-size="10" text-anchor="middle">Agent</text>
+                        <text x="490" y="100" fill="#fafafa" font-size="9" text-anchor="middle">(LLM Loop)</text>
+                        
+                        <!-- Arrow 4 -->
+                        <path d="M 545 90 L 575 90" stroke="#22c55e" stroke-width="2" fill="none"/>
+                        <polygon points="575,85 585,90 575,95" fill="#22c55e"/>
+                        
+                        <!-- Detection -->
+                        <rect x="580" y="60" width="100" height="60" fill="#18181b" stroke="#ef4444" rx="8"/>
+                        <text x="630" y="90" fill="#ef4444" font-size="12" font-weight="bold" text-anchor="middle">Detection</text>
+                        <text x="630" y="105" fill="#a1a1aa" font-size="10" text-anchor="middle">Engine</text>
+                        
+                        <!-- Arrow 5 -->
+                        <path d="M 645 125 L 645 145" stroke="#22c55e" stroke-width="2" fill="none"/>
+                        <polygon points="640,145 645,155 650,145" fill="#22c55e"/>
+                        
+                        <!-- Storage -->
+                        <rect x="580" y="150" width="100" height="25" fill="#18181b" stroke="#eab308" rx="4"/>
+                        <text x="630" y="167" fill="#eab308" font-size="10" text-anchor="middle">Storage + Reports</text>
+                    </svg>
+                </div>
+                
+                <ol class="text-secondary">
+                    <li class="mb-2"><strong>Schedule Manager</strong> runs diagnostics autonomously at configured intervals</li>
+                    <li class="mb-2"><strong>Diagnostics</strong> collect sensor data (process, port, file, network, memory, etc.)</li>
+                    <li class="mb-2"><strong>Payload</strong> is created with sensor data and sent to Central Agent</li>
+                    <li class="mb-2"><strong>Central Agent</strong> updates session context, executes skills, calls LLM for analysis</li>
+                    <li class="mb-2"><strong>Detection Engine</strong> evaluates rule-based heuristics and detects anomalies</li>
+                    <li class="mb-2"><strong>Storage</strong> logs events and detections, generates reports</li>
+                </ol>
+            </div>
+        </div>
+        
+        <!-- Sensors -->
+        <div class="card mb-4" id="sensors">
+            <div class="card-header">
+                <i class="bi bi-cpu"></i>
+                Diagnostic Sensors
+            </div>
+            <div class="card-body">
+                <p class="text-secondary mb-3">
+                    Monica includes multiple diagnostic sensors that collect system information at configurable intervals.
+                </p>
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="card bg-dark border-secondary">
+                            <div class="card-body py-2">
+                                <h6 class="text-accent mb-1">
+                                    <i class="bi bi-gear me-2"></i>process_sensor
+                                </h6>
+                                <p class="text-muted small mb-0">
+                                    Collects running process information including PID, name, CPU/memory usage.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-dark border-secondary">
+                            <div class="card-body py-2">
+                                <h6 class="text-accent mb-1">
+                                    <i class="bi bi-plug me-2"></i>port_sensor
+                                </h6>
+                                <p class="text-muted small mb-0">
+                                    Monitors open TCP/UDP listening ports and connections.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-dark border-secondary">
+                            <div class="card-body py-2">
+                                <h6 class="text-accent mb-1">
+                                    <i class="bi bi-folder me-2"></i>file_sensor
+                                </h6>
+                                <p class="text-muted small mb-0">
+                                    Monitors directory for file changes (added, removed, modified).
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-dark border-secondary">
+                            <div class="card-body py-2">
+                                <h6 class="text-accent mb-1">
+                                    <i class="bi bi-network-toolkit me-2"></i>network_sensor
+                                </h6>
+                                <p class="text-muted small mb-0">
+                                    Tracks network connections and external IP addresses contacted.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-dark border-secondary">
+                            <div class="card-body py-2">
+                                <h6 class="text-accent mb-1">
+                                    <i class="bi bi-memory me-2"></i>memory_sensor
+                                </h6>
+                                <p class="text-muted small mb-0">
+                                    Monitors RAM and swap memory usage percentages.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-dark border-secondary">
+                            <div class="card-body py-2">
+                                <h6 class="text-accent mb-1">
+                                    <i class="bi bi-hdd me-2"></i>disk_io_sensor
+                                </h6>
+                                <p class="text-muted small mb-0">
+                                    Monitors disk usage and I/O statistics.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-dark border-secondary">
+                            <div class="card-body py-2">
+                                <h6 class="text-accent mb-1">
+                                    <i class="bi bi-shield-lock me-2"></i>auth_sensor
+                                </h6>
+                                <p class="text-muted small mb-0">
+                                    Tracks authentication events and privilege escalation.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-dark border-secondary">
+                            <div class="card-body py-2">
+                                <h6 class="text-accent mb-1">
+                                    <i class="bi bi-server me-2"></i>service_sensor
+                                </h6>
+                                <p class="text-muted small mb-0">
+                                    Monitors critical Windows services status.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Detection -->
+        <div class="card mb-4" id="detection">
+            <div class="card-header">
+                <i class="bi bi-shield-exclamation"></i>
+                Detection Engine
+            </div>
+            <div class="card-body">
+                <p class="text-secondary mb-3">
+                    The detection engine evaluates sensor outputs against configurable thresholds and generates alerts.
+                </p>
+                
+                <h5 class="mb-3">Detection Types</h5>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="card bg-dark border-secondary">
+                            <div class="card-body py-2">
+                                <h6 class="text-warning mb-1">Rule-Based</h6>
+                                <p class="text-muted small mb-0">
+                                    Simple heuristics comparing sensor values against thresholds.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-dark border-secondary">
+                            <div class="card-body py-2">
+                                <h6 class="text-warning mb-1">Statistical</h6>
+                                <p class="text-muted small mb-0">
+                                    Detects outliers using rolling mean and standard deviation.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-dark border-secondary">
+                            <div class="card-body py-2">
+                                <h6 class="text-warning mb-1">ML-Based</h6>
+                                <p class="text-muted small mb-0">
+                                    Uses Isolation Forest for anomaly detection.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <h5 class="mt-4 mb-3">Default Thresholds</h5>
+                <table class="table table-dark table-sm">
+                    <thead>
+                        <tr>
+                            <th>Rule</th>
+                            <th>Threshold</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>process_count</td><td>250</td><td>Max running processes</td></tr>
+                        <tr><td>open_ports</td><td>50</td><td>Max listening ports</td></tr>
+                        <tr><td>file_changes</td><td>100</td><td>Max file changes per interval</td></tr>
+                        <tr><td>established_connections</td><td>100</td><td>Max established connections</td></tr>
+                        <tr><td>memory_percent</td><td>90%</td><td>Max memory usage</td></tr>
+                        <tr><td>failed_logins</td><td>5</td><td>Max failed logins per interval</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Skills -->
+        <div class="card mb-4" id="skills">
+            <div class="card-header">
+                <i class="bi bi-stars"></i>
+                Agent Skills
+            </div>
+            <div class="card-body">
+                <p class="text-secondary mb-3">
+                    Skills extend the Central Agent's capabilities with task-specific implementations.
+                </p>
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="card bg-dark border-secondary">
+                            <div class="card-body py-2">
+                                <h6 class="text-purple mb-1">network_analysis</h6>
+                                <p class="text-muted small mb-0">Analyzes network connections and identifies suspicious IPs.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-dark border-secondary">
+                            <div class="card-body py-2">
+                                <h6 class="text-purple mb-1">process_analysis</h6>
+                                <p class="text-muted small mb-0">Analyzes running processes for anomalies.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-dark border-secondary">
+                            <div class="card-body py-2">
+                                <h6 class="text-purple mb-1">memory_analysis</h6>
+                                <p class="text-muted small mb-0">Analyzes memory usage patterns.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-dark border-secondary">
+                            <div class="card-body py-2">
+                                <h6 class="text-purple mb-1">port_analysis</h6>
+                                <p class="text-muted small mb-0">Analyzes open ports and services.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-dark border-secondary">
+                            <div class="card-body py-2">
+                                <h6 class="text-purple mb-1">log_analysis</h6>
+                                <p class="text-muted small mb-0">Analyzes system and security logs.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-dark border-secondary">
+                            <div class="card-body py-2">
+                                <h6 class="text-purple mb-1">security_analysis</h6>
+                                <p class="text-muted small mb-0">General security posture analysis.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card bg-dark border-secondary">
+                            <div class="card-body py-2">
+                                <h6 class="text-purple mb-1">system_diagnostics</h6>
+                                <p class="text-muted small mb-0">Comprehensive system diagnostics.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <h5 class="mt-4 mb-3">Available Tools</h5>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <div class="card bg-dark border-secondary">
+                            <div class="card-body py-2">
+                                <h6 class="text-info mb-1">shell</h6>
+                                <p class="text-muted small mb-0">Execute shell commands</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-dark border-secondary">
+                            <div class="card-body py-2">
+                                <h6 class="text-info mb-1">file</h6>
+                                <p class="text-muted small mb-0">File operations</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-dark border-secondary">
+                            <div class="card-body py-2">
+                                <h6 class="text-info mb-1">process</h6>
+                                <p class="text-muted small mb-0">Process management</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-dark border-secondary">
+                            <div class="card-body py-2">
+                                <h6 class="text-info mb-1">diagnostic</h6>
+                                <p class="text-muted small mb-0">Run diagnostics</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Interfaces -->
+        <div class="card mb-4" id="interfaces">
+            <div class="card-header">
+                <i class="bi bi-globe"></i>
+                Input Interfaces
+            </div>
+            <div class="card-body">
+                <p class="text-secondary mb-3">
+                    Monica supports multiple input interfaces for triggering analysis.
+                </p>
+                
+                <table class="table table-dark table-sm">
+                    <thead>
+                        <tr>
+                            <th>Interface</th>
+                            <th>Port</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>HTTP</code></td><td>8000</td><td>REST API endpoints</td></tr>
+                        <tr><td><code>WebSocket</code></td><td>8001</td><td>Real-time updates</td></tr>
+                        <tr><td><code>CLI</code></td><td>-</td><td>Command line interface</td></tr>
+                        <tr><td><code>Queue</code></td><td>-</td><td>Redis/RabbitMQ consumer</td></tr>
+                        <tr><td><code>File</code></td><td>-</td><td>Drop folder monitoring</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Configuration -->
+        <div class="card mb-4" id="configuration">
+            <div class="card-header">
+                <i class="bi bi-gear"></i>
+                Configuration
+            </div>
+            <div class="card-body">
+                <p class="text-secondary mb-3">
+                    Monica is configured via environment variables and config.py.
+                </p>
+                
+                <h5 class="mb-3">Environment Variables</h5>
+                <table class="table table-dark table-sm">
+                    <thead>
+                        <tr>
+                            <th>Variable</th>
+                            <th>Default</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>OPENROUTER_API_KEY</code></td><td>-</td><td>LLM API key</td></tr>
+                        <tr><td><code>OPENROUTER_MODEL</code></td><td>openrouter-gpt-3.5-turbo</td><td>LLM model</td></tr>
+                        <tr><td><code>AGENT_LOG_DIR</code></td><td><code>./.logs</code></td><td>Log directory</td></tr>
+                        <tr><td><code>AGENT_WATCH_DIR</code></td><td>project root</td><td>File watch directory</td></tr>
+                        <tr><td><code>AGENT_THRESHOLD_*</code></td><td>varies</td><td>Detection thresholds</td></tr>
+                    </tbody>
+                </table>
+                
+                <h5 class="mt-4 mb-3">Polling Intervals</h5>
+                <table class="table table-dark table-sm">
+                    <thead>
+                        <tr>
+                            <th>Sensor</th>
+                            <th>Default Interval</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>process_sensor</td><td>60s</td></tr>
+                        <tr><td>port_sensor</td><td>120s</td></tr>
+                        <tr><td>file_sensor</td><td>30s</td></tr>
+                        <tr><td>network_sensor</td><td>60s</td></tr>
+                        <tr><td>memory_sensor</td><td>60s</td></tr>
+                        <tr><td>auth_sensor</td><td>30s</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- API Reference -->
+        <div class="card mb-4" id="api">
+            <div class="card-header">
+                <i class="bi bi-code"></i>
+                API Reference
+            </div>
+            <div class="card-body">
+                <p class="text-secondary mb-3">
+                    HTTP API endpoints available on port 8000.
+                </p>
+                
+                <table class="table table-dark table-sm">
+                    <thead>
+                        <tr>
+                            <th>Endpoint</th>
+                            <th>Method</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>/analyze</code></td><td>POST</td><td>Submit payload for analysis</td></tr>
+                        <tr><td><code>/schedules</code></td><td>GET</td><td>Get schedule status</td></tr>
+                        <tr><td><code>/schedules/{name}/run</code></td><td>POST</td><td>Run specific schedule</td></tr>
+                        <tr><td><code>/status</code></td><td>GET</td><td>Gateway status</td></tr>
+                        <tr><td><code>/trigger/{skill}</code></td><td>POST</td><td>Trigger skill</td></tr>
+                        <tr><td><code>/health</code></td><td>GET</td><td>Health check</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Testing -->
+        <div class="card mb-4" id="testing">
+            <div class="card-header">
+                <i class="bi bi-check-circle"></i>
+                Testing
+            </div>
+            <div class="card-body">
+                <p class="text-secondary mb-3">
+                    Monica includes comprehensive test suites.
+                </p>
+                
+                <h5 class="mb-3">Run Tests</h5>
+                <pre class="bg-dark p-3 rounded text-accent"><code># All tests
+pytest tests/ -v
+
+# Test suites
+pytest tests/test_central_agent.py   # Central Agent tests
+pytest tests/test_gateway.py       # Gateway tests
+pytest tests/test_diagnostics.py # Diagnostics tests
+pytest tests/test_integration.py   # Integration tests
+pytest tests/test_core.py         # Core module tests</code></pre>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Smooth scroll to anchor
+    const hash = window.location.hash;
+    if (hash) {
+        const target = document.querySelector(hash);
+        if (target) {
+            setTimeout(() => {
+                target.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+        }
+    }
+});
+</script>
+{% endblock %}
