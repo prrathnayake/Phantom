@@ -84,12 +84,6 @@ def index():
     return render_template("index.html")
 
 
-@app.route("/chat")
-def chat_page():
-    """Chat with agent page."""
-    return render_template("chat.html")
-
-
 @app.route("/diagnostics")
 def diagnostics_page():
     """Diagnostics runner page."""

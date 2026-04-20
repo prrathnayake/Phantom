@@ -670,6 +670,489 @@
             from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
+        /* Agent Workspace - Circular Layout */
+        .agent-workspace {
+            padding: 1rem;
+            position: relative;
+            min-height: 500px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Central Agent */
+        .agent-center {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+        }
+
+        .agent-avatar {
+            width: 90px;
+            height: 90px;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            color: var(--bg-dark);
+            position: relative;
+            animation: agentFloat 3s ease-in-out infinite;
+            box-shadow: 0 0 30px var(--accent-glow), 0 0 60px rgba(34, 197, 94, 0.2);
+        }
+
+        .agent-avatar::before {
+            content: '';
+            position: absolute;
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            border: 2px solid var(--accent);
+            animation: agentRing 2s ease-out infinite;
+        }
+
+        .agent-avatar::after {
+            content: '';
+            position: absolute;
+            width: 130px;
+            height: 130px;
+            border-radius: 50%;
+            border: 1px solid var(--accent);
+            opacity: 0.5;
+            animation: agentRing 2s ease-out infinite 0.5s;
+        }
+
+        @keyframes agentFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes agentRing {
+            0% { transform: scale(1); opacity: 0.8; }
+            100% { transform: scale(1.3); opacity: 0; }
+        }
+
+        .agent-status {
+            margin-top: 1rem;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .agent-status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: agentPulse 1.5s infinite;
+        }
+
+        @keyframes agentPulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 5px var(--accent); }
+            50% { opacity: 0.6; box-shadow: 0 0 15px var(--accent); }
+        }
+
+        .agent-task {
+            margin-top: 0.5rem;
+            font-size: 0.85rem;
+            color: var(--text-primary);
+            font-weight: 500;
+            max-width: 150px;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Orbiting Components */
+        .orbit-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .orbit-ring {
+            position: absolute;
+            border-radius: 50%;
+            border: 1px dashed var(--border);
+            opacity: 0.3;
+        }
+
+        .orbit-ring-1 {
+            width: 280px;
+            height: 280px;
+        }
+
+        .orbit-ring-2 {
+            width: 420px;
+            height: 420px;
+        }
+
+        /* Orbital Widgets - Positioned in circular layout */
+        .orbital-widget {
+            position: absolute;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 0.6rem;
+            min-width: 110px;
+            max-width: 120px;
+            animation: widgetFloat 4s ease-in-out infinite;
+        }
+
+        .orbital-widget.top { top: 25px; left: 50%; transform: translateX(-50%); }
+        .orbital-widget.bottom { bottom: 25px; left: 50%; transform: translateX(-50%); }
+        .orbital-widget.left { left: 20px; top: 50%; transform: translateY(-50%); }
+        .orbital-widget.right { right: 20px; top: 50%; transform: translateY(-50%); }
+
+        .orbital-widget.top-left { top: 60px; left: 60px; }
+        .orbital-widget.top-right { top: 60px; right: 60px; }
+        .orbital-widget.bottom-left { bottom: 60px; left: 60px; }
+        .orbital-widget.bottom-right { bottom: 60px; right: 60px; }
+
+        @keyframes widgetFloat {
+            0%, 100% { transform: translateY(0) translateX(var(--float-x, 0)); }
+            50% { transform: translateY(-3px) translateX(var(--float-x, 0)); }
+        }
+
+        .orbital-widget.top { --float-x: -50%; animation-delay: 0s; }
+        .orbital-widget.bottom { --float-x: -50%; animation-delay: 0.5s; }
+        .orbital-widget.left { --float-x: 0; animation-delay: 1s; }
+        .orbital-widget.right { --float-x: 0; animation-delay: 1.5s; }
+        .orbital-widget.top-left { animation-delay: 0.3s; }
+        .orbital-widget.top-right { animation-delay: 0.7s; }
+        .orbital-widget.bottom-left { animation-delay: 1.2s; }
+        .orbital-widget.bottom-right { animation-delay: 1.7s; }
+
+        .widget-title {
+            font-size: 0.65rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .widget-title i {
+            color: var(--accent);
+        }
+
+        .widget-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .widget-sub {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        /* Mini Processing Grid */
+        .mini-grid {
+            display: flex;
+            gap: 0.25rem;
+            margin-top: 0.5rem;
+        }
+
+        .mini-node {
+            width: 20px;
+            height: 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 0.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.6rem;
+            color: var(--text-muted);
+        }
+
+        .mini-node.active {
+            background: var(--accent-glow);
+            border-color: var(--accent);
+            color: var(--accent);
+            animation: miniPulse 0.5s ease;
+        }
+
+        @keyframes miniPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+        }
+
+        /* Mini Memory Blocks */
+        .mini-memory {
+            display: flex;
+            gap: 0.125rem;
+            margin-top: 0.5rem;
+        }
+
+        .mini-mem-block {
+            width: 12px;
+            height: 16px;
+            background: var(--bg-card);
+            border-radius: 2px;
+        }
+
+        .mini-mem-block.used {
+            background: var(--accent);
+        }
+
+        /* Mini Task Items */
+        .mini-tasks {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            max-height: 80px;
+            overflow: hidden;
+        }
+
+        .mini-task {
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            animation: miniTaskSlide 2s ease forwards;
+        }
+
+        .mini-task i {
+            color: var(--accent);
+            font-size: 0.5rem;
+        }
+
+        @keyframes miniTaskSlide {
+            0% { opacity: 0; transform: translateX(-10px); }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* Mini Data Stream */
+        .mini-stream {
+            display: flex;
+            gap: 0.375rem;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .mini-stream-item {
+            padding: 0.125rem 0.375rem;
+            border-radius: 0.25rem;
+            font-size: 0.55rem;
+            background: var(--bg-card);
+            white-space: nowrap;
+            animation: miniStream 2s ease forwards;
+        }
+
+        .mini-stream-item.sensor { border-left: 2px solid var(--info); }
+        .mini-stream-item.detection { border-left: 2px solid var(--danger); }
+        .mini-stream-item.event { border-left: 2px solid var(--accent); }
+        .mini-stream-item.warning { border-left: 2px solid var(--warning); }
+
+        @keyframes miniStream {
+            0% { opacity: 0; transform: translateX(10px); }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* Progress Bars */
+        .mini-progress {
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            margin-top: 0.5rem;
+            overflow: hidden;
+        }
+
+        .mini-progress-bar {
+            height: 100%;
+            background: var(--accent);
+            border-radius: 2px;
+            animation: progressMove 2s ease infinite;
+        }
+
+        @keyframes progressMove {
+            0% { width: 0%; margin-left: 0%; }
+            50% { width: 50%; margin-left: 25%; }
+            100% { width: 0%; margin-left: 100%; }
+        }
+
+        /* Old workspace styles (removed) */
+        .workspace-row {
+            display: none;
+        }
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, var(--accent-glow), transparent);
+            animation: nodeFlow 1.5s infinite;
+        }
+
+        @keyframes nodePulse {
+            0%, 100% { border-color: var(--border); }
+            50% { border-color: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
+        }
+
+        @keyframes nodeFlow {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .process-node.active {
+            background: var(--accent-glow);
+            border-color: var(--accent);
+        }
+
+        .process-node.active i {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .data-stream {
+            flex: 1;
+            height: 60px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            overflow: hidden;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+        }
+
+        .stream-item {
+            padding: 0.25rem 0.5rem;
+            background: var(--bg-card);
+            border-radius: 0.25rem;
+            white-space: nowrap;
+            animation: streamSlide 3s ease-out forwards;
+            color: var(--text-primary);
+        }
+
+        .stream-item.sensor { border-left: 2px solid var(--info); }
+        .stream-item.detection { border-left: 2px solid var(--danger); }
+        .stream-item.event { border-left: 2px solid var(--accent); }
+        .stream-item.warning { border-left: 2px solid var(--warning); }
+
+        @keyframes streamSlide {
+            0% { opacity: 0; transform: translateX(-20px); }
+            10% { opacity: 1; transform: translateX(0); }
+            90% { opacity: 1; }
+            100% { opacity: 0; transform: translateX(-50px); }
+        }
+
+        .stream-empty {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+        }
+
+        .memory-blocks {
+            flex: 1;
+            display: flex;
+            gap: 0.25rem;
+            height: 50px;
+            align-items: center;
+        }
+
+        .memory-block {
+            width: 30px;
+            height: 30px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 0.25rem;
+            animation: memoryGlow 2s ease-in-out infinite;
+        }
+
+        .memory-block.used {
+            background: var(--accent-glow);
+            border-color: var(--accent);
+        }
+
+        @keyframes memoryGlow {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        .task-queue {
+            flex: 1;
+            display: flex;
+            gap: 0.5rem;
+            height: 40px;
+            align-items: center;
+        }
+
+        .task-item {
+            padding: 0.375rem 0.75rem;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            animation: taskSlide 2s ease-out forwards;
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .task-item i {
+            color: var(--accent);
+            font-size: 0.65rem;
+        }
+
+        @keyframes taskSlide {
+            0% { opacity: 0; transform: translateX(20px); }
+            20% { opacity: 1; transform: translateX(0); }
+            80% { opacity: 1; }
+            100% { opacity: 0.5; transform: translateX(-20px); }
+        }
+
+        .agent-pulse-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: agentPulse 1.5s infinite;
+        }
+
+        @keyframes agentPulse {
+            0% { transform: scale(1); opacity: 1; box-shadow: 0 0 5px var(--accent); }
+            50% { transform: scale(1.3); opacity: 0.7; box-shadow: 0 0 15px var(--accent); }
+            100% { transform: scale(1); opacity: 1; box-shadow: 0 0 5px var(--accent); }
+        }
+
+        #currentTask {
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
@@ -687,39 +1170,13 @@
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/chat" id="nav-chat">
-                        <i class="bi bi-chat-dots"></i> Chat
-                    </a>
-                </li>
-                <li class="nav-item">
                     <a class="nav-link" href="/diagnostics" id="nav-diag">
                         <i class="bi bi-cpu"></i> Diagnostics
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/monitor" id="nav-monitor">
-                        <i class="bi bi-graph-up-arrow"></i> Monitor
-                    </a>
-                </li>
-                <li class="nav-item">
                     <a class="nav-link" href="/reports" id="nav-reports">
                         <i class="bi bi-file-earmark-ruled"></i> Reports
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link position-relative" href="/approvals" id="nav-approvals">
-                        <i class="bi bi-check-circle"></i> Approvals
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning" id="approvalsBadge" style="display: none; font-size: 0.6rem;">
-                            0
-                        </span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link position-relative" href="/alerts" id="nav-alerts">
-                        <i class="bi bi-bell"></i> Alerts
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="alertsBadge" style="display: none; font-size: 0.6rem;">
-                            0
-                        </span>
                     </a>
                 </li>
                 <li class="nav-item">
@@ -919,57 +1376,9 @@
                 .then(data => {
                     const unacknowledged = data.alerts?.filter(a => a.status === 'open').length || 0;
                     showChatNotification(unacknowledged);
-                    
-                    const badge = document.getElementById('alertsBadge');
-                    if (unacknowledged > 0) {
-                        badge.textContent = unacknowledged > 9 ? '9+' : unacknowledged;
-                        badge.style.display = 'block';
-                    } else {
-                        badge.style.display = 'none';
-                    }
-                })
-                .catch(() => {});
-            
-            // Also poll for pending approvals
-            fetch('/api/approvals')
-                .then(r => r.json())
-                .then(data => {
-                    const pending = data.count || 0;
-                    const badge = document.getElementById('approvalsBadge');
-                    if (pending > 0) {
-                        badge.textContent = pending > 9 ? '9+' : pending;
-                        badge.style.display = 'block';
-                    } else {
-                        badge.style.display = 'none';
-                    }
                 })
                 .catch(() => {});
         }, 30000);
-        
-        fetch('/api/alerts')
-            .then(r => r.json())
-            .then(data => {
-                const unacknowledged = data.alerts?.filter(a => a.status === 'open').length || 0;
-                const badge = document.getElementById('alertsBadge');
-                if (unacknowledged > 0) {
-                    badge.textContent = unacknowledged > 9 ? '9+' : unacknowledged;
-                    badge.style.display = 'block';
-                }
-            })
-            .catch(() => {});
-        
-        // Initial check for approvals
-        fetch('/api/approvals')
-            .then(r => r.json())
-            .then(data => {
-                const pending = data.count || 0;
-                const badge = document.getElementById('approvalsBadge');
-                if (pending > 0) {
-                    badge.textContent = pending > 9 ? '9+' : pending;
-                    badge.style.display = 'block';
-                }
-            })
-            .catch(() => {});
     </script>
     {% block scripts %}{% endblock %}
 </body>

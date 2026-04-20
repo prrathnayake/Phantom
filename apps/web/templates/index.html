@@ -3,170 +3,125 @@
 {% block title %}Dashboard - Monica Mission Control{% endblock %}
 
 {% block content %}
-<div class="row">
-    <!-- Sidebar -->
-    <div class="col-lg-3 mb-4">
-        <div class="sidebar" style="border-radius: 1rem;">
-            <div class="sidebar-section">
-                <div class="sidebar-title">Quick Actions</div>
-                <div class="d-grid gap-2">
-                    <a href="/chat" class="btn btn-outline-accent">
-                        <i class="bi bi-chat-dots me-2"></i> Start Chat
-                    </a>
-                    <a href="/diagnostics" class="btn btn-outline-accent">
-                        <i class="bi bi-lightning me-2"></i> Run Diagnostics
-                    </a>
-                    <a href="/monitor" class="btn btn-outline-accent">
-                        <i class="bi bi-realtime me-2"></i> View Activity
-                    </a>
-                    <a href="/reports" class="btn btn-outline-accent">
-                        <i class="bi bi-files me-2"></i> View Reports
-                    </a>
+<div class="row g-3">
+    <!-- Main Agent Workspace -->
+    <div class="col-lg-9">
+        <div class="card" style="min-height: 550px;">
+            <div class="card-header">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-robot text-accent"></i>
+                    <span>Agent Workspace</span>
                 </div>
             </div>
-            
-            <div class="sidebar-section">
-                <div class="sidebar-title">System Information</div>
-                <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
-                    <span class="text-secondary">Platform</span>
-                    <span class="fw-bold small" id="sysPlatform">-</span>
-                </div>
-                <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
-                    <span class="text-secondary">Python</span>
-                    <span class="fw-bold text-info" id="sysPython">-</span>
-                </div>
-                <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
-                    <span class="text-secondary">Uptime</span>
-                    <span class="fw-bold text-accent" id="sysUptime">-</span>
-                </div>
-                <div class="d-flex justify-content-between align-items-center py-2">
-                    <span class="text-secondary">Last Activity</span>
-                    <span class="fw-bold text-muted small" id="lastActivity">-</span>
-                </div>
-            </div>
-            
-            <div class="sidebar-section">
-                <div class="sidebar-title">Security Summary</div>
-                <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
-                    <span class="text-secondary">Events (24h)</span>
-                    <span class="fw-bold" id="statEventsDay">-</span>
-                </div>
-                <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary">
-                    <span class="text-secondary">Detections (24h)</span>
-                    <span class="fw-bold text-warning" id="statDetectionsDay">-</span>
-                </div>
-                <div class="d-flex justify-content-between align-items-center py-2">
-                    <span class="text-secondary">Active Sensors</span>
-                    <span class="fw-bold text-success" id="statSensors">-</span>
+            <div class="agent-workspace">
+                <div class="orbit-container">
+                    <!-- Top - Processing -->
+                    <div class="orbital-widget top">
+                        <div class="widget-title"><i class="bi bi-cpu"></i> Processing</div>
+                        <div class="mini-grid" id="miniGrid">
+                            <div class="mini-node"><i class="bi bi-diagram-3"></i></div>
+                            <div class="mini-node"><i class="bi bi-lightning-charge"></i></div>
+                            <div class="mini-node"><i class="bi bi-memory"></i></div>
+                            <div class="mini-node"><i class="bi bi-hdd"></i></div>
+                            <div class="mini-node"><i class="bi bi-terminal"></i></div>
+                        </div>
+                    </div>
+
+                    <!-- Bottom - Memory -->
+                    <div class="orbital-widget bottom">
+                        <div class="widget-title"><i class="bi bi-memory"></i> Memory</div>
+                        <div class="widget-value" id="memValue">--</div>
+                        <div class="widget-sub">MB used</div>
+                        <div class="mini-memory" id="miniMemory"></div>
+                    </div>
+
+                    <!-- Left - Data Stream -->
+                    <div class="orbital-widget left">
+                        <div class="widget-title"><i class="bi bi-receive"></i> Data Stream</div>
+                        <div class="mini-stream" id="miniStream">
+                            <div class="mini-stream-item">Waiting...</div>
+                        </div>
+                    </div>
+
+                    <!-- Right - Task Queue -->
+                    <div class="orbital-widget right">
+                        <div class="widget-title"><i class="bi bi-list-task"></i> Tasks</div>
+                        <div class="mini-tasks" id="miniTasks"></div>
+                    </div>
+
+                    <!-- Top-Left - Events -->
+                    <div class="orbital-widget top-left">
+                        <div class="widget-title"><i class="bi bi-lightning-charge"></i> Events</div>
+                        <div class="widget-value" id="eventsWidget">--</div>
+                        <div class="widget-sub">24h total</div>
+                        <div class="mini-progress">
+                            <div class="mini-progress-bar" id="eventsBar"></div>
+                        </div>
+                    </div>
+
+                    <!-- Top-Right - Detections -->
+                    <div class="orbital-widget top-right">
+                        <div class="widget-title"><i class="bi bi-shield-exclamation"></i> Detections</div>
+                        <div class="widget-value text-warning" id="detectionsWidget">--</div>
+                        <div class="widget-sub">active rules</div>
+                    </div>
+
+                    <!-- Bottom-Left - Schedules -->
+                    <div class="orbital-widget bottom-left">
+                        <div class="widget-title"><i class="bi bi-clock"></i> Schedules</div>
+                        <div class="widget-value text-info" id="schedulesWidget">--</div>
+                        <div class="widget-sub">active</div>
+                    </div>
+
+                    <!-- Bottom-Right - Sensors -->
+                    <div class="orbital-widget bottom-right">
+                        <div class="widget-title"><i class="bi bi-broadcast"></i> Sensors</div>
+                        <div class="widget-value text-success" id="sensorsWidget">--</div>
+                        <div class="widget-sub">online</div>
+                    </div>
+
+                    <!-- Central Agent -->
+                    <div class="agent-center">
+                        <div class="agent-avatar">
+                            <i class="bi bi-robot"></i>
+                        </div>
+                        <div class="agent-status">
+                            <div class="agent-status-dot"></div>
+                            <span id="agentStatus">Active</span>
+                        </div>
+                        <div class="agent-task" id="agentTaskText">Loading...</div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-    
-    <!-- Main Content -->
-    <div class="col-lg-9">
-        <!-- Stats Row -->
-        <div class="row g-3 mb-4">
-            <div class="col-6 col-lg-3">
-                <div class="card stat-card green">
-                    <div class="stat-value" id="eventsCount">-</div>
-                    <div class="stat-label">Total Events</div>
-                </div>
+
+    <!-- Right Sidebar - Approvals & Alerts -->
+    <div class="col-lg-3">
+        <!-- Approvals -->
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div><i class="bi bi-check-circle text-accent"></i> Approvals</div>
+                <span class="badge bg-warning text-dark" id="approvalsCountBadge" style="display: none;">0</span>
             </div>
-            <div class="col-6 col-lg-3">
-                <div class="card stat-card yellow">
-                    <div class="stat-value" id="detectionsCount">-</div>
-                    <div class="stat-label">Detections</div>
-                </div>
-            </div>
-            <div class="col-6 col-lg-3">
-                <div class="card stat-card blue">
-                    <div class="stat-value" id="schedulesCount">-</div>
-                    <div class="stat-label">Active Schedules</div>
-                </div>
-            </div>
-            <div class="col-6 col-lg-3">
-                <div class="card stat-card green">
-                    <div class="stat-value" id="reportsCount">-</div>
-                    <div class="stat-label">Reports</div>
+            <div class="log-container" id="approvalsList" style="max-height: 180px;">
+                <div class="empty-state small">
+                    <i class="bi bi-check-circle"></i>
+                    <p>No pending approvals</p>
                 </div>
             </div>
         </div>
-        
-        <!-- Quick Actions -->
-        <div class="row g-3 mb-4">
-            <div class="col-6 col-md-3">
-                <a href="/chat" class="text-decoration-none">
-                    <div class="card action-card">
-                        <i class="bi bi-robot"></i>
-                        <h6>AI Chat</h6>
-                        <p>Chat with the agent</p>
-                    </div>
-                </a>
+
+        <!-- Alerts -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div><i class="bi bi-bell text-danger"></i> Alerts</div>
+                <span class="badge bg-danger" id="alertsCountBadge" style="display: none;">0</span>
             </div>
-            <div class="col-6 col-md-3">
-                <a href="/diagnostics" class="text-decoration-none">
-                    <div class="card action-card">
-                        <i class="bi bi-terminal"></i>
-                        <h6>Diagnostics</h6>
-                        <p>Run system scans</p>
-                    </div>
-                </a>
-            </div>
-            <div class="col-6 col-md-3">
-                <a href="/monitor" class="text-decoration-none">
-                    <div class="card action-card">
-                        <i class="bi bi-realtime"></i>
-                        <h6>Live Monitor</h6>
-                        <p>Real-time activity</p>
-                    </div>
-                </a>
-            </div>
-            <div class="col-6 col-md-3">
-                <a href="/reports" class="text-decoration-none">
-                    <div class="card action-card">
-                        <i class="bi bi-journal-text"></i>
-                        <h6>Reports</h6>
-                        <p>Security reports</p>
-                    </div>
-                </a>
-            </div>
-        </div>
-        
-        <!-- Activity & Detections -->
-        <div class="row g-3">
-            <div class="col-lg-6">
-                <div class="card">
-                    <div class="card-header">
-                        <i class="bi bi-lightning-charge"></i>
-                        Recent Activity
-                        <button class="btn btn-sm btn-link text-secondary" onclick="loadActivity()">
-                            <i class="bi bi-arrow-clockwise"></i>
-                        </button>
-                    </div>
-                    <div class="log-container" id="activityLog">
-                        <div class="empty-state">
-                            <i class="bi bi-inbox"></i>
-                            <p>No recent activity</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-lg-6">
-                <div class="card">
-                    <div class="card-header">
-                        <i class="bi bi-shield-exclamation"></i>
-                        Recent Detections
-                        <button class="btn btn-sm btn-link text-secondary" onclick="loadActivity()">
-                            <i class="bi bi-arrow-clockwise"></i>
-                        </button>
-                    </div>
-                    <div class="log-container" id="detectionsLog">
-                        <div class="empty-state">
-                            <i class="bi bi-shield-check"></i>
-                            <p>No detections</p>
-                        </div>
-                    </div>
+            <div class="log-container" id="alertsList" style="max-height: 180px;">
+                <div class="empty-state small">
+                    <i class="bi bi-bell"></i>
+                    <p>No active alerts</p>
                 </div>
             </div>
         </div>
@@ -176,80 +131,198 @@
 
 {% block scripts %}
 <script>
-let activityInterval;
+const taskLabels = ['Monitoring sensors', 'Processing events', 'Checking detections', 'Analyzing patterns', 'Running diagnostics', 'Updating memory', 'Scanning files', 'Evaluating rules'];
+const icons = ['bi-cpu', 'bi-diagram-3', 'bi-lightning-charge', 'bi-memory', 'bi-terminal', 'bi-file-earmark-text', 'bi-hdd', 'bi-shield-check'];
 
-function loadActivity() {
-    showActivity();
-    fetch('/api/activity?count=30')
-        .then(r => r.json())
-        .then(data => {
-            // Update activity log
-            const activityDiv = document.getElementById('activityLog');
-            if (data.events && data.events.length > 0) {
-                activityDiv.innerHTML = data.events.slice(0, 15).map(e => {
-                    const type = e.sensor || 'unknown';
-                    return `<div class="log-entry">
-                        <span class="log-timestamp">${new Date(e.timestamp).toLocaleTimeString()}</span>
-                        <span class="log-badge ${type.replace('_sensor', '')}">${type}</span>
-                        <span class="text-light">${JSON.stringify(e.data).substring(0, 50)}</span>
-                    </div>`;
-                }).join('');
-            }
-            
-            // Update detections log
-            const detectionsDiv = document.getElementById('detectionsLog');
-            if (data.detections && data.detections.length > 0) {
-                detectionsDiv.innerHTML = data.detections.slice(0, 15).map(d => {
-                    return `<div class="log-entry">
-                        <span class="log-timestamp">${new Date(d.timestamp).toLocaleTimeString()}</span>
-                        <span class="log-badge detection">${d.rule}</span>
-                        <span class="text-light">${d.description || ''}</span>
-                    </div>`;
-                }).join('');
-            }
-        })
-        .catch(err => console.error('Activity load error:', err));
+function initWorkspace() {
+    for (let i = 0; i < 5; i++) {
+        document.getElementById('miniGrid').children[i].innerHTML = `<i class="bi ${icons[i]}"></i>`;
+    }
+    const mem = document.getElementById('miniMemory');
+    for (let i = 0; i < 8; i++) {
+        const block = document.createElement('div');
+        block.className = 'mini-mem-block';
+        block.id = 'mem' + i;
+        mem.appendChild(block);
+    }
+    loadRealData();
+    loadApprovals();
+    loadAlerts();
+    setInterval(loadRealData, 5000);
+    setInterval(loadApprovals, 10000);
+    setInterval(loadAlerts, 10000);
+    setInterval(updateProcessing, 1500);
+    setInterval(updateDataStream, 3000);
+    setInterval(updateTasks, 4000);
+    setInterval(updateMemory, 6000);
 }
 
-function loadStatus() {
-    fetch('/api/status')
+function loadApprovals() {
+    fetch('/api/approvals')
         .then(r => r.json())
         .then(data => {
-            document.getElementById('eventsCount').textContent = data.events_logged || 0;
-            document.getElementById('detectionsCount').textContent = data.detections || 0;
-            document.getElementById('schedulesCount').textContent = data.schedules || 0;
+            const container = document.getElementById('approvalsList');
+            const badge = document.getElementById('approvalsCountBadge');
+            const pending = data.approvals || [];
             
-            document.getElementById('statEvents').textContent = data.events_logged || 0;
-            document.getElementById('statDetections').textContent = data.detections || 0;
-            document.getElementById('statSchedules').textContent = data.schedules || 0;
-            
-            document.getElementById('sysUptime').textContent = data.uptime || '-';
-            document.getElementById('lastActivity').textContent = data.last_activity ? new Date(data.last_activity).toLocaleTimeString() : '-';
-            
-            document.getElementById('statEventsDay').textContent = data.events_24h || 0;
-            document.getElementById('statDetectionsDay').textContent = data.detections_24h || 0;
-            document.getElementById('statSensors').textContent = data.active_sensors || 0;
-            
-            fetch('/api/system/info')
-                .then(r => r.json())
-                .then(sys => {
-                    document.getElementById('sysPlatform').textContent = sys.platform || '-';
-                    document.getElementById('sysPython').textContent = sys.python_version || '-';
-                })
-                .catch(() => {});
-            
-            fetch('/api/reports/count')
-                .then(r => r.json())
-                .then(r => document.getElementById('reportsCount').textContent = r.count || 0)
-                .catch(() => document.getElementById('reportsCount').textContent = '0');
+            if (pending.length > 0) {
+                badge.textContent = pending.length;
+                badge.style.display = 'block';
+                container.innerHTML = pending.slice(0, 5).map(a => `
+                    <div class="log-entry">
+                        <span class="log-timestamp">${new Date(a.timestamp || Date.now()).toLocaleTimeString()}</span>
+                        <span class="text-light">${(a.action || 'Pending').substring(0, 25)}</span>
+                    </div>
+                `).join('');
+            } else {
+                badge.style.display = 'none';
+                container.innerHTML = '<div class="empty-state small"><i class="bi bi-check-circle"></i><p>No pending approvals</p></div>';
+            }
         })
-        .catch(err => console.error('Status load error:', err));
+        .catch(() => {
+            document.getElementById('approvalsCountBadge').style.display = 'none';
+        });
 }
 
-// Initial load
-loadActivity();
-loadStatus();
-setInterval(loadActivity, 5000);
-setInterval(loadStatus, 10000);
+function loadAlerts() {
+    fetch('/api/alerts')
+        .then(r => r.json())
+        .then(data => {
+            const container = document.getElementById('alertsList');
+            const badge = document.getElementById('alertsCountBadge');
+            const alerts = data.alerts || [];
+            const active = alerts.filter(a => a.status === 'open');
+            
+            if (active.length > 0) {
+                badge.textContent = active.length;
+                badge.style.display = 'block';
+                container.innerHTML = active.slice(0, 5).map(a => `
+                    <div class="log-entry">
+                        <span class="log-timestamp">${new Date(a.timestamp || Date.now()).toLocaleTimeString()}</span>
+                        <span class="text-light">${(a.message || 'Alert').substring(0, 25)}</span>
+                    </div>
+                `).join('');
+            } else {
+                badge.style.display = 'none';
+                container.innerHTML = '<div class="empty-state small"><i class="bi bi-bell"></i><p>No active alerts</p></div>';
+            }
+        })
+        .catch(() => {
+            document.getElementById('alertsCountBadge').style.display = 'none';
+        });
+}
+
+async function loadRealData() {
+    try {
+        const [statusRes, activityRes] = await Promise.all([
+            fetch('/api/status'),
+            fetch('/api/activity?count=20')
+        ]);
+        const status = await statusRes.json();
+        const activity = await activityRes.json();
+        
+        document.getElementById('eventsWidget').textContent = status.events_24h || 0;
+        document.getElementById('detectionsWidget').textContent = status.detections || 0;
+        document.getElementById('schedulesWidget').textContent = status.schedules || 0;
+        document.getElementById('sensorsWidget').textContent = status.active_sensors || 0;
+        
+        const eventsBar = document.getElementById('eventsBar');
+        if (eventsBar && status.events_24h) {
+            const percent = Math.min(100, (status.events_24h / 100) * 100);
+            eventsBar.style.width = percent + '%';
+        }
+        
+        document.getElementById('agentStatus').textContent = status.status === 'running' ? 'Active' : 'Idle';
+        
+        if (activity.events && activity.events.length > 0) {
+            document.getElementById('agentTaskText').textContent = 'Processing events';
+        } else {
+            document.getElementById('agentTaskText').textContent = 'Monitoring';
+        }
+    } catch (e) {
+        document.getElementById('eventsWidget').textContent = '--';
+        document.getElementById('detectionsWidget').textContent = '--';
+        document.getElementById('schedulesWidget').textContent = '--';
+        document.getElementById('sensorsWidget').textContent = '--';
+        document.getElementById('agentStatus').textContent = 'Offline';
+        document.getElementById('agentTaskText').textContent = 'Connecting...';
+    }
+}
+
+async function updateProcessing() {
+    const nodes = document.querySelectorAll('.mini-node');
+    nodes.forEach(n => n.classList.remove('active'));
+    try {
+        const r = await fetch('/api/status');
+        const data = await r.json();
+        if (data.status === 'running') {
+            const idx = Math.floor(Math.random() * nodes.length);
+            nodes[idx].classList.add('active');
+        }
+    } catch {
+        nodes[0].classList.add('active');
+    }
+}
+
+async function updateDataStream() {
+    const stream = document.getElementById('miniStream');
+    if (!stream) return;
+    try {
+        const r = await fetch('/api/activity?count=5');
+        const data = await r.json();
+        stream.innerHTML = '';
+        if (data.events && data.events.length > 0) {
+            data.events.slice(0, 3).forEach(e => {
+                const item = document.createElement('div');
+                item.className = 'mini-stream-item event';
+                item.textContent = (e.sensor || 'event').substring(0, 12);
+                stream.appendChild(item);
+            });
+        } else {
+            stream.innerHTML = '<div class="mini-stream-item">Idle</div>';
+        }
+    } catch {
+        stream.innerHTML = '<div class="mini-stream-item">Error</div>';
+    }
+}
+
+async function updateTasks() {
+    const queue = document.getElementById('miniTasks');
+    if (!queue) return;
+    const idx = Math.floor(Math.random() * taskLabels.length);
+    const item = document.createElement('div');
+    item.className = 'mini-task';
+    item.innerHTML = `<i class="bi ${icons[idx]}"></i>${taskLabels[idx]}`;
+    queue.appendChild(item);
+    while (queue.children.length > 3) {
+        queue.removeChild(queue.firstChild);
+    }
+}
+
+async function updateMemory() {
+    try {
+        const r = await fetch('/api/system/info');
+        const data = await r.json();
+        const memUsed = data.memory_usage || Math.floor(Math.random() * 50 + 20);
+        document.getElementById('memValue').textContent = memUsed;
+        
+        const blocks = Math.floor(memUsed / 10);
+        for (let i = 0; i < 8; i++) {
+            const block = document.getElementById('mem' + i);
+            if (block) block.classList.toggle('used', i < blocks);
+        }
+    } catch {
+        const count = Math.floor(Math.random() * 4) + 4;
+        document.getElementById('memValue').textContent = count * 10;
+        for (let i = 0; i < 8; i++) {
+            const block = document.getElementById('mem' + i);
+            if (block) block.classList.toggle('used', i < count);
+        }
+    }
+}
+
+if (document.querySelector('.agent-workspace')) {
+    initWorkspace();
+}
 </script>
 {% endblock %}
