@@ -169,6 +169,37 @@ central_agent/reports/YYYY-MM-DD/report_{session_id}_{timestamp}.md
 - **Multiple Interfaces**: HTTP (8000), CLI, Redis/RabbitMQ, File triggers, WebSocket (8001)
 - **LLM Analysis**: Single LLM loop for security analysis
 - **Report Generation**: Markdown reports with metadata
+- **Schedule Notifications**: Callbacks for schedule run events
+- **Real-time Dashboard**: Web UI with agent reasoning panel
+
+## Web Dashboard
+
+The Flask web dashboard provides real-time monitoring:
+
+```
+http://localhost:5000
+```
+
+### Dashboard Features
+
+- **Agent Workspace**: Animated orbital view with agent status
+- **Info Widgets**: Events, Detections, Schedules, Sensors (bottom row)
+- **Reasoning Panel**: Real-time agent reasoning messages
+- **Schedules Panel**: View/manage scheduled diagnostics
+- **Approvals Panel**: Pending action approvals
+- **Alerts Panel**: Active security alerts
+
+### Routes
+
+| Route | Description |
+|-------|-------------|
+| `/` | Main dashboard |
+| `/diagnostics` | Diagnostic collectors view |
+| `/monitor` | System monitor |
+| `/reports` | Generated reports |
+| `/alerts` | Alert management |
+| `/approvals` | Approval queue |
+| `/docs` | API documentation |
 
 ## API Endpoints
 
