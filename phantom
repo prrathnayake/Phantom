@@ -20,16 +20,16 @@ def cmd_status():
 
 def cmd_start():
     print("\n[STARTING CONTAINERS]")
-    run_cmd('docker compose -f docker-compose.yml up -d', check=False)
+    run_cmd('docker compose -f docker/docker-compose.yml up -d', check=False)
     print("Containers started.")
 
 
 def cmd_stop():
     print("\n[STOPPING CONTAINERS]")
     try:
-        run_cmd('docker compose -f docker-compose.yml stop', check=False)
+        run_cmd('docker compose -f docker/docker-compose.yml stop', check=False)
     except:
-        run_cmd('docker-compose -f docker-compose.yml stop', check=False)
+        run_cmd('docker-compose -f docker/docker-compose.yml stop', check=False)
     print("Containers stopped.")
     status_check()
 
@@ -45,7 +45,7 @@ def cmd_restart(service=None):
         run_cmd(f"docker restart phantom-{service}", check=False)
     else:
         print("\n[RESTARTING ALL]")
-        run_cmd('docker compose -f docker-compose.yml restart', check=False)
+        run_cmd('docker compose -f docker/docker-compose.yml restart', check=False)
 
 
 def cmd_logs(service="agent", lines=50):
@@ -62,12 +62,12 @@ def cmd_logs_follow(service="agent"):
 
 
 def cmd_ps():
-    run_cmd('docker compose -f docker-compose.yml ps', check=False)
+    run_cmd('docker compose -f docker/docker-compose.yml ps', check=False)
 
 
 def cmd_build():
     print("\n[BUILDING CONTAINERS]")
-    run_cmd('docker compose -f docker-compose.yml build --no-cache', check=False)
+    run_cmd('docker compose -f docker/docker-compose.yml build --no-cache', check=False)
     print("Build complete.")
 
 

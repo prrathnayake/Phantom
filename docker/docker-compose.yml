@@ -4,8 +4,8 @@ services:
   # Main Phantom AI Agent
   agent:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
     container_name: phantom-agent
     environment:
       - AGENT_LOG_DIR=/app/.logs
@@ -48,8 +48,8 @@ services:
   # Flask Web Dashboard
   dashboard:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
     container_name: phantom-dashboard
     command: ["python", "-m", "flask", "--app", "apps.web.app:create_app", "run", "--host", "0.0.0.0", "--port", "5000"]
     environment:
@@ -70,8 +70,8 @@ services:
   # TUI Dashboard
   tui:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
     container_name: phantom-tui
     command: ["python", "-m", "dashboard"]
     environment:
@@ -167,8 +167,8 @@ services:
   # CLI Management Interface
   cli:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/Dockerfile
     container_name: phantom-cli
     command: ["python", "-m", "cli"]
     environment:
