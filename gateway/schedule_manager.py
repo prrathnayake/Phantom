@@ -13,6 +13,22 @@ from typing import Any, Callable, Dict, List, Optional
 import config
 from utils.debug_log import debug_logger
 
+SCHEDULE_NOTIFICATIONS: List[Callable[[Dict], None]] = []
+
+
+def on_schedule_run(callback: Callable[[Dict], None]) -> None:
+    """Register callback for schedule run notifications."""
+    SCHEDULE_NOTIFICATIONS.append(callback)
+
+
+def _notify_schedule_run(result: dict) -> None:
+    """Notify all registered callbacks of schedule run."""
+    for callback in SCHEDULE_NOTIFICATIONS:
+        try:
+            callback(result)
+        except Exception:
+            pass
+
 
 @dataclass
 class Schedule:
@@ -199,6 +215,8 @@ class ScheduleManager:
                 "name": name,
                 "has_data": bool(context)
             })
+            
+            _notify_schedule_run(result)
             
             return result
         

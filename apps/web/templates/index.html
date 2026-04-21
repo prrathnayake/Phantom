@@ -6,16 +6,16 @@
 <div class="row g-3">
     <!-- Main Agent Workspace -->
     <div class="col-lg-9">
-        <div class="card" style="min-height: 550px;">
+        <div class="card" style="min-height: 700px;">
             <div class="card-header">
                 <div class="d-flex align-items-center gap-2">
                     <i class="bi bi-robot text-accent"></i>
                     <span>Agent Workspace</span>
                 </div>
             </div>
-            <div class="agent-workspace">
+            <div class="agent-workspace" style="height: 600px;">
                 <div class="orbit-container">
-                    <!-- Top - Processing -->
+                    <!-- Top - Processing (keep top) -->
                     <div class="orbital-widget top">
                         <div class="widget-title"><i class="bi bi-cpu"></i> Processing</div>
                         <div class="mini-grid" id="miniGrid">
@@ -27,7 +27,7 @@
                         </div>
                     </div>
 
-                    <!-- Bottom - Memory -->
+                    <!-- Bottom - Memory (keep bottom) -->
                     <div class="orbital-widget bottom">
                         <div class="widget-title"><i class="bi bi-memory"></i> Memory</div>
                         <div class="widget-value" id="memValue">--</div>
@@ -49,35 +49,38 @@
                         <div class="mini-tasks" id="miniTasks"></div>
                     </div>
 
-                    <!-- Top-Left - Events -->
-                    <div class="orbital-widget top-left">
-                        <div class="widget-title"><i class="bi bi-lightning-charge"></i> Events</div>
-                        <div class="widget-value" id="eventsWidget">--</div>
-                        <div class="widget-sub">24h total</div>
-                        <div class="mini-progress">
-                            <div class="mini-progress-bar" id="eventsBar"></div>
+                    <!-- Info widgets moved to bottom row -->
+                    <div class="info-widget-row">
+                        <div class="orbital-widget-info">
+                            <div class="widget-title"><i class="bi bi-lightning-charge"></i> Events</div>
+                            <div class="widget-value" id="eventsWidget">--</div>
+                            <div class="widget-sub">24h total</div>
+                        </div>
+                        <div class="orbital-widget-info">
+                            <div class="widget-title"><i class="bi bi-shield-exclamation"></i> Detections</div>
+                            <div class="widget-value text-warning" id="detectionsWidget">--</div>
+                            <div class="widget-sub">active rules</div>
+                        </div>
+                        <div class="orbital-widget-info">
+                            <div class="widget-title"><i class="bi bi-clock"></i> Schedules</div>
+                            <div class="widget-value text-info" id="schedulesWidget">--</div>
+                            <div class="widget-sub">active</div>
+                        </div>
+                        <div class="orbital-widget-info">
+                            <div class="widget-title"><i class="bi bi-broadcast"></i> Sensors</div>
+                            <div class="widget-value text-success" id="sensorsWidget">--</div>
+                            <div class="widget-sub">online</div>
                         </div>
                     </div>
 
-                    <!-- Top-Right - Detections -->
-                    <div class="orbital-widget top-right">
-                        <div class="widget-title"><i class="bi bi-shield-exclamation"></i> Detections</div>
-                        <div class="widget-value text-warning" id="detectionsWidget">--</div>
-                        <div class="widget-sub">active rules</div>
-                    </div>
-
-                    <!-- Bottom-Left - Schedules -->
-                    <div class="orbital-widget bottom-left">
-                        <div class="widget-title"><i class="bi bi-clock"></i> Schedules</div>
-                        <div class="widget-value text-info" id="schedulesWidget">--</div>
-                        <div class="widget-sub">active</div>
-                    </div>
-
-                    <!-- Bottom-Right - Sensors -->
-                    <div class="orbital-widget bottom-right">
-                        <div class="widget-title"><i class="bi bi-broadcast"></i> Sensors</div>
-                        <div class="widget-value text-success" id="sensorsWidget">--</div>
-                        <div class="widget-sub">online</div>
+                    <!-- Reasoning messages panel (inside orbit) -->
+                    <div class="reasoning-panel" id="reasoningPanel">
+                        <div class="reasoning-header">
+                            <i class="bi bi-cloud"></i> Agent Reasoning
+                        </div>
+                        <div class="reasoning-messages" id="reasoningMessages">
+                            <div class="reasoning-msg system">System initializing...</div>
+                        </div>
                     </div>
 
                     <!-- Central Agent -->
@@ -187,6 +190,36 @@
 const taskLabels = ['Monitoring sensors', 'Processing events', 'Checking detections', 'Analyzing patterns', 'Running diagnostics', 'Updating memory', 'Scanning files', 'Evaluating rules'];
 const icons = ['bi-cpu', 'bi-diagram-3', 'bi-lightning-charge', 'bi-memory', 'bi-terminal', 'bi-file-earmark-text', 'bi-hdd', 'bi-shield-check'];
 
+const reasoningMessages = [];
+const MAX_REASONING_MSGS = 10;
+
+function addReasoningMsg(text, type = 'system') {
+    const container = document.getElementById('reasoningMessages');
+    if (!container) return;
+    
+    const msg = document.createElement('div');
+    msg.className = 'reasoning-msg ' + type;
+    msg.textContent = text;
+    container.appendChild(msg);
+    
+    while (container.children.length > MAX_REASONING_MSGS) {
+        container.removeChild(container.firstChild);
+    }
+    container.scrollTop = container.scrollHeight;
+}
+
+function updateReasoningPanel() {
+    const status = document.getElementById('agentStatus');
+    const taskText = document.getElementById('agentTaskText');
+    
+    if (status && taskText) {
+        const isActive = status.textContent === 'Active';
+        if (isActive && Math.random() > 0.7) {
+            addReasoningMsg(taskText.textContent || 'Processing...', 'agent');
+        }
+    }
+}
+
 function initWorkspace() {
     for (let i = 0; i < 5; i++) {
         document.getElementById('miniGrid').children[i].innerHTML = `<i class="bi ${icons[i]}"></i>`;
@@ -198,6 +231,8 @@ function initWorkspace() {
         block.id = 'mem' + i;
         mem.appendChild(block);
     }
+    
+    addReasoningMsg('Agent initialized', 'system');
     loadRealData();
     loadSchedules();
     loadApprovals();
@@ -210,6 +245,7 @@ function initWorkspace() {
     setInterval(updateDataStream, 3000);
     setInterval(updateTasks, 4000);
     setInterval(updateMemory, 6000);
+    setInterval(updateReasoningPanel, 8000);
 }
 
 function loadSchedules() {
@@ -353,16 +389,18 @@ function loadAlerts() {
 
 async function loadRealData() {
     try {
-        const [statusRes, activityRes] = await Promise.all([
+        const [statusRes, activityRes, schedRes] = await Promise.all([
             fetch('/api/status'),
-            fetch('/api/activity?count=20')
+            fetch('/api/activity?count=20'),
+            fetch('/api/schedules')
         ]);
         const status = await statusRes.json();
         const activity = await activityRes.json();
+        const schedData = await schedRes.json();
         
         document.getElementById('eventsWidget').textContent = status.events_24h || 0;
         document.getElementById('detectionsWidget').textContent = status.detections || 0;
-        document.getElementById('schedulesWidget').textContent = status.schedules || 0;
+        document.getElementById('schedulesWidget').textContent = Object.keys(schedData.schedules || schedData || {}).length;
         document.getElementById('sensorsWidget').textContent = status.active_sensors || 0;
         
         const eventsBar = document.getElementById('eventsBar');

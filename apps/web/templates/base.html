@@ -902,6 +902,100 @@
         .orbital-widget.bottom-left { animation-delay: 1.2s; }
         .orbital-widget.bottom-right { animation-delay: 1.7s; }
 
+        /* Info widget row - bottom aligned */
+        .info-widget-row {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 1rem;
+            z-index: 5;
+        }
+
+        .orbital-widget-info {
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            padding: 0.5rem 0.75rem;
+            min-width: 90px;
+            text-align: center;
+            animation: widgetFloat 4s ease-in-out infinite;
+        }
+
+        .orbital-widget-info .widget-title {
+            font-size: 0.55rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .orbital-widget-info .widget-value {
+            font-size: 1.2rem;
+        }
+
+        .orbital-widget-info .widget-sub {
+            font-size: 0.55rem;
+        }
+
+        /* Reasoning panel */
+        .reasoning-panel {
+            position: absolute;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 280px;
+            max-height: 120px;
+            background: var(--bg-dark);
+            border: 1px solid var(--accent-dim);
+            border-radius: 0.5rem;
+            overflow: hidden;
+            z-index: 6;
+        }
+
+        .reasoning-header {
+            font-size: 0.6rem;
+            font-weight: 600;
+            color: var(--accent);
+            padding: 0.375rem 0.5rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .reasoning-messages {
+            padding: 0.375rem;
+            max-height: 80px;
+            overflow-y: auto;
+            font-size: 0.55rem;
+        }
+
+        .reasoning-msg {
+            padding: 0.25rem 0.375rem;
+            margin-bottom: 0.25rem;
+            border-radius: 0.25rem;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            animation: msgSlide 0.3s ease-out;
+        }
+
+        .reasoning-msg.system {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .reasoning-msg.agent {
+            border-left: 2px solid var(--accent);
+        }
+
+        .reasoning-msg.thinking {
+            color: var(--warning);
+        }
+
+        @keyframes msgSlide {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         .widget-title {
             font-size: 0.65rem;
             font-weight: 600;
