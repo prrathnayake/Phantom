@@ -27,7 +27,6 @@ services:
     volumes:
       - ./:/app:ro
       - agent-logs:/app/.logs
-      - agent-data:/app/data
     ports:
       - "8000:8000"
       - "8001:8001"
@@ -186,7 +185,6 @@ services:
     volumes:
       - ./:/app:ro
       - agent-logs:/app/.logs:ro
-      - agent-data:/app/data:ro
     depends_on:
       - agent
       - redis
@@ -199,7 +197,6 @@ services:
 
 volumes:
   agent-logs:
-  agent-data:
   redis-data:
   postgres-data:
   elasticsearch-data:
