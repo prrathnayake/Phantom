@@ -217,7 +217,7 @@ function loadSchedules() {
         .then(r => r.json())
         .then(data => {
             const container = document.getElementById('schedulesList');
-            const schedules = data.schedules || {};
+            const schedules = data.schedules || data;
             const keys = Object.keys(schedules);
             
             if (keys.length > 0) {
