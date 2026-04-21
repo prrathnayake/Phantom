@@ -39,7 +39,7 @@ A centralized security monitoring system with Gateway + Central Agent architectu
 ## Directory Layout
 
 ```
-suraksha/
+phantom/
 ├── main.py              # Entry point
 ├── config.py           # Configuration
 ├── central_agent/      # Central intelligence

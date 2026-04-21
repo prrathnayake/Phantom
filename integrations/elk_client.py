@@ -20,7 +20,7 @@ class ELKClient:
         self,
         url: Optional[str] = None,
         api_key: Optional[str] = None,
-        index_prefix: str = "suraksha"
+        index_prefix: str = "phantom"
     ):
         self.url = url or config.ELASTIC_URL
         self.api_key = api_key or config.ELASTIC_API_KEY
@@ -115,7 +115,7 @@ class ELKClient:
             "@timestamp": timestamp or datetime.utcnow().isoformat(),
             "sensor": sensor,
             "data": data,
-            "source": "suraksha-sensor"
+            "source": "phantom-sensor"
         }
         
         return self._send_doc(self._get_index("events"), doc)
@@ -153,7 +153,7 @@ class ELKClient:
             "affected_assets": affected_assets,
             "recommended_action": recommended_action,
             "status": status,
-            "source": "suraksha-alert"
+            "source": "phantom-alert"
         }
         
         return self._send_doc(self._get_index("alerts"), doc)
@@ -182,7 +182,7 @@ class ELKClient:
             "description": description,
             "details": details,
             "severity": severity,
-            "source": "suraksha-detection"
+            "source": "phantom-detection"
         }
         
         return self._send_doc(self._get_index("detections"), doc)
@@ -214,7 +214,7 @@ class ELKClient:
             "reason": reason,
             "risk_level": risk_level,
             "status": status,
-            "source": "suraksha-approval"
+            "source": "phantom-approval"
         }
         
         return self._send_doc(self._get_index("approvals"), doc)
@@ -272,7 +272,7 @@ class ELKClient:
         """Search documents in Elasticsearch.
         
         Args:
-            index_pattern: Index pattern (e.g., "suraksha-alerts-*")
+            index_pattern: Index pattern (e.g., "phantom-alerts-*")
             query: Elasticsearch query
             size: Number of results
             
@@ -312,5 +312,5 @@ def create_elk_client() -> ELKClient:
     return ELKClient(
         url=config.ELASTIC_URL,
         api_key=config.ELASTIC_API_KEY,
-        index_prefix=getattr(config, 'ELASTIC_INDEX_PREFIX', 'suraksha')
+        index_prefix=getattr(config, 'ELASTIC_INDEX_PREFIX', 'phantom')
     )

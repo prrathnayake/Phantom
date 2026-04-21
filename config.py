@@ -160,7 +160,7 @@ SIEM_INDEX = os.environ.get("AGENT_SIEM_INDEX")
 # Elasticsearch
 ELASTIC_URL = os.environ.get("ELASTIC_URL")
 ELASTIC_API_KEY = os.environ.get("ELASTIC_API_KEY")
-ELASTIC_INDEX_PREFIX = os.environ.get("ELASTIC_INDEX_PREFIX", "suraksha")
+ELASTIC_INDEX_PREFIX = os.environ.get("ELASTIC_INDEX_PREFIX", "phantom")
 
 # AWS CloudWatch
 CLOUDWATCH_REGION = os.environ.get("AWS_DEFAULT_REGION", "us-east-1")

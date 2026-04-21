@@ -58,7 +58,7 @@ class PagerDutyClient:
             "event_action": event_action,
             "payload": payload,
             "client": "Suraksha Security Agent",
-            "client_url": "https://github.com/suraksha-agent"
+            "client_url": "https://github.com/phantom-agent"
         }
         
         if dedup_key:
@@ -111,7 +111,7 @@ class PagerDutyClient:
         payload = {
             "summary": f"[{severity.upper()}] {title}",
             "severity": self._get_severity(severity),
-            "source": "suraksha-agent",
+            "source": "phantom-agent",
             "timestamp": datetime.utcnow().isoformat(),
             "custom_details": {
                 "alert_id": alert_id,
@@ -144,7 +144,7 @@ class PagerDutyClient:
         payload = {
             "summary": f"[APPROVAL] {action} - Risk: {risk_level.upper()}",
             "severity": self._get_severity(risk_level),
-            "source": "suraksha-approval",
+            "source": "phantom-approval",
             "timestamp": datetime.utcnow().isoformat(),
             "custom_details": {
                 "approval_id": approval_id,
@@ -170,7 +170,7 @@ class PagerDutyClient:
         payload = {
             "summary": message,
             "severity": "warning",
-            "source": "suraksha-agent"
+            "source": "phantom-agent"
         }
         
         return self._send_event("acknowledge", payload, dedup_key=incident_key)
@@ -188,7 +188,7 @@ class PagerDutyClient:
         payload = {
             "summary": message,
             "severity": "info",
-            "source": "suraksha-agent"
+            "source": "phantom-agent"
         }
         
         return self._send_event("resolve", payload, dedup_key=incident_key)
@@ -214,7 +214,7 @@ class PagerDutyClient:
         payload = {
             "summary": f"[DETECTION] {rule}: {description[:100]}",
             "severity": self._get_severity(severity),
-            "source": "suraksha-detection",
+            "source": "phantom-detection",
             "timestamp": datetime.utcnow().isoformat(),
             "custom_details": {
                 "rule": rule,

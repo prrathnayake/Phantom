@@ -56,7 +56,8 @@ htmlcov/
 central_agent/reports/*.json
 central_agent/reports/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/
 
-# Docker
+# Runtime PID files
+*.pid
 
 # Docker
 .kilo/

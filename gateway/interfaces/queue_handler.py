@@ -27,7 +27,7 @@ class QueueHandler:
         self,
         queue_type: str = "redis",
         queue_url: str = "redis://localhost:6379",
-        queue_name: str = "suraksha:payloads",
+        queue_name: str = "phantom:payloads",
         central_agent: Optional[Any] = None
     ):
         self.queue_type = queue_type
@@ -231,7 +231,7 @@ class QueueHandler:
 def create_queue_handler(
     queue_type: str = "redis",
     queue_url: str = "redis://localhost:6379",
-    queue_name: str = "suraksha:payloads",
+    queue_name: str = "phantom:payloads",
     central_agent: Optional[Any] = None
 ) -> QueueHandler:
     """Create queue handler.

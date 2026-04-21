@@ -35,7 +35,7 @@ class SIEMConfig:
     url: str
     api_key: Optional[str] = None
     index: Optional[str] = None
-    host: str = "suraksha-agent"
+    host: str = "phantom-agent"
     enabled: bool = True
 
 
@@ -113,8 +113,8 @@ class SIEMClient:
         return {
             "time": datetime.utcnow().isoformat(),
             "host": self.config.host,
-            "source": "suraksha-agent",
-            "sourcetype": f"suraksha:{event_type}",
+            "source": "phantom-agent",
+            "sourcetype": f"phantom:{event_type}",
             "event": event
         }
     
@@ -152,7 +152,7 @@ class SIEMClient:
             },
             "agent": {
                 "name": self.config.host,
-                "id": "suraksha"
+                "id": "phantom"
             },
             "full_log": json.dumps(event)
         }
@@ -177,7 +177,7 @@ class SIEMClient:
         return False
     
     def _send_elastic(self, event: Dict[str, Any], event_type: str) -> bool:
-        index_name = self.config.index or f"suraksha-{event_type}-{datetime.utcnow().strftime('%Y.%m.%d')}"
+        index_name = self.config.index or f"phantom-{event_type}-{datetime.utcnow().strftime('%Y.%m.%d')}"
         url = urljoin(self.config.url, f"/{index_name}/_doc/")
         
         headers = {"Content-Type": "application/json"}
@@ -286,7 +286,7 @@ class SIEMClient:
             "severity": severity,
             "affected_assets": affected_assets,
             "recommended_action": recommended_action,
-            "source": "suraksha-alert"
+            "source": "phantom-alert"
         }
         
         return self.send_event(event, "alert", alert_id)
@@ -311,7 +311,7 @@ class SIEMClient:
             "rule": rule,
             "description": description,
             "details": details,
-            "source": "suraksha-detection"
+            "source": "phantom-detection"
         }
         
         return self.send_event(event, "detection", f"{rule}-{datetime.utcnow().timestamp()}")
@@ -339,7 +339,7 @@ class SIEMClient:
             "action": action,
             "status": status,
             "risk_level": risk_level,
-            "source": "suraksha-approval"
+            "source": "phantom-approval"
         }
         
         return self.send_event(event, "audit", approval_id)
