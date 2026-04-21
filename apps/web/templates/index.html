@@ -15,57 +15,64 @@
             </div>
             <div class="agent-workspace" style="height: 600px;">
                 <div class="orbit-container">
-                    <!-- Top - Processing (keep top) -->
-                    <div class="orbital-widget top">
-                        <div class="widget-title"><i class="bi bi-cpu"></i> Processing</div>
-                        <div class="mini-grid" id="miniGrid">
-                            <div class="mini-node"><i class="bi bi-diagram-3"></i></div>
-                            <div class="mini-node"><i class="bi bi-lightning-charge"></i></div>
-                            <div class="mini-node"><i class="bi bi-memory"></i></div>
-                            <div class="mini-node"><i class="bi bi-hdd"></i></div>
-                            <div class="mini-node"><i class="bi bi-terminal"></i></div>
+                    <!-- All widgets in bottom row -->
+                    <div class="info-widget-row" style="flex-wrap: wrap; max-width: 90%;">
+                        <!-- Processing -->
+                        <div class="orbital-widget-info">
+                            <div class="widget-title"><i class="bi bi-cpu"></i> Processing</div>
+                            <div class="mini-grid" id="miniGrid">
+                                <div class="mini-node"><i class="bi bi-diagram-3"></i></div>
+                                <div class="mini-node"><i class="bi bi-lightning-charge"></i></div>
+                                <div class="mini-node"><i class="bi bi-memory"></i></div>
+                                <div class="mini-node"><i class="bi bi-hdd"></i></div>
+                                <div class="mini-node"><i class="bi bi-terminal"></i></div>
+                            </div>
                         </div>
-                    </div>
-
-                    <!-- Bottom - Memory (keep bottom) -->
-                    <div class="orbital-widget bottom">
-                        <div class="widget-title"><i class="bi bi-memory"></i> Memory</div>
-                        <div class="widget-value" id="memValue">--</div>
-                        <div class="widget-sub">MB used</div>
-                        <div class="mini-memory" id="miniMemory"></div>
-                    </div>
-
-                    <!-- Left - Data Stream -->
-                    <div class="orbital-widget left">
-                        <div class="widget-title"><i class="bi bi-receive"></i> Data Stream</div>
-                        <div class="mini-stream" id="miniStream">
-                            <div class="mini-stream-item">Waiting...</div>
+                        
+                        <!-- Memory -->
+                        <div class="orbital-widget-info">
+                            <div class="widget-title"><i class="bi bi-memory"></i> Memory</div>
+                            <div class="widget-value" id="memValue">--</div>
+                            <div class="widget-sub">MB used</div>
+                            <div class="mini-memory" id="miniMemory"></div>
                         </div>
-                    </div>
-
-                    <!-- Right - Task Queue -->
-                    <div class="orbital-widget right">
-                        <div class="widget-title"><i class="bi bi-list-task"></i> Tasks</div>
-                        <div class="mini-tasks" id="miniTasks"></div>
-                    </div>
-
-                    <!-- Info widgets moved to bottom row -->
-                    <div class="info-widget-row">
+                        
+                        <!-- Data Stream -->
+                        <div class="orbital-widget-info">
+                            <div class="widget-title"><i class="bi bi-receive"></i> Data Stream</div>
+                            <div class="mini-stream" id="miniStream">
+                                <div class="mini-stream-item">Waiting...</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Tasks -->
+                        <div class="orbital-widget-info">
+                            <div class="widget-title"><i class="bi bi-list-task"></i> Tasks</div>
+                            <div class="mini-tasks" id="miniTasks"></div>
+                        </div>
+                        
+                        <!-- Events -->
                         <div class="orbital-widget-info">
                             <div class="widget-title"><i class="bi bi-lightning-charge"></i> Events</div>
                             <div class="widget-value" id="eventsWidget">--</div>
                             <div class="widget-sub">24h total</div>
                         </div>
+                        
+                        <!-- Detections -->
                         <div class="orbital-widget-info">
                             <div class="widget-title"><i class="bi bi-shield-exclamation"></i> Detections</div>
                             <div class="widget-value text-warning" id="detectionsWidget">--</div>
                             <div class="widget-sub">active rules</div>
                         </div>
+                        
+                        <!-- Schedules -->
                         <div class="orbital-widget-info">
                             <div class="widget-title"><i class="bi bi-clock"></i> Schedules</div>
                             <div class="widget-value text-info" id="schedulesWidget">--</div>
                             <div class="widget-sub">active</div>
                         </div>
+                        
+                        <!-- Sensors -->
                         <div class="orbital-widget-info">
                             <div class="widget-title"><i class="bi bi-broadcast"></i> Sensors</div>
                             <div class="widget-value text-success" id="sensorsWidget">--</div>
