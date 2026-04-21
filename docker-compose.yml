@@ -1,6 +1,7 @@
 version: "3.8"
 
 services:
+  # Main Phantom AI Agent
   agent:
     build:
       context: .
@@ -11,39 +12,197 @@ services:
       - AGENT_WATCH_DIR=/app
       - AGENT_DEBUG=${AGENT_DEBUG:-false}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
-      - OPENROUTER_MODEL=${OPENROUTER_MODEL:-openrouter-gpt-3.5-turbo}
+      - OPENROUTER_MODEL=${OPENROUTER_MODEL:-openrouter/gpt-3.5-turbo}
       - AGENT_THRESHOLD_PROCESS_COUNT=${AGENT_THRESHOLD_PROCESS_COUNT:-400}
       - AGENT_THRESHOLD_OPEN_PORTS=${AGENT_THRESHOLD_OPEN_PORTS:-100}
       - AGENT_THRESHOLD_FILE_CHANGES=${AGENT_THRESHOLD_FILE_CHANGES:-500}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=${POSTGRES_DB:-phantom}
+      - POSTGRES_USER=${POSTGRES_USER:-phantom}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-phantom}
+      - ELASTIC_URL=http://elasticsearch:9200
     volumes:
       - ./:/app:ro
       - agent-logs:/app/.logs
+      - agent-data:/app/data
     ports:
       - "8000:8000"
+      - "8001:8001"
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - phantom-net
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/health', timeout=2)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
+  # Flask Web Dashboard
   dashboard:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: phantom-dashboard
-    command: ["python", "-m", "dashboard"]
+    command: ["python", "-m", "flask", "--app", "apps.web.app:create_app", "run", "--host", "0.0.0.0", "--port", "5000"]
     environment:
       - AGENT_LOG_DIR=/app/.logs
+      - FLASK_ENV=production
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     volumes:
       - agent-logs:/app/.logs:ro
     ports:
-      - "8001:8001"
+      - "5000:5000"
     depends_on:
       - agent
     restart: unless-stopped
     networks:
       - phantom-net
 
+  # TUI Dashboard
+  tui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: phantom-tui
+    command: ["python", "-m", "dashboard"]
+    environment:
+      - AGENT_LOG_DIR=/app/.logs
+      - TERM=xterm-256color
+    volumes:
+      - agent-logs:/app/.logs:ro
+    depends_on:
+      - agent
+    restart: unless-stopped
+    networks:
+      - phantom-net
+    tty: true
+    stdin_open: true
+
+  # Redis for caching and messaging
+  redis:
+    image: redis:7-alpine
+    container_name: phantom-redis
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - phantom-net
+
+  # PostgreSQL for persistent storage
+  postgres:
+    image: postgres:16-alpine
+    container_name: phantom-postgres
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-phantom}
+      - POSTGRES_USER=${POSTGRES_USER:-phantom}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-phantom}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-phantom}"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - phantom-net
+
+  # Elasticsearch for log storage
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: phantom-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD:-phantom}
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - phantom-net
+
+  # Kibana for log visualization
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: phantom-kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - phantom-net
+
+  # CLI Management Interface
+  cli:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: phantom-cli
+    command: ["python", "-m", "cli"]
+    environment:
+      - AGENT_LOG_DIR=/app/.logs
+      - AGENT_API_URL=http://agent:8000
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=${POSTGRES_DB:-phantom}
+      - POSTGRES_USER=${POSTGRES_USER:-phantom}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-phantom}
+      - TERM=xterm-256color
+    volumes:
+      - ./:/app:ro
+      - agent-logs:/app/.logs:ro
+      - agent-data:/app/data:ro
+    depends_on:
+      - agent
+      - redis
+      - postgres
+    restart: no
+    networks:
+      - phantom-net
+    tty: true
+    stdin_open: true
+
 volumes:
   agent-logs:
+  agent-data:
+  redis-data:
+  postgres-data:
+  elasticsearch-data:
 
 networks:
   phantom-net:

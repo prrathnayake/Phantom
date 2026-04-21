@@ -1,0 +1,139 @@
+#!/usr/bin/env python
+"""Phantom Docker Management CLI - Main entry point."""
+
+import subprocess
+import sys
+import os
+from pathlib import Path
+
+PROJECT_DIR = Path(__file__).parent
+
+
+def run_cmd(cmd, check=True):
+    return subprocess.run(cmd, cwd=PROJECT_DIR, check=check, shell=True)
+
+
+def cmd_status():
+    print("\n[PHANTOM CONTAINERS]")
+    run_cmd('docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"', check=False)
+
+
+def cmd_start():
+    print("\n[STARTING CONTAINERS]")
+    run_cmd('docker compose -f docker-compose.yml up -d', check=False)
+    print("Containers started.")
+
+
+def cmd_stop():
+    print("\n[STOPPING CONTAINERS]")
+    try:
+        run_cmd('docker compose -f docker-compose.yml stop', check=False)
+    except:
+        run_cmd('docker-compose -f docker-compose.yml stop', check=False)
+    print("Containers stopped.")
+    status_check()
+
+
+def status_check():
+    print("\n[CONTAINER STATUS]")
+    run_cmd('docker ps --format "table {{.Names}}\t{{.Status}}"', check=False)
+
+
+def cmd_restart(service=None):
+    if service:
+        print(f"\n[RESTARTING: {service}]")
+        run_cmd(f"docker restart phantom-{service}", check=False)
+    else:
+        print("\n[RESTARTING ALL]")
+        run_cmd('docker compose -f docker-compose.yml restart', check=False)
+
+
+def cmd_logs(service="agent", lines=50):
+    print(f"\n[LOGS: {service}]")
+    run_cmd(f"docker logs --tail {lines} phantom-{service}", check=False)
+
+
+def cmd_logs_follow(service="agent"):
+    print(f"\n[FOLLOWING LOGS: {service}] (Ctrl+C to exit)")
+    try:
+        run_cmd(f"docker logs -f --tail 50 phantom-{service}", check=False)
+    except KeyboardInterrupt:
+        pass
+
+
+def cmd_ps():
+    run_cmd('docker compose -f docker-compose.yml ps', check=False)
+
+
+def cmd_build():
+    print("\n[BUILDING CONTAINERS]")
+    run_cmd('docker compose -f docker-compose.yml build --no-cache', check=False)
+    print("Build complete.")
+
+
+def cmd_clean():
+    print("\n[CLEANING CONTAINERS & VOLUMES]")
+    confirm = input("Remove all containers and volumes? (y/N): ")
+    if confirm.lower() == "y":
+        run_cmd('docker compose -f docker-compose.yml down -v', check=False)
+        print("Cleaned.")
+    else:
+        print("Cancelled.")
+
+
+def cmd_exec(service, command):
+    print(f"\n[EXEC: {service}] $ {command}")
+    run_cmd(f'docker exec -it phantom-{service} sh -c "{command}"', check=False)
+
+
+def main():
+    args = sys.argv[1:]
+    cmd = args[0] if args else "status"
+
+    if cmd == "status" or cmd == "st":
+        cmd_status()
+    elif cmd == "start" or cmd == "up":
+        cmd_start()
+    elif cmd == "stop" or cmd == "down":
+        cmd_stop()
+    elif cmd == "restart" or cmd == "re":
+        cmd_restart(args[1] if len(args) > 1 else None)
+    elif cmd == "logs" or cmd == "log":
+        cmd_logs(args[1] if len(args) > 1 else "agent")
+    elif cmd == "logs-follow":
+        cmd_logs_follow(args[1] if len(args) > 1 else "agent")
+    elif cmd == "ps":
+        cmd_ps()
+    elif cmd == "build":
+        cmd_build()
+    elif cmd == "clean":
+        cmd_clean()
+    elif cmd == "exec":
+        if len(args) < 3:
+            print("Usage: ./phantom exec <service> <command>")
+            return
+        cmd_exec(args[1], " ".join(args[2:]))
+    elif cmd == "help" or cmd == "-h" or cmd == "--help":
+        print("""
+Phantom Docker Management CLI
+
+Commands:
+  start              Start all containers
+  stop               Stop all containers
+  status             Show container status
+  restart [service]  Restart all or specific service
+  logs [service]     Show logs (default: agent)
+  logs-follow        Follow logs in real-time
+  ps                 Show running services
+  build              Rebuild containers
+  clean              Remove containers and volumes
+  exec service cmd   Execute command in container
+  help               Show this help
+        """)
+    else:
+        print(f"Unknown command: {cmd}")
+        print("Run './phantom help' for available commands")
+
+
+if __name__ == "__main__":
+    main()
