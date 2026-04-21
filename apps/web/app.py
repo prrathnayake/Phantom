@@ -15,10 +15,10 @@ from flask import Flask, render_template, request, jsonify, session
 from threading import Lock
 
 import config
-from core import Storage, OpenRouterClient
-from central_agent import CentralAgent, create_central_agent
-from gateway import ScheduleManager
-from diagnostics import process_sensor, port_sensor, file_sensor
+from src.core import Storage, OpenRouterClient
+from src.central_agent import CentralAgent, create_central_agent
+from src.gateway import ScheduleManager
+from src.diagnostics import process_sensor, port_sensor, file_sensor
 
 app = Flask(__name__)
 app.secret_key = "phantom-mission-control-key"

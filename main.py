@@ -14,7 +14,7 @@ from pathlib import Path
 
 import config
 from central_agent import create_central_agent
-from gateway import create_gateway
+from src.gateway import create_gateway
 from utils.debug_log import debug_logger
 
 try:

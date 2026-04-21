@@ -57,6 +57,8 @@ central_agent/reports/*.json
 central_agent/reports/*.md
 central_agent/reports/[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]/
 session_memory.json
+src/central_agent/reports/
+src/central_agent/session_memory.json
 
 # Runtime PID files
 *.pid

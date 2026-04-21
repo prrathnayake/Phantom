@@ -6,7 +6,10 @@ import tempfile
 import shutil
 from pathlib import Path
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add src to path for imports
+src_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, src_path)
+sys.path.insert(0, os.path.join(src_path, 'src'))
 
 
 @pytest.fixture
