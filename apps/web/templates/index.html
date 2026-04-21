@@ -250,9 +250,9 @@ function addSchedule() {
     const name = document.getElementById('newScheduleName').value.trim();
     const interval = parseInt(document.getElementById('newScheduleInterval').value) || 300;
     const sensor = document.getElementById('newScheduleSensor').value;
-    
+
     if (!name) return alert('Please enter a schedule name');
-    
+
     fetch('/api/schedules/create', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -260,9 +260,15 @@ function addSchedule() {
     })
     .then(r => r.json())
     .then(data => {
-        bootstrap.Modal.getInstance(document.getElementById('addScheduleModal')).hide();
-        document.getElementById('newScheduleName').value = '';
-        loadSchedules();
+        if (data.success) {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addScheduleModal'));
+            if (modal) modal.hide();
+            else document.getElementById('addScheduleModal').style.display = 'none';
+            document.getElementById('newScheduleName').value = '';
+            loadSchedules();
+        } else {
+            alert('Error: ' + (data.error || 'Unknown error'));
+        }
     })
     .catch(err => alert('Error: ' + err.message));
 }
