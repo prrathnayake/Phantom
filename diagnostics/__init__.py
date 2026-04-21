@@ -1,4 +1,4 @@
-"""Diagnostic modules for Phantom."""
+"""Diagnostic modules for Phantom.
 
 Each diagnostic exposes a single callable `collect` that accepts a `context`
 dictionary and returns a payload describing the diagnostic result.
