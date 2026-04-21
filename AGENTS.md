@@ -43,11 +43,31 @@ diagnostics/      # Diagnostic collectors
 # Install dependencies
 pip install -r requirements.txt
 
-# Run the agent
+# Run the agent (local)
 python main.py
+
+# Run with Docker
+./phantom start        # Start all containers
+./phantom status     # Check status
+./phantom stop       # Stop containers
 
 # Run tests
 pytest tests/
+```
+
+## Docker Management
+
+Use `./phantom` CLI for container management:
+
+```bash
+./phantom start              # Start containers
+./phantom stop               # Stop containers
+./phantom status             # Show status
+./phantom restart [service]  # Restart service
+./phantom logs [service]     # View logs
+./phantom logs-follow        # Follow logs
+./phantom exec service cmd # Execute in container
+./phantom clean              # Remove containers & volumes
 ```
 
 ## Testing Commands & Conventions
