@@ -6,7 +6,7 @@ and tools for advanced autonomous operations.
 """
 import json
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from dataclasses import dataclass, field
 from pathlib import Path
 from threading import Lock
@@ -170,7 +170,7 @@ class CentralAgent:
             
             result = AnalysisResult(
                 session_id=session_id,
-                timestamp=datetime.utcnow().isoformat(),
+                timestamp=datetime.now(timezone.utc).isoformat(),
                 analysis=analysis,
                 metadata={
                     "trigger": trigger,
@@ -215,7 +215,7 @@ class CentralAgent:
         
         combined_payload = {
             "source": "batch",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "payloads": payloads,
             "count": len(payloads)
         }
@@ -234,7 +234,7 @@ class CentralAgent:
         Returns:
             Path to report file or None
         """
-        date_str = datetime.utcnow().strftime("%Y-%m-%d")
+        date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         report_dir = self.reports_dir / date_str
         
         if not report_dir.exists():
@@ -589,7 +589,7 @@ class CentralAgent:
         skill_results = skill_results or {}
         tool_results = tool_results or {}
         
-        date_str = datetime.utcnow().strftime("%Y-%m-%d")
+        date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         report_dir = self.reports_dir / date_str
         report_dir.mkdir(parents=True, exist_ok=True)
         

@@ -8,7 +8,7 @@ import logging
 import threading
 import time
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Callable, Optional
 
 from .base import BaseSkill, SkillCategory, SkillResult, SkillStatus
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 class LoadedSkill:
     """Container for loaded skill instance."""
     skill: BaseSkill
-    loaded_at: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+    loaded_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     use_count: int = 0
     last_used: Optional[str] = None
 
@@ -150,11 +150,11 @@ class SkillRegistry:
             
             if loaded and self._cache_instances:
                 loaded_at = datetime.fromisoformat(loaded.loaded_at)
-                age = (datetime.utcnow() - loaded_at).total_seconds()
+                age = (datetime.now(timezone.utc) - datetime.fromisoformat(loaded_at)).total_seconds()
                 
                 if age < self._max_cache_age:
                     loaded.use_count += 1
-                    loaded.last_used = datetime.utcnow().isoformat()
+                    loaded.last_used = datetime.now(timezone.utc).isoformat()
                     return loaded.skill
             
             if name not in self._loaders:

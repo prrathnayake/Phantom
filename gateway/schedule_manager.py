@@ -5,7 +5,7 @@ Collects results and sends payloads to Central Agent.
 """
 import time
 import importlib
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass, field
 from threading import Lock, Thread
 from typing import Any, Callable, Dict, List, Optional
@@ -37,7 +37,7 @@ class Schedule:
     interval: int
     script_module: str
     func: Callable[[Dict[str, Any]], None]
-    next_run: datetime = field(default_factory=datetime.utcnow)
+    next_run: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     last_result: Optional[dict] = None
     last_run_time: Optional[str] = None
     enabled: bool = True
@@ -46,13 +46,13 @@ class Schedule:
         """Check if schedule is due to run."""
         if not self.enabled:
             return False
-        return datetime.utcnow() >= self.next_run
+        return datetime.now(timezone.utc) >= self.next_run
     
     def mark_run(self, result: dict) -> None:
         """Mark schedule as run with result."""
         self.last_result = result
-        self.last_run_time = datetime.utcnow().isoformat()
-        self.next_run = datetime.utcnow() + timedelta(seconds=self.interval)
+        self.last_run_time = datetime.now(timezone.utc).isoformat()
+        self.next_run = datetime.now(timezone.utc) + timedelta(seconds=self.interval)
 
 
 class ScheduleManager:
@@ -120,7 +120,7 @@ class ScheduleManager:
                 interval=interval,
                 script_module=script_module,
                 func=func,
-                next_run=datetime.utcnow()
+                next_run=datetime.now(timezone.utc)
             )
             self._schedules[name] = schedule
         
@@ -205,7 +205,7 @@ class ScheduleManager:
             schedule.func(context)
             result = {
                 "name": name,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "source": name,
                 "data": context
             }

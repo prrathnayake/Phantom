@@ -25,7 +25,7 @@ def detect(context: Dict[str, Any], storage: Storage) -> List[Dict[str, Any]]:
     if proc_payload:
         count = proc_payload.get("count", 0)
         threshold = config.DETECTION_THRESHOLDS["process_count"]
-        if count > threshold:
+        if count >= threshold:
             description = f"High process count: {count} processes (threshold {threshold})"
             details = {"count": count, "top_processes": proc_payload.get("top_processes", [])}
             storage.log_detection("process_count", description, details)
@@ -36,7 +36,7 @@ def detect(context: Dict[str, Any], storage: Storage) -> List[Dict[str, Any]]:
     if port_payload:
         count = port_payload.get("count", 0)
         threshold = config.DETECTION_THRESHOLDS["open_ports"]
-        if count > threshold:
+        if count >= threshold:
             description = f"High number of open ports: {count} listening ports (threshold {threshold})"
             details = {"count": count, "ports": port_payload.get("listening", [])}
             storage.log_detection("open_ports", description, details)
@@ -47,7 +47,7 @@ def detect(context: Dict[str, Any], storage: Storage) -> List[Dict[str, Any]]:
     if file_payload:
         change_count = file_payload.get("change_count", 0)
         threshold = config.DETECTION_THRESHOLDS["file_changes"]
-        if change_count > threshold:
+        if change_count >= threshold:
             description = f"High file change volume: {change_count} modifications (threshold {threshold})"
             details = {
                 "added": file_payload.get("added", []),
@@ -62,7 +62,7 @@ def detect(context: Dict[str, Any], storage: Storage) -> List[Dict[str, Any]]:
     if network_payload:
         established = network_payload.get("established_count", 0)
         threshold = config.DETECTION_THRESHOLDS["established_connections"]
-        if established > threshold:
+        if established >= threshold:
             description = f"High established connections: {established} (threshold {threshold})"
             details = {
                 "count": established,
@@ -74,7 +74,7 @@ def detect(context: Dict[str, Any], storage: Storage) -> List[Dict[str, Any]]:
 
         external_ips = len(network_payload.get("external_ips", []))
         ip_threshold = config.DETECTION_THRESHOLDS["external_ips"]
-        if external_ips > ip_threshold:
+        if external_ips >= ip_threshold:
             description = f"Many external IPs contacted: {external_ips} unique IPs"
             details = {"external_ips": network_payload.get("external_ips", [])}
             storage.log_detection("external_ips", description, details)
@@ -85,7 +85,7 @@ def detect(context: Dict[str, Any], storage: Storage) -> List[Dict[str, Any]]:
     if memory_payload:
         percent = memory_payload.get("percent_used", 0)
         threshold = config.DETECTION_THRESHOLDS["memory_percent"]
-        if percent > threshold:
+        if percent >= threshold:
             description = f"High memory usage: {percent}% (threshold {threshold}%)"
             details = {
                 "percent_used": percent,
@@ -98,7 +98,7 @@ def detect(context: Dict[str, Any], storage: Storage) -> List[Dict[str, Any]]:
 
         swap_percent = memory_payload.get("swap_percent", 0)
         swap_threshold = config.DETECTION_THRESHOLDS["swap_percent"]
-        if swap_percent > swap_threshold:
+        if swap_percent >= swap_threshold:
             description = f"High swap usage: {swap_percent}% (threshold {swap_threshold}%)"
             details = {
                 "swap_percent": swap_percent,
@@ -114,7 +114,7 @@ def detect(context: Dict[str, Any], storage: Storage) -> List[Dict[str, Any]]:
         threshold = config.DETECTION_THRESHOLDS["disk_percent"]
         for disk in disks:
             percent = disk.get("percent_used", 0)
-            if percent > threshold:
+            if percent >= threshold:
                 device = disk.get("mount", disk.get("device", "unknown"))
                 description = f"High disk usage: {device} at {percent}% (threshold {threshold}%)"
                 details = {
@@ -131,7 +131,7 @@ def detect(context: Dict[str, Any], storage: Storage) -> List[Dict[str, Any]]:
     if auth_payload:
         failed_count = auth_payload.get("failed_count", 0)
         threshold = config.DETECTION_THRESHOLDS["failed_logins"]
-        if failed_count > threshold:
+        if failed_count >= threshold:
             description = f"Failed login attempts: {failed_count} (threshold {threshold})"
             details = {
                 "failed_count": failed_count,

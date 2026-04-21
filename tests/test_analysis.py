@@ -81,7 +81,7 @@ class TestDetection:
         
         context = {
             "file_sensor_last": {
-                "change_count": 200,
+                "change_count": 600,
                 "added": [],
                 "removed": [],
                 "modified": []
@@ -119,7 +119,7 @@ class TestDetection:
             "process_sensor_last": {"count": 500, "top_processes": []},
             "port_sensor_last": {"count": 100, "listening": []},
             "file_sensor_last": {
-                "change_count": 200,
+                "change_count": 600,
                 "added": [],
                 "removed": [],
                 "modified": []

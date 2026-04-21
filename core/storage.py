@@ -17,9 +17,9 @@ Each record contains a timestamp in ISO‑8601 format.  Use
 import json
 from pathlib import Path
 from typing import Dict, List, Optional
-from datetime import datetime
 
 import config
+from utils.datetime_utils import utcnow_iso
 from utils.debug_log import debug_logger
 
 
@@ -42,7 +42,7 @@ class Storage:
         :param payload: Arbitrary data collected by the sensor.
         """
         record = {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": utcnow_iso(),
             "sensor": sensor,
             "data": payload,
         }
@@ -57,7 +57,7 @@ class Storage:
         :param details: Additional contextual information.
         """
         record = {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": utcnow_iso(),
             "rule": rule,
             "description": description,
             "details": details,
@@ -77,30 +77,35 @@ class Storage:
         events = []
         try:
             with self.events_file.open("r", encoding="utf-8") as f:
-                for line in f:
-                    try:
-                        event = json.loads(line)
-                        if sensor and event.get("sensor") != sensor:
-                            continue
-                        events.append(event)
-                    except json.JSONDecodeError:
-                        continue
+                lines = f.readlines()
         except FileNotFoundError:
             return []
-        # Return the last `count` events in reverse chronological order
-        return list(reversed(events[-count:]))
+
+        for line in lines[-count:]:
+            try:
+                event = json.loads(line)
+                if sensor and event.get("sensor") != sensor:
+                    continue
+                events.append(event)
+            except json.JSONDecodeError:
+                continue
+
+        return list(reversed(events))
 
     def get_recent_detections(self, count: int = 20) -> List[Dict[str, any]]:
         """Return the most recent detection events."""
         detections = []
         try:
             with self.detections_file.open("r", encoding="utf-8") as f:
-                for line in f:
-                    try:
-                        detection = json.loads(line)
-                        detections.append(detection)
-                    except json.JSONDecodeError:
-                        continue
+                lines = f.readlines()
         except FileNotFoundError:
             return []
-        return list(reversed(detections[-count:]))
+
+        for line in lines[-count:]:
+            try:
+                detection = json.loads(line)
+                detections.append(detection)
+            except json.JSONDecodeError:
+                continue
+
+        return list(reversed(detections))
