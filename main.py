@@ -128,8 +128,8 @@ def main() -> None:
     
     print()
     print("=" * 50)
-    print(f"{Colors.BOLD}  MONICA{Colors.END}")
-    print(f"  Secure Monitoring Agent Harness System")
+    print(f"{Colors.BOLD}  PHANTOM{Colors.END}")
+    print(f"  AI Agentic Harness System")
     print("=" * 50)
     print()
     print(f"  HTTP API:       http://127.0.0.1:8000")

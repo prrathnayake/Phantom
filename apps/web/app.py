@@ -354,13 +354,14 @@ def create_schedule_api():
     if not name:
         return jsonify({"success": False, "error": "Name required"}), 400
     
+    sensor_module = f"{sensor}_sensor"
     try:
-        importlib.import_module(f"diagnostics.{sensor}_sensor")
+        importlib.import_module(f"diagnostics.{sensor_module}")
     except ImportError:
         return jsonify({"success": False, "error": f"Unknown sensor: {sensor}"}), 400
-    
+
     if schedule_manager:
-        schedule_manager.add_schedule(name, interval, sensor)
+        schedule_manager.add_schedule(name, interval, sensor_module)
         return jsonify({"success": True, "name": name, "interval": interval, "sensor": sensor})
     return jsonify({"success": False, "error": "No schedule manager"}), 500
 
