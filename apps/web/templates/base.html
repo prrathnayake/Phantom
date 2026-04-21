@@ -555,6 +555,13 @@
             display: flex;
         }
 
+        .chat-widget-popup.fullscreen {
+            width: calc(100vw - 2rem);
+            height: calc(100vh - 6rem);
+            bottom: 1rem;
+            right: 1rem;
+        }
+
         @keyframes chatSlideUp {
             from { opacity: 0; transform: translateY(20px) scale(0.95); }
             to { opacity: 1; transform: translateY(0) scale(1); }
@@ -581,6 +588,23 @@
         .chat-widget-header small {
             opacity: 0.8;
             font-weight: 400;
+        }
+
+        .chat-fullscreen-btn {
+            margin-left: auto;
+            background: transparent;
+            border: none;
+            color: var(--bg-dark);
+            cursor: pointer;
+            padding: 0.25rem;
+            border-radius: 0.25rem;
+            font-size: 1.1rem;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .chat-fullscreen-btn:hover {
+            opacity: 1;
         }
 
         .chat-widget-messages {
@@ -1266,6 +1290,9 @@
                 Phantom Assistant
                 <small class="d-block">AI Security Agent</small>
             </div>
+            <button class="chat-fullscreen-btn" onclick="toggleChatFullscreen()" title="Toggle fullscreen">
+                <i class="bi bi-arrows-angle-expand" id="chatFullscreenIcon"></i>
+            </button>
         </div>
         <div class="chat-widget-messages" id="chatWidgetMessages">
             <div class="chat-widget-msg assistant">Hello! How can I help you with security monitoring today?</div>
@@ -1362,6 +1389,17 @@
             const popup = document.getElementById('chatWidgetPopup');
             btn.classList.toggle('open');
             popup.classList.toggle('show');
+        }
+
+        function toggleChatFullscreen() {
+            const popup = document.getElementById('chatWidgetPopup');
+            const icon = document.getElementById('chatFullscreenIcon');
+            popup.classList.toggle('fullscreen');
+            if (popup.classList.contains('fullscreen')) {
+                icon.className = 'bi bi-arrows-angle-contract';
+            } else {
+                icon.className = 'bi bi-arrows-angle-expand';
+            }
         }
 
         function sendWidgetMessage() {
