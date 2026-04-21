@@ -4,6 +4,7 @@ A web-based dashboard for interacting with the Monica agent."""
 import os
 import sys
 import platform
+import importlib
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
@@ -339,6 +340,28 @@ def run_schedule_api(name):
         if result:
             return jsonify({"success": True, "result": result})
         return jsonify({"success": False, "error": "Schedule not found"}), 404
+    return jsonify({"success": False, "error": "No schedule manager"}), 500
+
+
+@app.route("/api/schedules/create", methods=["POST"])
+def create_schedule_api():
+    """Create a new schedule."""
+    data = request.get_json()
+    name = data.get("name")
+    interval = data.get("interval", 300)
+    sensor = data.get("sensor", "process")
+    
+    if not name:
+        return jsonify({"success": False, "error": "Name required"}), 400
+    
+    try:
+        importlib.import_module(f"diagnostics.{sensor}_sensor")
+    except ImportError:
+        return jsonify({"success": False, "error": f"Unknown sensor: {sensor}"}), 400
+    
+    if schedule_manager:
+        schedule_manager.add_schedule(name, interval, sensor)
+        return jsonify({"success": True, "name": name, "interval": interval, "sensor": sensor})
     return jsonify({"success": False, "error": "No schedule manager"}), 500
 
 

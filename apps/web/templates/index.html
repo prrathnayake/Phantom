@@ -96,15 +96,31 @@
         </div>
     </div>
 
-    <!-- Right Sidebar - Approvals & Alerts -->
+    <!-- Right Sidebar - Approvals, Alerts & Schedules -->
     <div class="col-lg-3">
+        <!-- Schedules -->
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div><i class="bi bi-clock text-accent"></i> Schedules</div>
+                <button class="btn btn-sm btn-link text-accent" onclick="showAddScheduleModal()" title="Add Schedule">
+                    <i class="bi bi-plus-lg"></i>
+                </button>
+            </div>
+            <div class="log-container" id="schedulesList" style="max-height: 200px;">
+                <div class="empty-state small">
+                    <i class="bi bi-clock"></i>
+                    <p>No schedules</p>
+                </div>
+            </div>
+        </div>
+
         <!-- Approvals -->
         <div class="card mb-3">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <div><i class="bi bi-check-circle text-accent"></i> Approvals</div>
                 <span class="badge bg-warning text-dark" id="approvalsCountBadge" style="display: none;">0</span>
             </div>
-            <div class="log-container" id="approvalsList" style="max-height: 180px;">
+            <div class="log-container" id="approvalsList" style="max-height: 150px;">
                 <div class="empty-state small">
                     <i class="bi bi-check-circle"></i>
                     <p>No pending approvals</p>
@@ -118,7 +134,7 @@
                 <div><i class="bi bi-bell text-danger"></i> Alerts</div>
                 <span class="badge bg-danger" id="alertsCountBadge" style="display: none;">0</span>
             </div>
-            <div class="log-container" id="alertsList" style="max-height: 180px;">
+            <div class="log-container" id="alertsList" style="max-height: 150px;">
                 <div class="empty-state small">
                     <i class="bi bi-bell"></i>
                     <p>No active alerts</p>
@@ -126,6 +142,43 @@
             </div>
         </div>
     </div>
+</div>
+
+<!-- Add Schedule Modal -->
+<div class="modal fade" id="addScheduleModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content" style="background: var(--bg-card); border: 1px solid var(--border);">
+            <div class="modal-header">
+                <h5 class="modal-title text-accent"><i class="bi bi-clock me-2"></i>Add Schedule</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label text-muted">Schedule Name</label>
+                    <input type="text" id="newScheduleName" class="form-control" placeholder="my_schedule">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted">Interval (seconds)</label>
+                    <input type="number" id="newScheduleInterval" class="form-control" placeholder="300" value="300">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted">Sensor Type</label>
+                    <select id="newScheduleSensor" class="form-control">
+                        <option value="process">Process</option>
+                        <option value="port">Port</option>
+                        <option value="file">File</option>
+                        <option value="network">Network</option>
+                        <option value="memory">Memory</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-accent" onclick="addSchedule()">Add</button>
+            </div>
+        </div>
+    </div>
+</div>
 </div>
 {% endblock %}
 
@@ -146,15 +199,95 @@ function initWorkspace() {
         mem.appendChild(block);
     }
     loadRealData();
+    loadSchedules();
     loadApprovals();
     loadAlerts();
     setInterval(loadRealData, 5000);
+    setInterval(loadSchedules, 10000);
     setInterval(loadApprovals, 10000);
     setInterval(loadAlerts, 10000);
     setInterval(updateProcessing, 1500);
     setInterval(updateDataStream, 3000);
     setInterval(updateTasks, 4000);
     setInterval(updateMemory, 6000);
+}
+
+function loadSchedules() {
+    fetch('/api/schedules')
+        .then(r => r.json())
+        .then(data => {
+            const container = document.getElementById('schedulesList');
+            const schedules = data.schedules || {};
+            const keys = Object.keys(schedules);
+            
+            if (keys.length > 0) {
+                container.innerHTML = keys.map(name => {
+                    const s = schedules[name];
+                    return `<div class="log-entry">
+                        <span class="log-badge ${s.enabled ? 'process' : ''}">${s.enabled ? 'ON' : 'OFF'}</span>
+                        <span class="text-light">${name}</span>
+                        <span class="text-muted" style="margin-left: auto; font-size: 0.65rem;">${s.interval || 60}s</span>
+                        <button class="btn btn-sm btn-link text-accent ms-1" onclick="runSchedule('${name}')" title="Run"><i class="bi bi-play"></i></button>
+                        <button class="btn btn-sm btn-link ${s.enabled ? 'text-warning' : 'text-success'}" onclick="toggleSchedule('${name}', ${!s.enabled})" title="${s.enabled ? 'Disable' : 'Enable'}"><i class="bi ${s.enabled ? 'pause-fill' : 'play-fill'}"></i></button>
+                        <button class="btn btn-sm btn-link text-danger" onclick="deleteSchedule('${name}')" title="Delete"><i class="bi bi-trash"></i></button>
+                    </div>`;
+                }).join('');
+            } else {
+                container.innerHTML = '<div class="empty-state small"><i class="bi bi-clock"></i><p>No schedules</p></div>';
+            }
+        })
+        .catch(() => {
+            document.getElementById('schedulesList').innerHTML = '<div class="empty-state small"><i class="bi bi-clock"></i><p>No schedules</p></div>';
+        });
+}
+
+function showAddScheduleModal() {
+    const modal = new bootstrap.Modal(document.getElementById('addScheduleModal'));
+    modal.show();
+}
+
+function addSchedule() {
+    const name = document.getElementById('newScheduleName').value.trim();
+    const interval = parseInt(document.getElementById('newScheduleInterval').value) || 300;
+    const sensor = document.getElementById('newScheduleSensor').value;
+    
+    if (!name) return alert('Please enter a schedule name');
+    
+    fetch('/api/schedules/create', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name, interval, sensor})
+    })
+    .then(r => r.json())
+    .then(data => {
+        bootstrap.Modal.getInstance(document.getElementById('addScheduleModal')).hide();
+        document.getElementById('newScheduleName').value = '';
+        loadSchedules();
+    })
+    .catch(err => alert('Error: ' + err.message));
+}
+
+function toggleSchedule(name, enable) {
+    const endpoint = enable ? '/api/schedules/' + name + '/enable' : '/api/schedules/' + name + '/disable';
+    fetch(endpoint, {method: 'POST'})
+    .then(r => r.json())
+    .then(() => loadSchedules())
+    .catch(err => alert('Error: ' + err.message));
+}
+
+function runSchedule(name) {
+    fetch('/api/schedules/' + name + '/run', {method: 'POST'})
+    .then(r => r.json())
+    .then(data => alert('Schedule started: ' + name))
+    .catch(err => alert('Error: ' + err.message));
+}
+
+function deleteSchedule(name) {
+    if (!confirm('Delete schedule ' + name + '?')) return;
+    fetch('/api/schedules/' + name + '/remove', {method: 'POST'})
+    .then(r => r.json())
+    .then(() => loadSchedules())
+    .catch(err => alert('Error: ' + err.message));
 }
 
 function loadApprovals() {
