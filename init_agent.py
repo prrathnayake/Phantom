@@ -1,4 +1,4 @@
-"""Initialization CLI for Monica - the security monitoring agent.
+"""Initialization CLI for Phantom - AI Agentic Harness System.
 
 Usage:
     python init_agent.py scan       - Scan system for OS and requirements

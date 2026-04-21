@@ -1,6 +1,6 @@
 """Mission Control Dashboard - Web Application.
 
-A web-based dashboard for interacting with the Monica agent."""
+A web-based dashboard for interacting with the Phantom agent."""
 import os
 import sys
 import platform
@@ -21,7 +21,7 @@ from gateway import ScheduleManager
 from diagnostics import process_sensor, port_sensor, file_sensor
 
 app = Flask(__name__)
-app.secret_key = "monica-mission-control-key"
+app.secret_key = "phantom-mission-control-key"
 
 start_time = datetime.utcnow()
 chat_history = []
@@ -155,7 +155,7 @@ def chat_api():
     context_summary = _get_recent_context()
     memory_summary = _get_recent_memory()
     
-    prompt = f"""You are the Monica Security Agent. 
+    prompt = f"""You are the Phantom Security Agent. 
 User wants to chat with you about security monitoring.
 
 Recent Context:
@@ -173,7 +173,7 @@ Respond as a helpful security assistant."""
 
     llm_client = OpenRouterClient()
     messages = [
-        {"role": "system", "content": "You are Monica, a helpful security monitoring assistant."},
+        {"role": "system", "content": "You are Phantom, a helpful security monitoring assistant."},
         {"role": "user", "content": prompt}
     ]
     

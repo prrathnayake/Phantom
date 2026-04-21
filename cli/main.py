@@ -1,4 +1,4 @@
-"""Monica CLI - Command-line interface for Monica Security Agent."""
+"""Phantom CLI - Command-line interface for Phantom Security Agent."""
 import sys
 import os
 import argparse
@@ -10,7 +10,7 @@ CLI_DIR = Path(__file__).parent
 def main():
     parser = argparse.ArgumentParser(
         prog="agent",
-        description="Monica - Secure Monitoring Agent Harness System",
+        description="Phantom - Secure Monitoring Agent Harness System",
         add_help=False
     )
     parser.add_argument(
@@ -63,7 +63,7 @@ def main():
 
 def show_help():
     print("""
-Monica - Secure Monitoring Agent Harness System
+Phantom - Secure Monitoring Agent Harness System
 
 Usage: ./agent <command> [options]
 
@@ -72,8 +72,8 @@ Commands:
   version             Show version information
   onboard             Initial setup and onboarding
   config              Manage configuration
-  start               Start the Monica agent
-  stop                Stop the Monica agent
+  start               Start the Phantom agent
+  stop                Stop the Phantom agent
   status              Show agent status
   run [diagnostic]    Run diagnostics manually
   reports             View analysis reports
@@ -92,7 +92,7 @@ For more information, visit the documentation.
 
 
 def show_version():
-    print("Monica - Secure Monitoring Agent")
+    print("Phantom - Secure Monitoring Agent")
     print("Version: 1.0.0")
     print("Build: 2026.04")
 
@@ -101,7 +101,7 @@ def cmd_onboard(args):
     if args and args[0] == "check":
         return onboard_check()
 
-    print("=== Monica Onboarding ===\n")
+    print("=== Phantom Onboarding ===\n")
 
     print("1. Checking environment...")
     check_environment()
@@ -315,7 +315,7 @@ def config_show():
 
 
 def cmd_start(args):
-    print("Starting Monica agent...")
+    print("Starting Phantom agent...")
 
     if is_running():
         print("Agent is already running!")
@@ -324,7 +324,7 @@ def cmd_start(args):
     import subprocess
     import sys
 
-    pid_file = Path("monica.pid")
+    pid_file = Path("phantom.pid")
     proc = subprocess.Popen(
         [sys.executable, "main.py"],
         cwd=Path(__file__).parent.parent,
@@ -341,7 +341,7 @@ def cmd_start(args):
 
 
 def cmd_stop(args):
-    print("Stopping Monica agent...")
+    print("Stopping Phantom agent...")
 
     import psutil
 
@@ -359,7 +359,7 @@ def cmd_stop(args):
                 except (psutil.NoSuchProcess, psutil.AccessDenied):
                     pass
 
-    pid_file = Path("monica.pid")
+    pid_file = Path("phantom.pid")
     if pid_file.exists():
         pid = int(pid_file.read_text().strip())
         try:
@@ -390,12 +390,12 @@ def cmd_stop(args):
 
 
 def cmd_status(args):
-    print("=== Monica Status ===\n")
+    print("=== Phantom Status ===\n")
 
     if is_running():
         print("Status: RUNNING")
 
-        pid_file = Path("monica.pid")
+        pid_file = Path("phantom.pid")
         if pid_file.exists():
             pid = pid_file.read_text().strip()
             print(f"PID: {pid}")
@@ -494,7 +494,7 @@ def cmd_reports(args):
 
 
 def is_running():
-    pid_file = Path("monica.pid")
+    pid_file = Path("phantom.pid")
     if not pid_file.exists():
         return False
 

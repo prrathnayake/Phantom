@@ -19,7 +19,7 @@ from gateway.interfaces.websocket_handler import WebSocketHandler, create_websoc
 
 
 class Gateway:
-    """Gateway Server for Monica.
+    """Gateway Server for Phantom.
     
     Manages all input interfaces and schedules,
     sends payloads to central agent for analysis.

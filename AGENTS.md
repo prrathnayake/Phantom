@@ -16,7 +16,7 @@ Do not create or use any alternate memory root.
 
 ## Project Identity
 
-**Project**: Monica - Secure Monitoring Agent Harness System
+**Project**: Phantom - AI Agentic Harness System
 **Focus**: Centralized security monitoring with Gateway + Central Agent architecture
 
 ## Project Structure & Important Directories

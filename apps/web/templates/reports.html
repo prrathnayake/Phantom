@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Reports - Monica Mission Control{% endblock %}
+{% block title %}Reports - Phantom Mission Control{% endblock %}
 
 {% block content %}
 <div class="row">
@@ -46,7 +46,7 @@
         {% for report in reports %}
         <div class="ls-row report-item" data-name="{{ report.name }}" onclick="viewReport('{{ report.path }}')">
             <span class="ls-perms">-rw-r--r--</span>
-            <span class="ls-user">monica</span>
+            <span class="ls-user">phantom</span>
             <span class="ls-group">security</span>
             <span class="ls-size">{{ ((report.size or 1024) // 1024) }}K</span>
             <span class="ls-date">{{ report.modified[:16] }}</span>

@@ -1,4 +1,4 @@
-# Monica Security Monitoring Agent - Complete Documentation
+# Phantom - AI Agentic Harness System - Complete Documentation
 
 ## Table of Contents
 
@@ -20,7 +20,7 @@
 
 ## Executive Summary
 
-Monica (Secure Monitoring Agent Harness System) is a comprehensive security monitoring platform designed for autonomous threat detection and response. The system combines rule-based detection, statistical anomaly detection, and ML-based anomaly detection with LLM-powered security analysis.
+Phantom (AI Agentic Harness System) is a comprehensive security monitoring platform designed for autonomous threat detection and response. The system combines rule-based detection, statistical anomaly detection, and ML-based anomaly detection with LLM-powered security analysis.
 
 ### Key Capabilities
 
@@ -554,7 +554,7 @@ python main.py
 python apps/web/app.py
 
 # With custom config
-AGENT_LOG_DIR=/var/log/monica python main.py
+AGENT_LOG_DIR=/var/log/phantom python main.py
 ```
 
 ### Docker (optional)

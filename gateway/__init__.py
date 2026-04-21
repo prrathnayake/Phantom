@@ -1,4 +1,4 @@
-"""Gateway package for Monica.
+"""Gateway package for Phantom.
 
 Handles input interfaces and scheduled diagnostic runs.
 Sends payloads to Central Agent for analysis.

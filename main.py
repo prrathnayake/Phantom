@@ -1,4 +1,4 @@
-"""Entry point for Monica - Secure Monitoring Agent Harness System.
+"""Entry point for Phantom - AI Agentic Harness System.
 
 Architecture:
 - Gateway: Input interfaces + Schedule Manager
@@ -94,7 +94,7 @@ def stop_web_dashboard():
 
 
 def main() -> None:
-    """Run the Monica monitoring agent."""
+    """Run the Phantom monitoring agent."""
     global running
     running = True
     
@@ -106,7 +106,7 @@ def main() -> None:
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     
-    debug_logger.info("Starting Monica")
+    debug_logger.info("Starting Phantom")
     
     central_agent = create_central_agent()
     gateway = create_gateway(central_agent=central_agent)

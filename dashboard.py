@@ -394,7 +394,7 @@ class DashboardApp(App):
             self.chat_display.update_messages(self._chat_messages)
 
     def _build_context(self) -> list[dict[str, str]]:
-        messages = [{"role": "system", "content": "You are Monica, a security monitoring agent."}]
+        messages = [{"role": "system", "content": "You are Phantom, an AI agentic harness system."}]
         
         state = self._agent_state.get_all()
         risk_score, risk_level = self._agent_state.calculate_risk()

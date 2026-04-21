@@ -1,1 +1,1 @@
-"""Utility modules for Monica - the security monitoring agent."""
+"""Utility modules for Phantom - AI Agentic Harness System."""

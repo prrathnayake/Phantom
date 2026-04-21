@@ -1,4 +1,4 @@
-"""CLI module for Monica agent."""
+"""CLI module for Phantom."""
 from .main import main
 
 __all__ = ["main"]

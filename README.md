@@ -1,4 +1,4 @@
-# Monica - Secure Monitoring Agent Harness System
+# Phantom - AI Agentic Harness System
 
 A centralized security monitoring system with Gateway + Central Agent architecture.
 
