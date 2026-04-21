@@ -3,10 +3,10 @@
 The central intelligence layer for Phantom.
 Analyzes diagnostic payloads and generates security reports.
 """
-from central_agent.agent import CentralAgent, create_central_agent
-from central_agent.context import ContextManager, create_context_manager
-from central_agent.memory import SessionMemory, create_session_memory
-from central_agent.reports_storage import ReportStorage, create_report_storage
+from .agent import CentralAgent, create_central_agent
+from .context import ContextManager, create_context_manager
+from .memory import SessionMemory, create_session_memory
+from .reports_storage import ReportStorage, create_report_storage
 
 __all__ = [
     "CentralAgent",

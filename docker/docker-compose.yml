@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   # Main Phantom AI Agent
   agent:
@@ -25,7 +23,7 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-phantom}
       - ELASTIC_URL=http://elasticsearch:9200
     volumes:
-      - ./:/app:ro
+      - ../:/app
       - agent-logs:/app/.logs
     ports:
       - "8000:8000"
@@ -183,7 +181,7 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-phantom}
       - TERM=xterm-256color
     volumes:
-      - ./:/app:ro
+      - ../:/app
       - agent-logs:/app/.logs:ro
     depends_on:
       - agent

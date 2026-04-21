@@ -13,9 +13,9 @@ import signal
 from pathlib import Path
 
 import config
-from central_agent import create_central_agent
+from src.central_agent import create_central_agent
 from src.gateway import create_gateway
-from utils.debug_log import debug_logger
+from src.utils.debug_log import debug_logger
 
 try:
     import psutil
