@@ -11,8 +11,9 @@ ROOT_DIR = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT_DIR))
 
 import json
+import uuid
 from datetime import datetime, timedelta, timezone
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session
 from threading import Lock
 
 import config
@@ -24,8 +25,61 @@ app = Flask(__name__)
 app.secret_key = os.environ.get("PHANTOM_DASHBOARD_SECRET", "phantom-mission-control-key")
 
 start_time = datetime.now(timezone.utc)
-chat_history = []
 chat_lock = Lock()
+
+
+class ChatStore:
+    """File-backed per-session chat history."""
+
+    def __init__(self):
+        self._dir = config.LOG_DIR / "chats"
+        self._dir.mkdir(parents=True, exist_ok=True)
+        self._lock = Lock()
+
+    def _path(self, sid: str) -> Path:
+        return self._dir / f"{sid}.json"
+
+    def load(self, sid: str) -> list:
+        with self._lock:
+            path = self._path(sid)
+            if path.exists():
+                try:
+                    return json.loads(path.read_text(encoding="utf-8"))
+                except (json.JSONDecodeError, OSError):
+                    pass
+            return []
+
+    def save(self, sid: str, history: list) -> None:
+        with self._lock:
+            try:
+                self._path(sid).write_text(json.dumps(history, ensure_ascii=False), encoding="utf-8")
+            except OSError:
+                pass
+
+    def clear(self, sid: str) -> None:
+        with self._lock:
+            try:
+                self._path(sid).unlink(missing_ok=True)
+            except OSError:
+                pass
+
+
+chat_store = ChatStore()
+
+
+def _get_session_id() -> str:
+    """Return a stable session ID for the current browser session."""
+    if "chat_session_id" not in session:
+        session["chat_session_id"] = str(uuid.uuid4())
+    return session["chat_session_id"]
+
+
+def _get_chat_history() -> list:
+    return chat_store.load(_get_session_id())
+
+
+def _save_chat_history(history: list) -> None:
+    chat_store.save(_get_session_id(), history)
 
 agent = None
 schedule_manager = None
@@ -164,17 +218,19 @@ def chat_api():
     if not user_message:
         return jsonify({"error": "Empty message"}), 400
     
-    with chat_lock:
-        chat_history.append({
-            "role": "user",
-            "content": user_message,
-            "timestamp": datetime.now(timezone.utc).isoformat()
-        })
+    history = _get_chat_history()
+    history.append({
+        "role": "user",
+        "content": user_message,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    })
+    _save_chat_history(history)
     
     context_summary = _get_recent_context()
     memory_summary = _get_recent_memory()
     
-    prompt = f"""You are the Phantom Security Agent. 
+    history = _get_chat_history()
+    prompt = f"""You are the Phantom Security Agent.
 User wants to chat with you about security monitoring.
 
 Recent Context:
@@ -184,7 +240,7 @@ Recent Memory:
 {memory_summary}
 
 Chat History:
-{chr(10).join([f"{m['role']}: {m['content']}" for m in chat_history[-5:]])}
+{chr(10).join([f"{m['role']}: {m['content']}" for m in history[-5:]])}
 
 User: {user_message}
 
@@ -213,16 +269,17 @@ Respond as a helpful security assistant."""
         else:
             response = "I apologize, but I'm unable to process your request right now. The AI service may be temporarily unavailable."
     
-    with chat_lock:
-        chat_history.append({
-            "role": "assistant",
-            "content": response,
-            "timestamp": datetime.now(timezone.utc).isoformat()
-        })
-    
+    history = _get_chat_history()
+    history.append({
+        "role": "assistant",
+        "content": response,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    })
+    _save_chat_history(history)
+
     return jsonify({
         "response": response,
-        "history": chat_history[-10:]
+        "history": history[-10:]
     })
 
 
@@ -253,15 +310,13 @@ def reports_count_api():
 @app.route("/api/chat/history", methods=["GET"])
 def chat_history_api():
     """Get chat history."""
-    with chat_lock:
-        return jsonify(chat_history[-20:])
+    return jsonify(_get_chat_history()[-20:])
 
 
 @app.route("/api/chat/clear", methods=["POST"])
 def chat_clear_api():
     """Clear chat history."""
-    with chat_lock:
-        chat_history.clear()
+    chat_store.clear(_get_session_id())
     return jsonify({"status": "cleared"})
 
 

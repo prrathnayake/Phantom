@@ -1575,6 +1575,26 @@
             container.scrollTop = container.scrollHeight;
         }
 
+        function loadChatHistory() {
+            fetch('/api/chat/history')
+                .then(r => r.json())
+                .then(messages => {
+                    const container = document.getElementById('chatWidgetMessages');
+                    container.innerHTML = '';
+                    if (!messages || messages.length === 0) {
+                        container.innerHTML = '<div class="chat-widget-msg assistant">Hello! How can I help you with security monitoring today?</div>';
+                        return;
+                    }
+                    messages.forEach(m => {
+                        const role = m.role === 'assistant' ? 'assistant' : 'user';
+                        appendChatBubble(role, m.content);
+                    });
+                })
+                .catch(() => {
+                    // keep default greeting on error
+                });
+        }
+
         // Chat Widget
         function toggleChatWidget() {
             const btn = document.getElementById('chatWidgetBtn');
@@ -1653,6 +1673,9 @@
                 })
                 .catch(() => {});
         }, 30000);
+
+        // Load persistent chat history on page load
+        loadChatHistory();
     </script>
     {% block scripts %}{% endblock %}
 </body>
