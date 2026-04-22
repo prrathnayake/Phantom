@@ -187,7 +187,7 @@ def create_directories():
 
     dirs = [
         config.LOG_DIR,
-        Path("agent/reports"),
+        Path("src/agent/reports"),
         Path(".codex_memories"),
     ]
 
@@ -461,7 +461,7 @@ def cmd_run(args):
 def cmd_reports(args):
     from pathlib import Path
 
-    reports_dir = Path("agent/reports")
+    reports_dir = Path("src/agent/reports")
 
     if not reports_dir.exists():
         print("No reports found")

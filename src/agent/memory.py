@@ -388,7 +388,7 @@ def create_session_memory() -> SessionMemory:
         Configured SessionMemory instance
     """
     return SessionMemory(
-        persist_path=Path("agent") / "reports" / "session_memory.json",
+        persist_path=Path("src/agent") / "reports" / "session_memory.json",
         default_ttl=3600.0,
         max_entries=500
     )

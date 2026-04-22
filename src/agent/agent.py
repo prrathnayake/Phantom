@@ -101,7 +101,7 @@ class Agent:
         self.context_mgr = context_mgr or create_context_manager()
         self.memory = memory or create_session_memory()
         self.report_storage = report_storage or create_report_storage(
-            reports_dir=reports_dir or Path("agent") / "reports"
+            reports_dir=reports_dir or Path("src/agent") / "reports"
         )
         
         self.skill_registry = skill_registry or get_skill_registry()
@@ -731,5 +731,5 @@ def create_agent() -> Agent:
         llm_client=OpenRouterClient(),
         context_mgr=create_context_manager(),
         memory=create_session_memory(),
-        reports_dir=Path("agent") / "reports"
+        reports_dir=Path("src/agent") / "reports"
     )

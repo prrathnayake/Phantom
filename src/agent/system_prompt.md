@@ -39,7 +39,7 @@ The agent loops around a single LLM for analysis:
 
 ## Reports
 - Format: Markdown with JSON metadata
-- Location: `agent/reports/YYYY-MM-DD/`
+- Location: `src/agent/reports/YYYY-MM-DD/`
 - Naming: `report_{session_id}_{timestamp}.md`
 - Content: Executive summary, findings, recommendations,raw data
 
@@ -59,7 +59,7 @@ The agent loops around a single LLM for analysis:
 - `src/gateway/schedule_manager.py`: Diagnostic scheduling
 - `src/agent/context.py`: Session context
 - `src/agent/memory.py`: Memory management
-- `agent/reports/`: Report storage (runtime)
+- `src/agent/reports/`: Report storage
 
 ## Interaction Flow
 

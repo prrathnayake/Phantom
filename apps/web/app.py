@@ -88,7 +88,7 @@ approval_manager = None
 alert_manager = None
 response_engine = None
 
-REPORTS_ROOT = ROOT_DIR / "agent" / "reports"
+REPORTS_ROOT = ROOT_DIR / "src" / "agent" / "reports"
 SENSOR_TYPES = {
     "process": "process_sensor",
     "port": "port_sensor",

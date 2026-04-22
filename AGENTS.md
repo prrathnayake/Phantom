@@ -28,7 +28,9 @@ src/
     context.py      # Session context manager
     memory.py       # Session memory with TTL
     agent.py        # Agent with LLM loop
+    reports/        # Generated reports (YYYY-MM-DD/)
     skills/         # Skill implementations
+
   gateway/          # Input interfaces + schedule manager
     schedule_manager.py  # Autonomous diagnostic runs
     payload_sender.py   # Sends payloads to Agent
@@ -39,9 +41,6 @@ src/
   integrations/     # External service clients
   utils/            # Utilities
   skills/           # Legacy agent skills
-
-agent/      # Runtime data (kept at root)
-  reports/          # Generated reports (YYYY-MM-DD/)
 
 tests/              # Test suite
 apps/web/           # Flask web dashboard

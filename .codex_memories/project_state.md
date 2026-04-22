@@ -12,7 +12,7 @@ active_threads: {
   "gateway": "working, input interfaces (HTTP/CLI/Queue/File/WS) + autonomous schedule manager",
   "agent": "working, LLM analysis loop with context/memory management and sanitized LLM health/fallback reporting",
   "diagnostics": "working, configured process/port/file/network/memory/disk_io/auth/service/registry/dns/driver/certificate/hardware sensors supported by dashboard scheduling",
-  "reports": "stored in agent/reports/YYYY-MM-DD/",
+  "reports": "stored in src/agent/reports/YYYY-MM-DD/",
   "dashboard": "Flask dashboard refined for safer report viewing, live status, mobile layouts, and accessible controls",
   "tests": "144 tests passing"
 }
@@ -33,6 +33,6 @@ active_threads: {
 - src/core/ - Storage + OpenRouterClient
 - src/integrations/ - External service clients
 - src/utils/ - Utilities
-- agent/reports/ - Runtime reports (root level)
+- src/agent/reports/ - Runtime reports
 - apps/web/ - Flask dashboard
 - cli/ - CLI tools

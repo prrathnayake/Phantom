@@ -52,6 +52,7 @@ Phantom/
 │   │   ├── memory.py       # Session memory with TTL
 │   │   ├── agent.py        # Agent with LLM loop
 │   │   ├── reports_storage.py
+│   │   ├── reports/        # Generated reports (YYYY-MM-DD/)
 │   │   └── skills/         # Agent skills
 │   ├── gateway/        # Input interfaces + scheduler
 │   │   ├── server.py
@@ -79,8 +80,6 @@ Phantom/
 │   ├── integrations/   # External service clients
 │   └── utils/          # Utilities
 ├── tests/              # Test suite
-├── agent/      # Runtime data (reports, session memory)
-│   └── reports/
 └── docs/               # Documentation
 ```
 
@@ -169,7 +168,7 @@ python dashboard.py
 
 Generated reports stored in:
 ```
-agent/reports/YYYY-MM-DD/report_{session_id}_{timestamp}.md
+src/agent/reports/YYYY-MM-DD/report_{session_id}_{timestamp}.md
 ```
 
 ## Key Features

@@ -22,7 +22,7 @@ class ReportStorage:
     """
     
     def __init__(self, reports_dir: Optional[Path] = None):
-        self.reports_dir = reports_dir or Path("agent") / "reports"
+        self.reports_dir = reports_dir or Path("src/agent") / "reports"
         self._lock = Lock()
         
         self.reports_dir.mkdir(parents=True, exist_ok=True)
@@ -332,5 +332,5 @@ def create_report_storage(reports_dir: Optional[Path] = None) -> ReportStorage:
         Configured ReportStorage instance
     """
     return ReportStorage(
-        reports_dir=reports_dir or Path("agent") / "reports"
+        reports_dir=reports_dir or Path("src/agent") / "reports"
     )

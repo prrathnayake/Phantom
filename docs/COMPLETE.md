@@ -170,7 +170,7 @@ src/agent/
     └── system_diagnostics.py
 ```
 
-Reports are stored at runtime in `agent/reports/YYYY-MM-DD/`.
+Reports are stored at runtime in `src/agent/reports/YYYY-MM-DD/`.
 
 **Agent Features**:
 - Session-based context management
@@ -408,7 +408,7 @@ Events stored as JSON lines:
 
 ### Report Format
 
-Markdown reports in `agent/reports/YYYY-MM-DD/`:
+Markdown reports in `src/agent/reports/YYYY-MM-DD/`:
 
 ```markdown
 # Security Analysis Report
