@@ -203,7 +203,7 @@ class CLIHandler:
             "data": args if args else {}
         }
         
-            result = self.agent.analyze(
+        result = self.agent.analyze(
             payload=payload,
             trigger="cli"
         )
@@ -229,7 +229,7 @@ class CLIHandler:
     
     def _list_reports(self) -> int:
         """List recent reports."""
-            reports = self.agent.get_recent_reports()
+        reports = self.agent.get_recent_reports()
         
         if not reports:
             print("No reports found")
