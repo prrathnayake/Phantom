@@ -421,6 +421,32 @@ def cmd_version(args: argparse.Namespace) -> None:
     print(f"  Docker Compose: {compose_ver}")
 
 
+def cmd_help(args: argparse.Namespace) -> None:
+    """Show detailed help for a specific command."""
+    parser = build_parser()
+    target = args.command_name if hasattr(args, "command_name") else None
+    if target:
+        # Find the subparser for the target command
+        subparsers_actions = [
+            action for action in parser._actions
+            if isinstance(action, argparse._SubParsersAction)
+        ]
+        if subparsers_actions:
+            subparser = subparsers_actions[0].choices.get(target)
+            if subparser:
+                subparser.print_help()
+                return
+        # Try aliases
+        for sp in subparsers_actions[0].choices.values():
+            if target in getattr(sp, "_name_parser_map", {}):
+                sp.print_help()
+                return
+        print(red(f"Unknown command: '{target}'"))
+        print(f"Run {cyan('phantom --help')} to see all commands.")
+    else:
+        parser.print_help()
+
+
 # ── Argument Parser ─────────────────────────────────────────────────
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
@@ -503,6 +529,10 @@ Examples:
     # top
     sub.add_parser("top", aliases=["stats"], help="Show resource usage")
 
+    # help
+    p_help = sub.add_parser("help", help="Show help for a specific command")
+    p_help.add_argument("command_name", nargs="?", help="Command to get help for (e.g. start, logs)")
+
     return parser
 
 
@@ -532,6 +562,7 @@ _COMMANDS = {
     "config": cmd_config,
     "top": cmd_top,
     "stats": cmd_top,
+    "help": cmd_help,
 }
 
 _VERBOSE = False
