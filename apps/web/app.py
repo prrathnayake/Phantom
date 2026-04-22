@@ -171,24 +171,55 @@ def monitor_page():
 
 @app.route("/reports")
 def reports_page():
-    """Reports viewer page."""
+    """Reports viewer page with pagination."""
     reports = []
     reports_dir = REPORTS_ROOT
     
+    # Pagination params
+    try:
+        limit = max(1, min(int(request.args.get("limit", 50)), 500))
+    except ValueError:
+        limit = 50
+    try:
+        offset = max(0, int(request.args.get("offset", 0)))
+    except ValueError:
+        offset = 0
+    
     if reports_dir.exists():
+        all_reports = []
         for date_dir in sorted(reports_dir.iterdir(), reverse=True):
             if date_dir.is_dir():
-                for report in sorted(date_dir.glob("*.md"), reverse=True):
-                    rel_path = report.relative_to(reports_dir).as_posix()
-                    reports.append({
-                        "date": date_dir.name,
-                        "name": report.name,
-                        "path": rel_path,
-                        "size": report.stat().st_size,
-                        "modified": datetime.fromtimestamp(report.stat().st_mtime, timezone.utc).isoformat()
-                    })
+                for report in date_dir.glob("*.md"):
+                    try:
+                        all_reports.append((
+                            report,
+                            report.stat().st_mtime
+                        ))
+                    except OSError:
+                        continue
+        
+        all_reports.sort(key=lambda x: x[1], reverse=True)
+        total = len(all_reports)
+        
+        for report, _ in all_reports[offset:offset + limit]:
+            rel_path = report.relative_to(reports_dir).as_posix()
+            reports.append({
+                "date": report.parent.name,
+                "name": report.name,
+                "path": rel_path,
+                "size": report.stat().st_size,
+                "modified": datetime.fromtimestamp(report.stat().st_mtime, timezone.utc).isoformat()
+            })
+    else:
+        total = 0
     
-    return render_template("reports.html", reports=reports)
+    return render_template(
+        "reports.html",
+        reports=reports,
+        total=total,
+        limit=limit,
+        offset=offset
+    )
 
 
 @app.route("/approvals")
