@@ -797,8 +797,8 @@
 
         /* Workspace Sidebar - Equal Height Cards */
         .workspace-sidebar {
-            width: 260px;
-            min-width: 260px;
+            width: 340px;
+            min-width: 340px;
             display: flex;
             flex-direction: column;
             gap: 0.75rem;
@@ -935,7 +935,7 @@
         /* Orbiting Components */
         .orbit-container {
             position: relative;
-            width: calc(100% - 270px);
+            width: calc(100% - 355px);
             height: 100%;
             display: flex;
             flex-direction: column;
@@ -1541,19 +1541,19 @@
         pollGlobalStatus();
         setInterval(pollGlobalStatus, 30000);
 
-        // Floating timer
-        let timerStart = Date.now();
+        // Floating timer — shows current date and local clock time
         function updateFloatingTimer() {
-            const elapsed = Math.floor((Date.now() - timerStart) / 1000);
-            const hrs = String(Math.floor(elapsed / 3600)).padStart(2, '0');
-            const mins = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
-            const secs = String(elapsed % 60).padStart(2, '0');
+            const now = new Date();
+            const hrs = String(now.getHours()).padStart(2, '0');
+            const mins = String(now.getMinutes()).padStart(2, '0');
+            const secs = String(now.getSeconds()).padStart(2, '0');
+
             const timerEl = document.getElementById('floatingTimer');
             if (timerEl) timerEl.textContent = `${hrs}:${mins}:${secs}`;
-            
+
             const dateEl = document.getElementById('timerDate');
-            if (dateEl && !dateEl.textContent) {
-                dateEl.textContent = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            if (dateEl) {
+                dateEl.textContent = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             }
         }
         setInterval(updateFloatingTimer, 1000);
