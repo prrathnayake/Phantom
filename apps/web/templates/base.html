@@ -752,6 +752,51 @@
             justify-content: center;
         }
 
+        /* Workspace Sidebar - Equal Height Cards */
+        .workspace-sidebar {
+            width: 260px;
+            min-width: 260px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            overflow-y: auto;
+        }
+
+        .sidebar-card {
+            background: var(--bg-card);
+            border: 1px solid var(--accent-dim);
+            border-radius: 0;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-card-header {
+            background: var(--bg-dark);
+            border-bottom: 1px solid var(--accent-dim);
+            padding: 0.5rem 0.75rem;
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .sidebar-card-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0;
+        }
+
+        .sidebar-card-body .empty-state {
+            padding: 1.5rem;
+        }
+
         /* Central Agent */
         .agent-center {
             position: relative;
@@ -908,11 +953,11 @@
         /* Info widget row - bottom line */
         .info-widget-row {
             position: absolute;
-            bottom: 12px;
+            bottom: 55px;
             left: 0;
             right: 0;
             display: flex;
-            gap: 0.6rem;
+            gap: 0.75rem;
             z-index: 5;
             flex-wrap: wrap;
             justify-content: center;
@@ -921,11 +966,11 @@
 
         .info-widget-row-2 {
             position: absolute;
-            bottom: -65px;
+            bottom: 5px;
             left: 0;
             right: 0;
             display: flex;
-            gap: 0.6rem;
+            gap: 0.75rem;
             z-index: 5;
             flex-wrap: wrap;
             justify-content: center;
@@ -936,23 +981,23 @@
             background: var(--bg-dark);
             border: 1px solid var(--border);
             border-radius: 0.5rem;
-            padding: 0.5rem 0.75rem;
-            min-width: 85px;
+            padding: 0.6rem 1rem;
+            min-width: 95px;
             text-align: center;
             animation: widgetFloat 4s ease-in-out infinite;
         }
 
         .orbital-widget-info .widget-title {
-            font-size: 0.55rem;
-            margin-bottom: 0.2rem;
+            font-size: 0.6rem;
+            margin-bottom: 0.25rem;
         }
 
         .orbital-widget-info .widget-value {
-            font-size: 1.1rem;
+            font-size: 1.25rem;
         }
 
         .orbital-widget-info .widget-sub {
-            font-size: 0.5rem;
+            font-size: 0.55rem;
         }
 
         /* Reasoning panel - position at top of workspace */
@@ -961,10 +1006,18 @@
             top: 10px;
             left: 50%;
             transform: translateX(-50%);
-            width: 420px;
-            max-height: 120px;
+            width: 560px;
+            max-height: 160px;
             background: var(--bg-dark);
             border: 1px solid var(--accent-dim);
+            z-index: 6;
+        }
+
+        .reasoning-messages {
+            padding: 0.5rem;
+            max-height: 110px;
+            overflow-y: auto;
+            font-size: 0.65rem;
         }
 
         /* Responsive Design */
@@ -973,10 +1026,10 @@
                 width: 100%;
             }
             .info-widget-row {
-                bottom: 4px;
+                bottom: 45px;
             }
             .info-widget-row-2 {
-                bottom: -52px;
+                bottom: 5px;
             }
             .info-widget-row, .info-widget-row-2 {
                 position: absolute;
@@ -999,7 +1052,7 @@
                 font-size: 1.1rem;
             }
             .reasoning-panel {
-                width: 280px;
+                width: 320px;
                 top: 5px;
             }
         }
@@ -1029,8 +1082,9 @@
                 overflow-x: auto;
                 padding: 0.5rem !important;
             }
-            .workspace-sidebar .card {
+            .workspace-sidebar .sidebar-card {
                 min-width: 180px;
+                flex: 1 0 auto;
             }
             .agent-avatar {
                 width: 70px;
