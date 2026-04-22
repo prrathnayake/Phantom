@@ -58,8 +58,8 @@ class Gateway:
             agent=agent
         )
         
-        self.queue_handler = create_queue_handler(central_agent=central_agent)
-        self.file_trigger = create_file_trigger(central_agent=central_agent)
+        self.queue_handler = create_queue_handler(agent=agent)
+        self.file_trigger = create_file_trigger(agent=agent)
         self.ws_handler = create_websocket_handler(
             port=ws_port,
             agent=agent
@@ -138,7 +138,7 @@ class Gateway:
 
 
 def create_gateway(
-    central_agent: Optional[Any] = None,
+    agent: Optional[Any] = None,
     http_port: int = 8000,
     ws_port: int = 8001,
     autonomous: bool = True
@@ -149,7 +149,7 @@ def create_gateway(
         Configured Gateway instance
     """
     return Gateway(
-        central_agent=central_agent,
+        agent=agent,
         http_port=http_port,
         ws_port=ws_port,
         autonomous=autonomous

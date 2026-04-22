@@ -189,7 +189,7 @@ class FileTrigger:
 
 def create_file_trigger(
     watch_path: Optional[Path] = None,
-    central_agent: Optional[Any] = None
+    agent: Optional[Any] = None
 ) -> FileTrigger:
     """Create file trigger.
     

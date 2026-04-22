@@ -259,7 +259,7 @@ class CLIHandler:
 
 def create_cli_handler(
     schedule_manager: Optional[Any] = None,
-    central_agent: Optional[Any] = None
+    agent: Optional[Any] = None
 ) -> CLIHandler:
     """Create CLI handler.
     

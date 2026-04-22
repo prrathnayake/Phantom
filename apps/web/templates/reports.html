@@ -57,8 +57,16 @@
         {% endfor %}
 
         <div class="ls-divider"></div>
-        <div class="ls-total">
-            <span class="text-muted">total {{ reports|length }} reports</span>
+        <div class="ls-total d-flex justify-content-between align-items-center">
+            <span class="text-muted">total {{ total }} reports (showing {{ offset + 1 }}-{{ offset + reports|length }})</span>
+            <div class="btn-group btn-group-sm" role="group">
+                {% if offset > 0 %}
+                <a href="/reports?limit={{ limit }}&offset={{ [offset - limit, 0] | max }}" class="btn btn-outline-secondary">&lt; Prev</a>
+                {% endif %}
+                {% if offset + reports|length < total %}
+                <a href="/reports?limit={{ limit }}&offset={{ offset + limit }}" class="btn btn-outline-secondary">Next &gt;</a>
+                {% endif %}
+            </div>
         </div>
         {% endif %}
     </div>

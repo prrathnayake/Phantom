@@ -245,7 +245,7 @@ def create_queue_handler(
     queue_type: str = "redis",
     queue_url: str = "redis://localhost:6379",
     queue_name: str = "phantom:payloads",
-    central_agent: Optional[Any] = None
+    agent: Optional[Any] = None
 ) -> QueueHandler:
     """Create queue handler.
     

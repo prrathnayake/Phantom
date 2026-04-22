@@ -459,7 +459,7 @@ def create_http_server(
     host: str = "127.0.0.1",
     port: int = 8000,
     schedule_manager: Optional[Any] = None,
-    central_agent: Optional[Any] = None,
+    agent: Optional[Any] = None,
     approval_manager: Optional[Any] = None,
     alert_manager: Optional[Any] = None
 ) -> GatewayHTTPServer:

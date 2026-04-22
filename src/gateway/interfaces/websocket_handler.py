@@ -187,7 +187,7 @@ class WebSocketHandler:
 def create_websocket_handler(
     host: str = "127.0.0.1",
     port: int = 8001,
-    central_agent: Optional[Any] = None
+    agent: Optional[Any] = None
 ) -> WebSocketHandler:
     """Create WebSocket handler.
     
