@@ -14,7 +14,6 @@ COPY src ./src
 COPY apps ./apps
 COPY main.py .
 COPY config.py .
-COPY init_agent.py .
 COPY dashboard.py .
 COPY cli ./cli
 
