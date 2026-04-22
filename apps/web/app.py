@@ -199,7 +199,19 @@ Respond as a helpful security assistant."""
     response = llm_client.chat_completion(messages, max_tokens=512)
     
     if not response:
-        response = "I apologize, but I'm unable to process your request right now. Please ensure the OPENROUTER_API_KEY is configured."
+        error = llm_client.last_error
+        if error and error.category == "missing_api_key":
+            response = "I apologize, but I'm unable to process your request right now. Please ensure the OPENROUTER_API_KEY is configured."
+        elif error and error.category == "timeout":
+            response = "The LLM service is taking too long to respond. Please try again in a moment."
+        elif error and error.category == "rate_limited":
+            response = "Rate limit exceeded. Please wait a moment before sending another message."
+        elif error and error.category == "auth_error":
+            response = "Authentication failed. Please check that your OPENROUTER_API_KEY is valid."
+        elif error and error.category == "http_error":
+            response = f"The LLM service returned an error. Please try again later."
+        else:
+            response = "I apologize, but I'm unable to process your request right now. The AI service may be temporarily unavailable."
     
     with chat_lock:
         chat_history.append({
