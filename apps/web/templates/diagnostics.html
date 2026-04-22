@@ -18,6 +18,37 @@
         <!-- Process Scanner -->
         <div class="card mb-3">
             <div class="card-header">
+                <i class="bi bi-sliders"></i> Sensor Runner
+            </div>
+            <div class="card-body d-flex flex-column">
+                <p class="text-secondary small mb-3">Run any configured collector directly, including network, service, DNS, driver, certificate, and hardware checks.</p>
+                <label for="diagnosticType" class="form-label text-muted">Sensor Type</label>
+                <select id="diagnosticType" name="diagnostic_type" class="form-control mb-3" autocomplete="off">
+                    <option value="process">Process</option>
+                    <option value="port">Port</option>
+                    <option value="file">File</option>
+                    <option value="network">Network</option>
+                    <option value="memory">Memory</option>
+                    <option value="disk_io">Disk I/O</option>
+                    <option value="auth">Auth</option>
+                    <option value="service">Service</option>
+                    <option value="registry">Registry</option>
+                    <option value="dns">DNS</option>
+                    <option value="driver">Driver</option>
+                    <option value="certificate">Certificate</option>
+                    <option value="hardware">Hardware</option>
+                </select>
+                <div class="mt-auto">
+                    <button class="btn btn-accent w-100" onclick="runDiagnostic(document.getElementById('diagnosticType').value, 'btnGeneric')" id="btnGeneric">
+                        <i class="bi bi-play me-2"></i> Run Selected
+                    </button>
+                </div>
+                <div class="mt-3" id="genericResult"></div>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">
                 <i class="bi bi-memory"></i> Process Scanner
             </div>
             <div class="card-body d-flex flex-column">
@@ -71,7 +102,7 @@
                 <div>
                     <i class="bi bi-clock-history"></i> Scheduled Diagnostics
                 </div>
-                <button class="btn btn-sm btn-outline-secondary" onclick="loadSchedules()">
+                <button class="btn btn-sm btn-outline-secondary" onclick="loadSchedules()" aria-label="Refresh Schedules">
                     <i class="bi bi-arrow-clockwise"></i> Refresh
                 </button>
             </div>
@@ -103,12 +134,12 @@
 
 {% block scripts %}
 <script>
-function runDiagnostic(type) {
-    const btn = document.getElementById('btn' + type.charAt(0).toUpperCase() + type.slice(1));
+function runDiagnostic(type, buttonId) {
+    const btn = document.getElementById(buttonId || ('btn' + type.charAt(0).toUpperCase() + type.slice(1)));
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Running...';
     
-    const resultDiv = document.getElementById(type + 'Result');
+    const resultDiv = document.getElementById(buttonId ? 'genericResult' : (type + 'Result'));
     resultDiv.innerHTML = '';
     
     fetch('/api/diagnostics/run', {
@@ -119,32 +150,75 @@ function runDiagnostic(type) {
     .then(r => r.json())
     .then(data => {
         btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-play me-2"></i>Run Now';
+        btn.innerHTML = buttonId ? '<i class="bi bi-play me-2"></i>Run Selected' : '<i class="bi bi-play me-2"></i>Run Now';
         
         if (data.error) {
-            resultDiv.innerHTML = `<div class="alert alert-danger mt-3">${data.error}</div>`;
+            const err = document.createElement('div');
+            err.className = 'alert alert-danger mt-3';
+            err.textContent = data.error;
+            resultDiv.appendChild(err);
             return;
         }
         
         showActivity();
         
-        let content = `<div class="alert alert-success"><i class="bi bi-check-circle me-2"></i>Diagnostic completed!</div>`;
-        content += `<pre class="bg-dark p-3 rounded mt-3" style="font-size: 0.75rem;">${JSON.stringify(data.result, null, 2)}</pre>`;
+        const ok = document.createElement('div');
+        ok.className = data.analysis_status === 'llm_unavailable' ? 'alert alert-warning' : 'alert alert-success';
+        ok.textContent = data.analysis_status === 'llm_unavailable'
+            ? 'Diagnostic completed. LLM unavailable; fallback summary shown.'
+            : 'Diagnostic completed.';
+        resultDiv.appendChild(ok);
+
+        const details = document.createElement('details');
+        details.className = 'mt-3';
+        details.open = true;
+        const summary = document.createElement('summary');
+        summary.className = 'text-accent';
+        summary.textContent = 'Raw JSON Result';
+        const pre = document.createElement('pre');
+        pre.className = 'bg-dark p-3 rounded mt-3';
+        pre.style.fontSize = '0.75rem';
+        pre.textContent = JSON.stringify(data.result, null, 2);
+        details.appendChild(summary);
+        details.appendChild(pre);
+        resultDiv.appendChild(details);
         
         if (data.analysis) {
-            content += `<div class="mt-3 p-3 rounded" style="background: var(--bg-card); border: 1px solid var(--border);">`;
-            content += `<strong class="text-accent">Analysis:</strong><br>${data.analysis}</div>`;
-            content += `<div class="mt-2"><strong>Risk Level:</strong> `;
+            const analysis = document.createElement('div');
+            analysis.className = 'mt-3 p-3 rounded';
+            analysis.style.background = 'var(--bg-card)';
+            analysis.style.border = '1px solid var(--border)';
+            const strong = document.createElement('strong');
+            strong.className = 'text-accent';
+            strong.textContent = data.analysis_status === 'llm_unavailable' ? 'LLM Status: ' : 'Analysis: ';
+            analysis.appendChild(strong);
+            analysis.appendChild(document.createTextNode(data.analysis));
+            resultDiv.appendChild(analysis);
+
+            if (data.fallback_summary) {
+                const fallback = document.createElement('div');
+                fallback.className = 'mt-2 p-3 rounded';
+                fallback.style.background = 'var(--bg-dark)';
+                fallback.style.border = '1px solid var(--warning)';
+                fallback.textContent = data.fallback_summary;
+                resultDiv.appendChild(fallback);
+            }
+
+            const risk = document.createElement('div');
+            risk.className = 'mt-2';
             const riskClass = data.risk_level === 'LOW' ? 'success' : data.risk_level === 'MEDIUM' ? 'warning' : 'danger';
-            content += `<span class="badge bg-${riskClass}">${data.risk_level}</span></div>`;
+            risk.innerHTML = `<strong>Risk Level:</strong> <span class="badge bg-${riskClass}">${escapeHtml(data.risk_level || 'UNKNOWN')}</span>`;
+            resultDiv.appendChild(risk);
         }
-        
-        resultDiv.innerHTML = content;
     })
     .catch(err => {
         btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-play me-2"></i>Run Now';
-        resultDiv.innerHTML = `<div class="alert alert-danger mt-3">Error: ${err.message}</div>`;
+        btn.innerHTML = buttonId ? '<i class="bi bi-play me-2"></i>Run Selected' : '<i class="bi bi-play me-2"></i>Run Now';
+        resultDiv.innerHTML = '';
+        const errBox = document.createElement('div');
+        errBox.className = 'alert alert-danger mt-3';
+        errBox.textContent = 'Error: ' + err.message;
+        resultDiv.appendChild(errBox);
     });
 }
 
@@ -169,9 +243,9 @@ function loadSchedules() {
                         <div class="d-flex align-items-center gap-2">
                             <input type="number" class="form-control form-control-sm" 
                                    style="width: 80px; background: var(--bg-dark); border: 1px solid var(--border); color: var(--text-primary);"
-                                   value="${info.interval}" min="10" id="interval-${name}">
+                                   value="${info.interval}" min="10" id="interval-${name}" aria-label="Interval for ${escapeHtml(name)}">
                             <span class="small text-muted">s</span>
-                            <button class="btn btn-sm btn-link text-accent" onclick="updateInterval('${name}')" title="Update">
+                            <button class="btn btn-sm btn-link text-accent" onclick="updateInterval('${name}')" title="Update" aria-label="Update interval for ${escapeHtml(name)}">
                                 <i class="bi bi-check"></i>
                             </button>
                         </div>
@@ -182,11 +256,11 @@ function loadSchedules() {
                     <td>
                         <div class="d-flex gap-1">
                             ${info.enabled 
-                                ? `<button class="btn btn-sm btn-outline-warning" onclick="toggleSchedule('${name}', false)" title="Disable"><i class="bi bi-pause"></i></button>`
-                                : `<button class="btn btn-sm btn-outline-success" onclick="toggleSchedule('${name}', true)" title="Enable"><i class="bi bi-play"></i></button>`
+                                ? `<button class="btn btn-sm btn-outline-warning" onclick="toggleSchedule('${name}', false)" title="Disable" aria-label="Disable ${escapeHtml(name)}"><i class="bi bi-pause"></i></button>`
+                                : `<button class="btn btn-sm btn-outline-success" onclick="toggleSchedule('${name}', true)" title="Enable" aria-label="Enable ${escapeHtml(name)}"><i class="bi bi-play"></i></button>`
                             }
-                            <button class="btn btn-sm btn-outline-primary" onclick="runSchedule('${name}')" title="Run Now"><i class="bi bi-lightning"></i></button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="removeSchedule('${name}')" title="Remove"><i class="bi bi-trash"></i></button>
+                            <button class="btn btn-sm btn-outline-primary" onclick="runSchedule('${name}')" title="Run Now" aria-label="Run ${escapeHtml(name)} now"><i class="bi bi-lightning"></i></button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="removeSchedule('${name}')" title="Remove" aria-label="Remove ${escapeHtml(name)}"><i class="bi bi-trash"></i></button>
                         </div>
                     </td>
                 </tr>`;

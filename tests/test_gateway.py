@@ -105,6 +105,49 @@ class TestScheduleManager:
         schedules = mgr.get_all_schedules()
         assert len(schedules) == 2
 
+    def test_create_schedule_manager_registers_defaults(self):
+        """Test default configured schedules are registered."""
+        import config
+        from gateway.schedule_manager import create_schedule_manager
+
+        mgr = create_schedule_manager()
+        schedules = mgr.get_all_schedules()
+
+        assert len(schedules) == len(config.POLL_INTERVALS)
+        for name in config.POLL_INTERVALS:
+            assert name in schedules
+
+    def test_run_schedule_uses_returned_collector_payload(self):
+        """Test returned collector data is captured in the run result."""
+        from gateway.schedule_manager import ScheduleManager
+
+        mgr = ScheduleManager()
+
+        def test_func(ctx):
+            ctx["shared_snapshot"] = {"old": "state"}
+            return {"fresh": "payload"}
+
+        mgr.add_schedule("returned-payload", 60, "test_module", test_func)
+        result = mgr.run_schedule("returned-payload")
+
+        assert result is not None
+        assert result["data"] == {"fresh": "payload"}
+
+    def test_update_interval(self):
+        """Test schedule interval updates reset next run."""
+        from gateway.schedule_manager import ScheduleManager
+
+        mgr = ScheduleManager()
+
+        def test_func(ctx):
+            return {}
+
+        mgr.add_schedule("interval-test", 60, "test_module", test_func)
+        assert mgr.update_interval("interval-test", 120) is True
+        assert mgr.get_schedule_info("interval-test")["interval"] == 120
+        assert mgr.update_interval("missing", 120) is False
+        assert mgr.update_interval("interval-test", 5) is False
+
 
 class TestPayloadSender:
     """Tests for PayloadSender."""

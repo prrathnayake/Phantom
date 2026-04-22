@@ -97,6 +97,23 @@ class TestOpenRouterClient:
         assert hasattr(client, "base_url")
         assert hasattr(client, "model")
 
+    def test_missing_key_sets_sanitized_health(self, monkeypatch):
+        """Test missing API key reports safe structured health."""
+        import config
+        from core import OpenRouterClient
+
+        monkeypatch.setattr(config, "OPENROUTER_API_KEY", "")
+        client = OpenRouterClient()
+
+        response = client.chat_completion([{"role": "user", "content": "hello"}])
+        health = client.get_health()
+
+        assert response is None
+        assert health["configured"] is False
+        assert health["status"] == "missing_api_key"
+        assert health["error_category"] == "missing_api_key"
+        assert "api_key" not in health
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

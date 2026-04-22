@@ -53,9 +53,9 @@
                     <!-- Populated by JS -->
                 </div>
                 <div class="d-flex justify-content-between mt-2 text-muted small">
-                    <span>Now</span>
-                    <span>30m ago</span>
                     <span>1h ago</span>
+                    <span>30m ago</span>
+                    <span>Now</span>
                 </div>
             </div>
         </div>
@@ -71,7 +71,7 @@
                     <i class="bi bi-lightning-charge"></i>
                     Recent Events
                 </div>
-                <button class="btn btn-sm btn-link text-secondary" onclick="loadActivity()">
+                <button class="btn btn-sm btn-link text-secondary" onclick="loadActivity()" aria-label="Refresh Events">
                     <i class="bi bi-arrow-clockwise"></i>
                 </button>
             </div>
@@ -91,7 +91,7 @@
                     <i class="bi bi-shield-exclamation"></i>
                     Recent Detections
                 </div>
-                <button class="btn btn-sm btn-link text-secondary" onclick="loadActivity()">
+                <button class="btn btn-sm btn-link text-secondary" onclick="loadActivity()" aria-label="Refresh Detections">
                     <i class="bi bi-arrow-clockwise"></i>
                 </button>
             </div>
@@ -112,7 +112,10 @@ let activityHistory = [];
 
 function loadActivity() {
     fetch('/api/activity?count=50')
-        .then(r => r.json())
+        .then(r => {
+            if (!r.ok) throw new Error('activity unavailable');
+            return r.json();
+        })
         .then(data => {
             document.getElementById('totalEvents').textContent = data.events?.length || 0;
             document.getElementById('totalDetections').textContent = data.detections?.length || 0;
@@ -123,8 +126,8 @@ function loadActivity() {
                     const type = (e.sensor || 'unknown').replace('_sensor', '');
                     return `<div class="log-entry">
                         <span class="log-timestamp">${new Date(e.timestamp).toLocaleTimeString()}</span>
-                        <span class="log-badge ${type}">${type}</span>
-                        <span class="text-light">${JSON.stringify(e.data).substring(0, 60)}...</span>
+                        <span class="log-badge ${escapeHtml(type)}">${escapeHtml(type)}</span>
+                        <span class="text-light text-truncate" style="min-width: 0;" title="${escapeHtml(JSON.stringify(e.data || {}))}">${escapeHtml(JSON.stringify(e.data || {}).substring(0, 120))}</span>
                     </div>`;
                 }).join('');
             } else {
@@ -136,8 +139,8 @@ function loadActivity() {
                 detectionsDiv.innerHTML = data.detections.slice(0, 30).map(d => {
                     return `<div class="log-entry">
                         <span class="log-timestamp">${new Date(d.timestamp).toLocaleTimeString()}</span>
-                        <span class="log-badge detection">${d.rule}</span>
-                        <span class="text-light">${d.description || ''}</span>
+                        <span class="log-badge detection text-truncate" style="max-width: 180px;" title="${escapeHtml(d.rule || 'rule')}">${escapeHtml(d.rule || 'rule')}</span>
+                        <span class="text-light text-truncate" style="min-width: 0;" title="${escapeHtml(d.description || '')}">${escapeHtml(d.description || '')}</span>
                     </div>`;
                 }).join('');
             } else {
@@ -182,12 +185,20 @@ function updateActivityGraph() {
 
 function loadStatus() {
     fetch('/api/status')
-        .then(r => r.json())
+        .then(r => {
+            if (!r.ok) throw new Error('status unavailable');
+            return r.json();
+        })
         .then(data => {
             document.getElementById('totalSchedules').textContent = data.schedules || 0;
             document.getElementById('systemStatus').textContent = data.status === 'running' ? 'Running' : 'Stopped';
+            document.getElementById('systemStatus').className = data.status === 'running' ? 'stat-value text-success' : 'stat-value text-danger';
         })
-        .catch(err => console.error('Status load error:', err));
+        .catch(err => {
+            console.error('Status load error:', err);
+            document.getElementById('systemStatus').textContent = 'Offline';
+            document.getElementById('systemStatus').className = 'stat-value text-danger';
+        });
 }
 
 loadActivity();

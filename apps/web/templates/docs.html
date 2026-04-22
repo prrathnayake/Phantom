@@ -736,6 +736,48 @@ pytest tests/test_core.py         # Core module tests</code></pre>
 </div>
 {% endblock %}
 
+{% block extra_styles %}
+<style>
+#overview,
+#architecture,
+#components,
+#dataflow,
+#sensors,
+#detection,
+#skills,
+#interfaces,
+#configuration,
+#api,
+#testing {
+    scroll-margin-top: 5rem;
+}
+
+.card-body pre,
+.card-body code {
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 991px) {
+    .sidebar {
+        position: static !important;
+        height: auto !important;
+        max-height: none !important;
+    }
+    .doc-nav {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 0.25rem;
+    }
+    .card-body svg {
+        min-width: 680px;
+    }
+    .card-body .text-center.my-4 {
+        overflow-x: auto;
+    }
+}
+</style>
+{% endblock %}
+
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {

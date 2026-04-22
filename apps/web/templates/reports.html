@@ -14,9 +14,11 @@
 
 <div class="row g-3 mb-4">
     <div class="col-lg-12">
+        <label for="searchReports" class="visually-hidden">Search Reports</label>
         <input type="text" id="searchReports" class="form-control" 
                placeholder="Search reports by name..." 
                onkeyup="filterReports()">
+        <div id="reportsEmptySearch" class="text-muted small mt-2" style="display: none;">No reports match that search.</div>
     </div>
 </div>
 
@@ -44,7 +46,7 @@
         <div class="ls-divider"></div>
 
         {% for report in reports %}
-        <div class="ls-row report-item" data-name="{{ report.name }}" onclick="viewReport('{{ report.path }}')">
+        <div class="ls-row report-item" data-name="{{ report.name }}" data-path="{{ report.path }}" role="button" tabindex="0" aria-label="Open {{ report.name }}">
             <span class="ls-perms">-rw-r--r--</span>
             <span class="ls-user">phantom</span>
             <span class="ls-group">security</span>
@@ -127,6 +129,33 @@
     padding: 0.5rem 1rem;
     color: var(--text-muted);
 }
+
+@media (max-width: 640px) {
+    .ls-header {
+        display: none;
+    }
+    .ls-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.25rem 0.75rem;
+        padding: 0.75rem 1rem;
+    }
+    .ls-perms,
+    .ls-user,
+    .ls-group {
+        display: none;
+    }
+    .ls-name {
+        grid-column: 1 / -1;
+        overflow-wrap: anywhere;
+    }
+    .ls-size,
+    .ls-date {
+        width: auto;
+        text-align: left;
+        color: var(--text-muted);
+    }
+}
 </style>
 {% endblock %}
 
@@ -134,19 +163,27 @@
 <script>
 function filterReports() {
     const search = document.getElementById('searchReports').value.toLowerCase();
+    let visible = 0;
     document.querySelectorAll('.report-item').forEach(item => {
         const name = item.dataset.name.toLowerCase();
-        item.style.display = name.includes(search) ? 'flex' : 'none';
+        const match = name.includes(search);
+        item.style.display = match ? '' : 'none';
+        if (match) visible++;
     });
+    document.getElementById('reportsEmptySearch').style.display = visible ? 'none' : 'block';
 }
 
 function viewReport(path) {
-    document.getElementById('reportContent').innerHTML = '<span class="text-muted">Loading report...</span>';
+    document.getElementById('reportContent').textContent = 'Loading report...';
     const modal = new bootstrap.Modal(document.getElementById('reportModal'));
     modal.show();
     
-    fetch('/api/report/' + encodeURIComponent(path))
-        .then(r => r.text())
+    const safePath = path.split('/').map(encodeURIComponent).join('/');
+    fetch('/api/report/' + safePath)
+        .then(r => {
+            if (!r.ok) throw new Error('Report unavailable');
+            return r.text();
+        })
         .then(content => {
             document.getElementById('reportContent').textContent = content;
         })
@@ -154,5 +191,15 @@ function viewReport(path) {
             document.getElementById('reportContent').textContent = 'Error: ' + err.message;
         });
 }
+
+document.querySelectorAll('.report-item').forEach(item => {
+    item.addEventListener('click', () => viewReport(item.dataset.path));
+    item.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            viewReport(item.dataset.path);
+        }
+    });
+});
 </script>
 {% endblock %}

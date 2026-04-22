@@ -7,21 +7,21 @@ import platform
 import importlib
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
+ROOT_DIR = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT_DIR))
 
 import json
 from datetime import datetime, timedelta, timezone
-from flask import Flask, render_template, request, jsonify, session
+from flask import Flask, render_template, request, jsonify
 from threading import Lock
 
 import config
 from src.core import Storage, OpenRouterClient
-from src.central_agent import CentralAgent, create_central_agent
-from src.gateway import ScheduleManager
-from src.diagnostics import process_sensor, port_sensor, file_sensor
+from src.central_agent import create_central_agent
+from src.gateway import create_schedule_manager
 
 app = Flask(__name__)
-app.secret_key = "phantom-mission-control-key"
+app.secret_key = os.environ.get("PHANTOM_DASHBOARD_SECRET", "phantom-mission-control-key")
 
 start_time = datetime.now(timezone.utc)
 chat_history = []
@@ -33,6 +33,23 @@ storage = None
 approval_manager = None
 alert_manager = None
 response_engine = None
+
+REPORTS_ROOT = ROOT_DIR / "central_agent" / "reports"
+SENSOR_TYPES = {
+    "process": "process_sensor",
+    "port": "port_sensor",
+    "file": "file_sensor",
+    "network": "network_sensor",
+    "memory": "memory_sensor",
+    "disk_io": "disk_io_sensor",
+    "auth": "auth_sensor",
+    "service": "service_sensor",
+    "registry": "registry_sensor",
+    "dns": "dns_sensor",
+    "driver": "driver_sensor",
+    "certificate": "certificate_sensor",
+    "hardware": "hardware_sensor",
+}
 
 
 def create_app():
@@ -47,7 +64,7 @@ def init_app():
     
     storage = Storage()
     agent = create_central_agent()
-    schedule_manager = ScheduleManager()
+    schedule_manager = create_schedule_manager()
     
     from src.analysis.approval_manager import create_approval_manager
     from src.analysis.alert_manager import create_alert_manager
@@ -102,17 +119,19 @@ def monitor_page():
 def reports_page():
     """Reports viewer page."""
     reports = []
-    reports_dir = Path("central_agent/reports")
+    reports_dir = REPORTS_ROOT
     
     if reports_dir.exists():
         for date_dir in sorted(reports_dir.iterdir(), reverse=True):
             if date_dir.is_dir():
                 for report in sorted(date_dir.glob("*.md"), reverse=True):
+                    rel_path = report.relative_to(reports_dir).as_posix()
                     reports.append({
                         "date": date_dir.name,
                         "name": report.name,
-                        "path": str(report),
-                        "modified": datetime.fromtimestamp(report.stat().st_mtime).isoformat()
+                        "path": rel_path,
+                        "size": report.stat().st_size,
+                        "modified": datetime.fromtimestamp(report.stat().st_mtime, timezone.utc).isoformat()
                     })
     
     return render_template("reports.html", reports=reports)
@@ -193,17 +212,17 @@ Respond as a helpful security assistant."""
         "response": response,
         "history": chat_history[-10:]
     })
-    
-    return render_template("reports.html", reports=reports)
 
 
 @app.route("/api/report/<path:report_path>", methods=["GET"])
 def report_content_api(report_path):
     """Get report content."""
     try:
-        report_file = Path(report_path)
-        if report_file.exists():
+        report_file = _resolve_report_path(report_path)
+        if report_file and report_file.exists():
             return report_file.read_text(encoding="utf-8")
+        return "Report not found", 404
+    except PermissionError:
         return "Report not found", 404
     except Exception as e:
         return str(e), 500
@@ -212,11 +231,11 @@ def report_content_api(report_path):
 @app.route("/api/reports/count", methods=["GET"])
 def reports_count_api():
     """Get total report count."""
-    reports_dir = Path("central_agent/reports")
+    reports_dir = REPORTS_ROOT
     count = 0
     if reports_dir.exists():
         count = len(list(reports_dir.glob("**/*.md")))
-    return jsonify({"count": count    })
+    return jsonify({"count": count})
 
 
 @app.route("/api/chat/history", methods=["GET"])
@@ -237,23 +256,20 @@ def chat_clear_api():
 @app.route("/api/diagnostics/run", methods=["POST"])
 def run_diagnostic_api():
     """Run a diagnostic manually."""
-    data = request.get_json()
+    data = request.get_json() or {}
     diagnostic = data.get("diagnostic", "")
     
     if not diagnostic:
         return jsonify({"error": "No diagnostic specified"}), 400
     
     try:
-        context = {}
-        
-        if diagnostic == "process":
-            result = process_sensor.collect(context)
-        elif diagnostic == "port":
-            result = port_sensor.collect(context)
-        elif diagnostic == "file":
-            result = file_sensor.collect(context)
-        else:
+        sensor_module = SENSOR_TYPES.get(diagnostic)
+        if not sensor_module:
             return jsonify({"error": f"Unknown diagnostic: {diagnostic}"}), 400
+
+        context = {}
+        module = _load_sensor_module(sensor_module)
+        result = module.collect(context)
         
         storage.log_event(f"web_{diagnostic}", result)
         
@@ -264,13 +280,25 @@ def run_diagnostic_api():
                 trigger="manual"
             )
             
-            return jsonify({
+            analysis_status = "completed"
+            fallback_summary = None
+            llm_health = agent.llm_client.get_health()
+            if analysis.analysis.startswith("LLM analysis unavailable"):
+                analysis_status = "llm_unavailable"
+                fallback_summary = _build_fallback_analysis(diagnostic, result)
+
+            response = {
                 "status": "success",
                 "diagnostic": diagnostic,
                 "result": result,
                 "analysis": analysis.analysis,
-                "risk_level": analysis.risk_level
-            })
+                "risk_level": analysis.risk_level,
+                "analysis_status": analysis_status,
+                "llm_health": llm_health,
+            }
+            if fallback_summary:
+                response["fallback_summary"] = fallback_summary
+            return jsonify(response)
         
         return jsonify({
             "status": "success",
@@ -346,22 +374,32 @@ def run_schedule_api(name):
 @app.route("/api/schedules/create", methods=["POST"])
 def create_schedule_api():
     """Create a new schedule."""
-    data = request.get_json()
+    data = request.get_json() or {}
     name = data.get("name")
-    interval = data.get("interval", 300)
+    try:
+        interval = int(data.get("interval", 300))
+    except (TypeError, ValueError):
+        return jsonify({"success": False, "error": "Invalid interval (min 10 seconds)"}), 400
     sensor = data.get("sensor", "process")
     
     if not name:
         return jsonify({"success": False, "error": "Name required"}), 400
+    if interval < 10:
+        return jsonify({"success": False, "error": "Invalid interval (min 10 seconds)"}), 400
     
-    sensor_module = f"{sensor}_sensor"
+    sensor_module = SENSOR_TYPES.get(sensor)
+    if not sensor_module:
+        return jsonify({"success": False, "error": f"Unknown sensor: {sensor}"}), 400
+
     try:
-        importlib.import_module(f"diagnostics.{sensor_module}")
+        _load_sensor_module(sensor_module)
     except ImportError:
         return jsonify({"success": False, "error": f"Unknown sensor: {sensor}"}), 400
 
     if schedule_manager:
         schedule_manager.add_schedule(name, interval, sensor_module)
+        if not schedule_manager.get_schedule_info(name):
+            return jsonify({"success": False, "error": f"Unknown sensor: {sensor}"}), 400
         return jsonify({"success": True, "name": name, "interval": interval, "sensor": sensor})
     return jsonify({"success": False, "error": "No schedule manager"}), 500
 
@@ -369,18 +407,17 @@ def create_schedule_api():
 @app.route("/api/schedules/<name>/interval", methods=["POST"])
 def update_schedule_interval_api(name):
     """Update schedule interval."""
-    data = request.get_json()
-    new_interval = data.get("interval")
+    data = request.get_json() or {}
+    try:
+        new_interval = int(data.get("interval"))
+    except (TypeError, ValueError):
+        return jsonify({"success": False, "error": "Invalid interval (min 10 seconds)"}), 400
     if not new_interval or new_interval < 10:
         return jsonify({"success": False, "error": "Invalid interval (min 10 seconds)"}), 400
     
     if schedule_manager:
-        with schedule_manager._lock:
-            schedule = schedule_manager._schedules.get(name)
-            if schedule:
-                schedule.interval = new_interval
-                schedule.next_run = datetime.now(timezone.utc) + timedelta(seconds=new_interval)
-                return jsonify({"success": True, "message": f"Interval updated to {new_interval}s"})
+        if schedule_manager.update_interval(name, new_interval):
+            return jsonify({"success": True, "message": f"Interval updated to {new_interval}s"})
         return jsonify({"success": False, "error": "Schedule not found"}), 404
     return jsonify({"success": False, "error": "No schedule manager"}), 500
 
@@ -399,9 +436,8 @@ def status_api():
         event_count = len(events)
         detection_count = len(detections)
         
-        one_day_ago = datetime.now(timezone.utc) - timedelta(hours=24)
-        events_24h = sum(1 for e in events if datetime.fromisoformat(e.get('timestamp', '2020-01-01')) > one_day_ago)
-        detections_24h = sum(1 for d in detections if datetime.fromisoformat(d.get('timestamp', '2020-01-01')) > one_day_ago)
+        events_24h = _count_since(events, "timestamp", hours=24)
+        detections_24h = _count_since(detections, "timestamp", hours=24)
     else:
         events_24h = 0
         detections_24h = 0
@@ -412,8 +448,9 @@ def status_api():
     secs = int(uptime_seconds % 60)
     uptime_str = f"{hrs:02d}:{mins:02d}:{secs:02d}"
     
-    last_activity = storage.get_recent_events(count=1)
+    last_activity = storage.get_recent_events(count=1) if storage else []
     last_activity_time = last_activity[0].get('timestamp') if last_activity else None
+    llm_health = agent.llm_client.get_health() if agent and agent.llm_client else OpenRouterClient().get_health()
     
     return jsonify({
         "status": "running",
@@ -423,9 +460,11 @@ def status_api():
         "detections": detection_count,
         "events_24h": events_24h,
         "detections_24h": detections_24h,
-        "active_sensors": 3,
+        "active_sensors": _active_sensor_count(),
         "last_activity": last_activity_time,
-        "schedules": schedule_manager.schedule_count() if schedule_manager else 0
+        "schedules": schedule_manager.schedule_count() if schedule_manager else 0,
+        "memory_usage": _get_memory_usage(),
+        "llm_health": llm_health,
     })
 
 
@@ -436,8 +475,16 @@ def system_info_api():
         "platform": platform.system() + " " + platform.release(),
         "python_version": platform.python_version(),
         "hostname": platform.node(),
-        "processor": platform.processor()
+        "processor": platform.processor(),
+        "memory_usage": _get_memory_usage()
     })
+
+
+@app.route("/api/llm/health", methods=["GET"])
+def llm_health_api():
+    """Get sanitized LLM client health."""
+    llm_health = agent.llm_client.get_health() if agent and agent.llm_client else OpenRouterClient().get_health()
+    return jsonify(llm_health)
 
 
 @app.route("/api/approvals", methods=["GET"])
@@ -553,6 +600,82 @@ def approval_stats_api():
     if approval_manager:
         return jsonify(approval_manager.get_approval_stats())
     return jsonify({})
+
+
+def _load_sensor_module(sensor_module: str):
+    """Load a diagnostic sensor by module name."""
+    return importlib.import_module(f"src.diagnostics.{sensor_module}")
+
+
+def _resolve_report_path(report_path: str) -> Path | None:
+    """Resolve a report path safely inside the reports root."""
+    root = REPORTS_ROOT.resolve()
+    candidate = (root / report_path).resolve()
+    try:
+        candidate.relative_to(root)
+    except ValueError as exc:
+        raise PermissionError("Report path outside reports root") from exc
+    if candidate.suffix.lower() != ".md":
+        return None
+    return candidate
+
+
+def _parse_timestamp(value) -> datetime | None:
+    """Parse timestamps from logs into timezone-aware UTC datetimes."""
+    if value is None:
+        return None
+    try:
+        if isinstance(value, (int, float)):
+            return datetime.fromtimestamp(value, timezone.utc)
+        text = str(value).strip()
+        if not text:
+            return None
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        return parsed.astimezone(timezone.utc)
+    except (TypeError, ValueError):
+        return None
+
+
+def _count_since(records: list[dict], field: str, hours: int) -> int:
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+    count = 0
+    for record in records:
+        parsed = _parse_timestamp(record.get(field))
+        if parsed and parsed > cutoff:
+            count += 1
+    return count
+
+
+def _active_sensor_count() -> int:
+    if not schedule_manager:
+        return 0
+    schedules = schedule_manager.get_all_schedules()
+    return sum(1 for item in schedules.values() if item and item.get("enabled"))
+
+
+def _get_memory_usage() -> int | None:
+    try:
+        import psutil
+        return int(round(psutil.virtual_memory().used / (1024 * 1024)))
+    except Exception:
+        return None
+
+
+def _build_fallback_analysis(diagnostic: str, result: dict) -> str:
+    """Build a local summary when LLM analysis is unavailable."""
+    if diagnostic == "process":
+        return f"Local fallback: observed {result.get('count', 0)} running processes. Review top CPU consumers for unusual names or owners."
+    if diagnostic == "port":
+        return f"Local fallback: observed {result.get('count', 0)} listening ports. Review externally exposed or unexpected services."
+    if diagnostic == "file":
+        return f"Local fallback: observed {result.get('change_count', 0)} file changes in {result.get('directory', 'the watched directory')}."
+    if diagnostic == "network":
+        return f"Local fallback: observed {result.get('established_count', 0)} established connections and {len(result.get('external_ips', []))} external IPs."
+    if diagnostic == "memory":
+        return f"Local fallback: memory usage is {result.get('percent_used', result.get('memory_percent', 'unknown'))}%."
+    return f"Local fallback: {diagnostic} diagnostic completed. Review the raw result for unusual values."
 
 
 def _get_recent_context():

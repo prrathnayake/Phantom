@@ -54,6 +54,10 @@
 
 {% block scripts %}
 <script>
+function emptyAlerts(message, icon = 'bi-bell-slash') {
+    return `<div class="text-center py-4 text-muted"><i class="bi ${icon}" style="font-size: 2rem;"></i><p class="mt-2">${message}</p></div>`;
+}
+
 function loadAlerts() {
     fetch('/api/alerts')
         .then(r => r.json())
@@ -62,27 +66,55 @@ function loadAlerts() {
             const alerts = data.alerts || [];
 
             if (alerts.length === 0) {
-                list.innerHTML = '<div class="text-center py-4 text-muted"><i class="bi bi-bell-slash" style="font-size: 2rem;"></i><p class="mt-2">No alerts</p></div>';
+                list.innerHTML = emptyAlerts('No alerts');
             } else {
-                list.innerHTML = alerts.map(a => '
-                    <div class="log-entry" style="justify-content: space-between;">
-                        <span class="log-badge ' + (a.severity === 'critical' ? 'detection' : a.severity === 'high' ? 'process' : 'file') + '">' + (a.severity || 'unknown').toUpperCase() + '</span>
-                        <span class="text-light flex-fill mx-2" style="min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><strong>' + (a.title || 'Alert') + '</strong></span>
-                        <span class="text-muted small" style="white-space: nowrap;">' + (a.created || '') + '</span>
-                        ' + (a.status === 'pending' ? '
-                        <button class="btn btn-sm btn-outline-accent ms-2" onclick="acknowledgeAlert(\'' + a.alert_id + '\')">
-                            <i class="bi bi-check"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-accent ms-1" onclick="resolveAlert(\'' + a.alert_id + '\')">
-                            <i class="bi bi-check-all"></i>
-                        </button>' : '') + '
-                    </div>
-                ').join('');
+                list.innerHTML = '';
+                alerts.forEach(a => {
+                    const row = document.createElement('div');
+                    row.className = 'log-entry';
+                    row.style.justifyContent = 'space-between';
+
+                    const sev = document.createElement('span');
+                    sev.className = 'log-badge ' + (a.severity === 'critical' ? 'detection' : a.severity === 'high' ? 'process' : 'file');
+                    sev.textContent = (a.severity || 'unknown').toUpperCase();
+                    row.appendChild(sev);
+
+                    const title = document.createElement('span');
+                    title.className = 'text-light flex-fill mx-2 text-truncate';
+                    title.style.minWidth = '0';
+                    title.textContent = a.title || 'Alert';
+                    row.appendChild(title);
+
+                    const status = document.createElement('span');
+                    status.className = 'text-muted small d-none d-md-inline';
+                    status.textContent = (a.status || 'pending') + ' · ' + (a.created ? new Date(a.created).toLocaleString() : '');
+                    row.appendChild(status);
+
+                    if (['pending', 'routed'].includes(a.status)) {
+                        const acknowledge = document.createElement('button');
+                        acknowledge.className = 'btn btn-sm btn-outline-accent ms-2';
+                        acknowledge.setAttribute('aria-label', 'Acknowledge ' + (a.title || 'alert'));
+                        acknowledge.innerHTML = '<i class="bi bi-check"></i>';
+                        acknowledge.addEventListener('click', () => acknowledgeAlert(a.alert_id));
+                        row.appendChild(acknowledge);
+                    }
+
+                    if (['pending', 'routed', 'acknowledged'].includes(a.status)) {
+                        const resolve = document.createElement('button');
+                        resolve.className = 'btn btn-sm btn-outline-accent ms-1';
+                        resolve.setAttribute('aria-label', 'Resolve ' + (a.title || 'alert'));
+                        resolve.innerHTML = '<i class="bi bi-check-all"></i>';
+                        resolve.addEventListener('click', () => resolveAlert(a.alert_id));
+                        row.appendChild(resolve);
+                    }
+
+                    list.appendChild(row);
+                });
             }
         })
         .catch(err => {
             console.error('Error loading alerts:', err);
-            document.getElementById('alertsList').innerHTML = '<div class="text-center py-4 text-muted"><i class="bi bi-wifi-off" style="font-size: 2rem;"></i><p class="mt-2">Failed to load alerts</p></div>';
+            document.getElementById('alertsList').innerHTML = emptyAlerts('Failed to load alerts', 'bi-wifi-off');
         });
 
     // Load stats

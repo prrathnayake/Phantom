@@ -36,7 +36,8 @@ class Schedule:
     name: str
     interval: int
     script_module: str
-    func: Callable[[Dict[str, Any]], None]
+    func: Callable[[Dict[str, Any]], Any]
+    context: Dict[str, Any] = field(default_factory=dict)
     next_run: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     last_result: Optional[dict] = None
     last_run_time: Optional[str] = None
@@ -99,7 +100,7 @@ class ScheduleManager:
         """
         if func is None:
             try:
-                module = importlib.import_module(f"diagnostics.{script_module}")
+                module = importlib.import_module(f"src.diagnostics.{script_module}")
                 func = getattr(module, "collect", None)
                 if func is None:
                     debug_logger.warning(
@@ -201,19 +202,24 @@ class ScheduleManager:
         debug_logger.info("Running schedule", {"name": name})
         
         try:
-            context: Dict[str, Any] = {}
-            schedule.func(context)
+            context = schedule.context
+            collected = schedule.func(context)
+            data = collected if collected is not None else {
+                key: value
+                for key, value in context.items()
+                if not key.endswith("_snapshot")
+            }
             result = {
                 "name": name,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
                 "source": name,
-                "data": context
+                "data": data
             }
             schedule.mark_run(result)
             
             debug_logger.info("Schedule complete", {
                 "name": name,
-                "has_data": bool(context)
+                "has_data": bool(data)
             })
             
             _notify_schedule_run(result)
@@ -312,6 +318,32 @@ class ScheduleManager:
         """
         with self._lock:
             return len(self._schedules)
+
+    def update_interval(self, name: str, interval: int) -> bool:
+        """Update a schedule interval and move its next run forward.
+
+        Args:
+            name: Schedule name
+            interval: New interval in seconds
+
+        Returns:
+            True if updated
+        """
+        if interval < 10:
+            return False
+
+        with self._lock:
+            schedule = self._schedules.get(name)
+            if not schedule:
+                return False
+            schedule.interval = interval
+            schedule.next_run = datetime.now(timezone.utc) + timedelta(seconds=interval)
+
+        debug_logger.info("Schedule interval updated", {
+            "name": name,
+            "interval": interval
+        })
+        return True
     
     def run_autonomous(self) -> None:
         """Run all scheduled diagnostics autonomously.
@@ -371,11 +403,10 @@ def create_schedule_manager() -> ScheduleManager:
     )
     
     for name, interval in config.POLL_INTERVALS.items():
-        module_name = name.replace("_sensor", "")
         manager.add_schedule(
             name=name,
             interval=interval,
-            script_module=module_name
+            script_module=name
         )
     
     debug_logger.info("Default schedules configured", {

@@ -6,6 +6,8 @@ Rolling state for the current working day.
 - None currently
 
 ## Recent Completions
+- Implemented Phantom Dashboard Bug Fix & UI Refinement Plan: default schedules, `network` schedule creation, timezone-safe `/api/status`, report path confinement, LLM health/fallback summaries, Alerts/Approvals JS fixes, dashboard accessibility/mobile refinements, and route/API regression tests.
+- Verified dashboard with `python -m compileall -q .`, `pytest tests/ -q` (144 passed), and Playwright desktop/mobile smoke checks for all dashboard pages.
 - Added BACKGROUND TASKS panel to TUI dashboard for monitoring active/pending threadpool tasks and debug logs
 - Added debug logging throughout codebase (sensors, core, analysis, skills, utils)
 - Fixed config: changed WATCH_DIRECTORY to project folder, added .logs/ to gitignore
@@ -21,6 +23,7 @@ Rolling state for the current working day.
 - None
 
 ## Notes
+- Rotate the current local OpenRouter key because the previous report endpoint could read absolute local files.
 - Dashboard and agent both write to same local logs folder
 - Press R to refresh dashboard, Q to quit
 - Agent runs via: python -m main

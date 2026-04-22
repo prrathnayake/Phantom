@@ -7,24 +7,26 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="icon" href="data:,">
     <style>
         :root {
-            --bg-dark: #0d0d0d;
-            --bg-card: #0a0a0a;
-            --bg-card-hover: #111111;
-            --border: #1a1a1a;
-            --border-light: #2a2a2a;
-            --text-primary: #00ff00;
-            --text-secondary: #00cc00;
-            --text-muted: #007700;
-            --accent: #00ff00;
-            --accent-dim: #00aa00;
-            --accent-glow: rgba(0, 255, 0, 0.1);
-            --success: #00ff00;
-            --warning: #ffff00;
-            --danger: #ff0000;
-            --info: #00ffff;
-            --terminal-glow: 0 0 10px rgba(0, 255, 0, 0.5);
+            color-scheme: dark;
+            --bg-dark: #080b0a;
+            --bg-card: #0d1411;
+            --bg-card-hover: #132019;
+            --border: #1c3027;
+            --border-light: #315545;
+            --text-primary: #d9ffe5;
+            --text-secondary: #9fe9b3;
+            --text-muted: #78a886;
+            --accent: #35f27d;
+            --accent-dim: #1f9f55;
+            --accent-glow: rgba(53, 242, 125, 0.14);
+            --success: #35f27d;
+            --warning: #facc15;
+            --danger: #ff5c5c;
+            --info: #67e8f9;
+            --terminal-glow: 0 0 10px rgba(53, 242, 125, 0.35);
         }
         
         * {
@@ -39,6 +41,8 @@
             font-family: 'JetBrains Mono', 'Courier New', monospace;
             min-height: 100vh;
             cursor: text;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: rgba(53, 242, 125, 0.18);
         }
         
         ::selection {
@@ -82,9 +86,30 @@
         }
         
         input:focus, textarea:focus, select:focus {
-            outline: none;
             border-color: var(--accent) !important;
             box-shadow: var(--terminal-glow);
+        }
+
+        :focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 3px;
+            box-shadow: var(--terminal-glow);
+        }
+
+        .skip-link {
+            position: fixed;
+            left: 1rem;
+            top: 1rem;
+            z-index: 10000;
+            transform: translateY(-200%);
+            background: var(--accent);
+            color: var(--bg-dark);
+            padding: 0.5rem 0.75rem;
+            font-weight: 700;
+        }
+
+        .skip-link:focus-visible {
+            transform: translateY(0);
         }
         
         input::placeholder, textarea::placeholder {
@@ -294,6 +319,7 @@
             display: flex;
             align-items: center;
             gap: 0.75rem;
+            min-width: 0;
         }
         
         .log-entry:hover {
@@ -317,6 +343,7 @@
             font-size: 0.65rem;
             font-weight: 600;
             text-transform: uppercase;
+            flex-shrink: 0;
         }
         
         .log-badge.process { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
@@ -549,7 +576,7 @@
         .chat-widget-popup {
             position: fixed;
             bottom: 5.5rem;
-            left: 1.5rem;
+            right: 1.5rem;
             width: 380px;
             height: 500px;
             background: var(--bg-card);
@@ -571,7 +598,7 @@
             width: calc(100vw - 2rem);
             height: calc(100vh - 6rem);
             bottom: 1rem;
-            left: 1rem;
+            right: 1rem;
         }
 
         @keyframes chatSlideUp {
@@ -734,6 +761,16 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
+        }
+
+        .floating-tools {
+            position: fixed;
+            bottom: 1.5rem;
+            right: max(1.5rem, env(safe-area-inset-right));
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            z-index: 9999;
         }
 
         .timer-widget .timer-date {
@@ -1105,8 +1142,12 @@
             }
             .chat-widget-popup {
                 width: calc(100vw - 1rem);
-                left: 0.5rem;
+                right: 0.5rem;
                 bottom: 4rem;
+            }
+            .floating-tools {
+                bottom: 1rem;
+                right: 1rem;
             }
             .timer-widget {
                 display: none;
@@ -1316,10 +1357,21 @@
             100% { width: 0%; margin-left: 100%; }
         }
 
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                scroll-behavior: auto !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
         
     </style>
+    {% block extra_styles %}{% endblock %}
 </head>
 <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
     <nav class="navbar navbar-expand-lg">
         <div class="container-fluid">
             <a class="navbar-brand" href="/">
@@ -1357,14 +1409,14 @@
         </div>
     </nav>
 
-    <div class="container-fluid py-4" style="padding-bottom: 6rem;">
+    <main id="main-content" class="container-fluid py-4" style="padding-bottom: 6rem;">
         {% block content %}{% endblock %}
-    </div>
+    </main>
 
     <div class="activity-pulse" id="activityIndicator" style="display: none;"></div>
 
-    <!-- Left side: Timer + Chat Button -->
-    <div style="position: fixed; bottom: 1.5rem; left: 1.5rem; display: flex; align-items: center; gap: 0.75rem; z-index: 9999;">
+    <!-- Floating Timer + Chat Button -->
+    <div class="floating-tools">
         <!-- Floating Timer -->
         <div class="timer-widget">
             <span class="timer-date" id="timerDate"></span>
@@ -1373,7 +1425,7 @@
         </div>
         
         <!-- Chat Widget Button -->
-        <button class="chat-widget-btn" id="chatWidgetBtn" onclick="toggleChatWidget()">
+        <button class="chat-widget-btn" id="chatWidgetBtn" onclick="toggleChatWidget()" aria-label="Open Phantom Assistant">
             <i class="bi bi-chat-dots-fill"></i>
             <i class="bi bi-x-lg"></i>
             <span class="notification-badge" id="chatNotifBadge">0</span>
@@ -1381,14 +1433,14 @@
     </div>
 
     <!-- Chat Widget Popup -->
-    <div class="chat-widget-popup" id="chatWidgetPopup">
+    <div class="chat-widget-popup" id="chatWidgetPopup" aria-live="polite">
         <div class="chat-widget-header">
             <i class="bi bi-robot"></i>
             <div>
                 Phantom Assistant
                 <small class="d-block">AI Security Agent</small>
             </div>
-            <button class="chat-fullscreen-btn" onclick="toggleChatFullscreen()" title="Toggle fullscreen">
+            <button class="chat-fullscreen-btn" onclick="toggleChatFullscreen()" title="Toggle fullscreen" aria-label="Toggle assistant fullscreen">
                 <i class="bi bi-arrows-angle-expand" id="chatFullscreenIcon"></i>
             </button>
         </div>
@@ -1396,9 +1448,10 @@
             <div class="chat-widget-msg assistant">Hello! How can I help you with security monitoring today?</div>
         </div>
         <div class="chat-widget-input">
-            <input type="text" id="chatWidgetInput" placeholder="Ask me anything..." 
+            <label for="chatWidgetInput" class="visually-hidden">Assistant Message</label>
+            <input type="text" id="chatWidgetInput" name="chat_message" autocomplete="off" placeholder="Ask me anything..." 
                    onkeypress="if(event.key === 'Enter') sendWidgetMessage()">
-            <button onclick="sendWidgetMessage()">
+            <button onclick="sendWidgetMessage()" aria-label="Send assistant message">
                 <i class="bi bi-send" style="color: var(--bg-dark);"></i>
             </button>
         </div>
@@ -1435,26 +1488,58 @@
         
         // Reconnect handler
         let reconnectAttempts = 0;
+        function updateGlobalStatus(data) {
+            const dot = document.getElementById('globalStatus');
+            const text = document.getElementById('statusText');
+            if (!dot || !text) return;
+            if (!data || data.status !== 'running') {
+                dot.className = 'status-dot offline';
+                text.textContent = 'Offline';
+                return;
+            }
+            const llm = data.llm_health || {};
+            if (llm.configured && llm.status !== 'reachable') {
+                dot.className = 'status-dot warning';
+                text.textContent = 'Online / LLM degraded';
+                return;
+            }
+            dot.className = 'status-dot online';
+            text.textContent = 'System Online';
+        }
+
         function scheduleReconnect() {
             if (reconnectAttempts < 5) {
                 reconnectAttempts++;
                 setTimeout(() => {
-                    fetch('/api/status').then(() => {
+                    fetch('/api/status').then(r => {
+                        if (!r.ok) throw new Error('status unavailable');
+                        return r.json();
+                    }).then(data => {
                         reconnectAttempts = 0;
-                        document.getElementById('globalStatus').className = 'status-dot online';
-                        document.getElementById('statusText').textContent = 'System Online';
+                        updateGlobalStatus(data);
                     }).catch(() => scheduleReconnect());
                 }, 3000 * reconnectAttempts);
             }
         }
         
-        setInterval(() => {
-            fetch('/api/status').catch(() => {
+        function pollGlobalStatus() {
+            fetch('/api/status')
+                .then(r => {
+                    if (!r.ok) throw new Error('status unavailable');
+                    return r.json();
+                })
+                .then(data => {
+                    reconnectAttempts = 0;
+                    updateGlobalStatus(data);
+                })
+                .catch(() => {
                 document.getElementById('globalStatus').className = 'status-dot offline';
                 document.getElementById('statusText').textContent = 'Reconnecting...';
                 scheduleReconnect();
             });
-        }, 30000);
+        }
+        pollGlobalStatus();
+        setInterval(pollGlobalStatus, 30000);
 
         // Floating timer
         let timerStart = Date.now();
@@ -1479,6 +1564,15 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        function appendChatBubble(role, text) {
+            const container = document.getElementById('chatWidgetMessages');
+            const bubble = document.createElement('div');
+            bubble.className = `chat-widget-msg ${role}`;
+            bubble.textContent = text;
+            container.appendChild(bubble);
+            container.scrollTop = container.scrollHeight;
         }
 
         // Chat Widget
@@ -1506,8 +1600,7 @@
             if (!msg) return;
             input.value = '';
             const container = document.getElementById('chatWidgetMessages');
-            container.innerHTML += `<div class="chat-widget-msg user">${escapeHtml(msg)}</div>`;
-            container.scrollTop = container.scrollHeight;
+            appendChatBubble('user', msg);
             const typing = document.createElement('div');
             typing.className = 'chat-widget-typing';
             typing.id = 'widgetTyping';
@@ -1523,14 +1616,14 @@
             .then(data => {
                 document.getElementById('widgetTyping')?.remove();
                 if (data.response) {
-                    container.innerHTML += `<div class="chat-widget-msg assistant">${escapeHtml(data.response)}</div>`;
+                    appendChatBubble('assistant', data.response);
                 }
                 container.scrollTop = container.scrollHeight;
                 hideChatNotification();
             })
             .catch(() => {
                 document.getElementById('widgetTyping')?.remove();
-                container.innerHTML += `<div class="chat-widget-msg assistant">Sorry, I encountered an error.</div>`;
+                appendChatBubble('assistant', 'Sorry, I encountered an error.');
             });
         }
 
@@ -1555,7 +1648,7 @@
             fetch('/api/alerts')
                 .then(r => r.json())
                 .then(data => {
-                    const unacknowledged = data.alerts?.filter(a => a.status === 'open').length || 0;
+                    const unacknowledged = data.alerts?.filter(a => ['pending', 'routed'].includes(a.status)).length || 0;
                     showChatNotification(unacknowledged);
                 })
                 .catch(() => {});

@@ -67,7 +67,7 @@ class DiagnosticTool(BaseTool):
             )
         
         try:
-            module_name = f"diagnostics.{sensor}_sensor"
+            module_name = f"src.diagnostics.{sensor}_sensor"
             module = __import__(module_name, fromlist=["collect"])
             collect_func = getattr(module, "collect")
             

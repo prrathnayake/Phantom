@@ -442,7 +442,7 @@ def cmd_run(args):
     module_name = diagnostic.replace("_sensor", "")
     try:
         import importlib
-        module = importlib.import_module(f"diagnostics.{module_name}_sensor")
+        module = importlib.import_module(f"src.diagnostics.{module_name}_sensor")
 
         if hasattr(module, "collect"):
             result = module.collect()

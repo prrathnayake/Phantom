@@ -129,7 +129,7 @@
                     <div class="sidebar-card">
                         <div class="sidebar-card-header">
                             <div class="small"><i class="bi bi-clock text-accent"></i> Schedules</div>
-                            <button class="btn btn-sm btn-link text-accent p-0" onclick="showAddScheduleModal()" title="Add Schedule">
+                            <button class="btn btn-sm btn-link text-accent p-0" onclick="showAddScheduleModal()" title="Add Schedule" aria-label="Add Schedule">
                                 <i class="bi bi-plus-lg"></i>
                             </button>
                         </div>
@@ -180,25 +180,33 @@
         <div class="modal-content" style="background: var(--bg-card); border: 1px solid var(--border);">
             <div class="modal-header">
                 <h5 class="modal-title text-accent"><i class="bi bi-clock me-2"></i>Add Schedule</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3">
-                    <label class="form-label text-muted">Schedule Name</label>
-                    <input type="text" id="newScheduleName" class="form-control" placeholder="my_schedule">
+                    <label class="form-label text-muted" for="newScheduleName">Schedule Name</label>
+                    <input type="text" id="newScheduleName" name="schedule_name" class="form-control" placeholder="my_schedule" autocomplete="off" spellcheck="false">
                 </div>
                 <div class="mb-3">
-                    <label class="form-label text-muted">Interval (seconds)</label>
-                    <input type="number" id="newScheduleInterval" class="form-control" placeholder="300" value="300">
+                    <label class="form-label text-muted" for="newScheduleInterval">Interval (seconds)</label>
+                    <input type="number" id="newScheduleInterval" name="schedule_interval" class="form-control" placeholder="300" value="300" min="10" autocomplete="off">
                 </div>
                 <div class="mb-3">
-                    <label class="form-label text-muted">Sensor Type</label>
-                    <select id="newScheduleSensor" class="form-control">
+                    <label class="form-label text-muted" for="newScheduleSensor">Sensor Type</label>
+                    <select id="newScheduleSensor" name="schedule_sensor" class="form-control" autocomplete="off">
                         <option value="process">Process</option>
                         <option value="port">Port</option>
                         <option value="file">File</option>
                         <option value="network">Network</option>
                         <option value="memory">Memory</option>
+                        <option value="disk_io">Disk I/O</option>
+                        <option value="auth">Auth</option>
+                        <option value="service">Service</option>
+                        <option value="registry">Registry</option>
+                        <option value="dns">DNS</option>
+                        <option value="driver">Driver</option>
+                        <option value="certificate">Certificate</option>
+                        <option value="hardware">Hardware</option>
                     </select>
                 </div>
             </div>
@@ -285,13 +293,15 @@ function loadSchedules() {
             if (keys.length > 0) {
                 container.innerHTML = keys.map(name => {
                     const s = schedules[name];
+                    const safeName = escapeHtml(name);
+                    const encodedName = encodeURIComponent(name);
                     return `<div class="log-entry">
                         <span class="log-badge ${s.enabled ? 'process' : ''}">${s.enabled ? 'ON' : 'OFF'}</span>
-                        <span class="text-light">${name}</span>
+                        <span class="text-light text-truncate" title="${safeName}">${safeName}</span>
                         <span class="text-muted" style="margin-left: auto; font-size: 0.65rem;">${s.interval || 60}s</span>
-                        <button class="btn btn-sm btn-link text-accent ms-1" onclick="runSchedule('${name}')" title="Run"><i class="bi bi-play"></i></button>
-                        <button class="btn btn-sm btn-link ${s.enabled ? 'text-warning' : 'text-success'}" onclick="toggleSchedule('${name}', ${!s.enabled})" title="${s.enabled ? 'Disable' : 'Enable'}"><i class="bi ${s.enabled ? 'pause-fill' : 'play-fill'}"></i></button>
-                        <button class="btn btn-sm btn-link text-danger" onclick="deleteSchedule('${name}')" title="Delete"><i class="bi bi-trash"></i></button>
+                        <button class="btn btn-sm btn-link text-accent ms-1" onclick="runSchedule('${encodedName}')" title="Run" aria-label="Run ${safeName}"><i class="bi bi-play"></i></button>
+                        <button class="btn btn-sm btn-link ${s.enabled ? 'text-warning' : 'text-success'}" onclick="toggleSchedule('${encodedName}', ${!s.enabled})" title="${s.enabled ? 'Disable' : 'Enable'}" aria-label="${s.enabled ? 'Disable' : 'Enable'} ${safeName}"><i class="bi bi-${s.enabled ? 'pause-fill' : 'play-fill'}"></i></button>
+                        <button class="btn btn-sm btn-link text-danger" onclick="deleteSchedule('${encodedName}')" title="Delete" aria-label="Delete ${safeName}"><i class="bi bi-trash"></i></button>
                     </div>`;
                 }).join('');
             } else {
@@ -351,7 +361,8 @@ function runSchedule(name) {
 }
 
 function deleteSchedule(name) {
-    if (!confirm('Delete schedule ' + name + '?')) return;
+    const label = decodeURIComponent(name);
+    if (!confirm('Delete schedule ' + label + '?')) return;
     fetch('/api/schedules/' + name + '/remove', {method: 'POST'})
     .then(r => r.json())
     .then(() => loadSchedules())
@@ -371,8 +382,8 @@ function loadApprovals() {
                 badge.style.display = 'block';
                 container.innerHTML = pending.slice(0, 5).map(a => `
                     <div class="log-entry">
-                        <span class="log-timestamp">${new Date(a.timestamp || Date.now()).toLocaleTimeString()}</span>
-                        <span class="text-light">${(a.action || 'Pending').substring(0, 25)}</span>
+                        <span class="log-timestamp">${new Date(a.created_at || Date.now()).toLocaleTimeString()}</span>
+                        <span class="text-light text-truncate">${escapeHtml((a.action_type_display || a.action || 'Pending').substring(0, 40))}</span>
                     </div>
                 `).join('');
             } else {
@@ -392,15 +403,15 @@ function loadAlerts() {
             const container = document.getElementById('alertsList');
             const badge = document.getElementById('alertsCountBadge');
             const alerts = data.alerts || [];
-            const active = alerts.filter(a => a.status === 'open');
+            const active = alerts.filter(a => ['pending', 'routed'].includes(a.status));
             
             if (active.length > 0) {
                 badge.textContent = active.length;
                 badge.style.display = 'block';
                 container.innerHTML = active.slice(0, 5).map(a => `
                     <div class="log-entry">
-                        <span class="log-timestamp">${new Date(a.timestamp || Date.now()).toLocaleTimeString()}</span>
-                        <span class="text-light">${(a.message || 'Alert').substring(0, 25)}</span>
+                        <span class="log-timestamp">${new Date(a.created || Date.now()).toLocaleTimeString()}</span>
+                        <span class="text-light text-truncate">${escapeHtml((a.title || 'Alert').substring(0, 40))}</span>
                     </div>
                 `).join('');
             } else {
@@ -429,6 +440,13 @@ async function loadRealData() {
         document.getElementById('detectionsWidget').textContent = status.detections || 0;
         document.getElementById('schedulesWidget').textContent = Object.keys(schedData.schedules || schedData || {}).length;
         document.getElementById('sensorsWidget').textContent = status.active_sensors || 0;
+        if (typeof status.memory_usage === 'number') {
+            document.getElementById('memValue').textContent = status.memory_usage;
+            setMemoryBlocks(status.memory_usage);
+        } else {
+            document.getElementById('memValue').textContent = '--';
+            setMemoryBlocks(0);
+        }
         
         // Row 2: System status
         const uptimeWidget = document.getElementById('uptimeWidget');
@@ -446,7 +464,7 @@ async function loadRealData() {
         document.getElementById('agentStatus').textContent = status.status === 'running' ? 'Active' : 'Idle';
         
         if (activity.events && activity.events.length > 0) {
-            document.getElementById('agentTaskText').textContent = 'Processing events';
+            document.getElementById('agentTaskText').textContent = activity.events[0].sensor ? `Latest: ${activity.events[0].sensor}` : 'Processing events';
         } else {
             document.getElementById('agentTaskText').textContent = 'Monitoring';
         }
@@ -506,13 +524,34 @@ async function updateDataStream() {
 async function updateTasks() {
     const queue = document.getElementById('miniTasks');
     if (!queue) return;
-    const idx = Math.floor(Math.random() * taskLabels.length);
-    const item = document.createElement('div');
-    item.className = 'mini-task';
-    item.innerHTML = `<i class="bi ${icons[idx]}"></i>${taskLabels[idx]}`;
-    queue.appendChild(item);
-    while (queue.children.length > 3) {
-        queue.removeChild(queue.firstChild);
+    try {
+        const r = await fetch('/api/activity?count=3');
+        const data = await r.json();
+        queue.innerHTML = '';
+        const rows = (data.events || []).slice(0, 3);
+        if (!rows.length) {
+            queue.innerHTML = '<div class="mini-task"><i class="bi bi-radar"></i>Monitoring sensors</div>';
+            return;
+        }
+        rows.forEach(e => {
+            const item = document.createElement('div');
+            item.className = 'mini-task';
+            const icon = document.createElement('i');
+            icon.className = 'bi bi-activity';
+            item.appendChild(icon);
+            item.appendChild(document.createTextNode((e.sensor || 'event').substring(0, 28)));
+            queue.appendChild(item);
+        });
+    } catch {
+        queue.innerHTML = '<div class="mini-task"><i class="bi bi-wifi-off"></i>Activity unavailable</div>';
+    }
+}
+
+function setMemoryBlocks(memUsed) {
+    const blocks = Math.min(8, Math.max(0, Math.ceil(Number(memUsed || 0) / 1024)));
+    for (let i = 0; i < 8; i++) {
+        const block = document.getElementById('mem' + i);
+        if (block) block.classList.toggle('used', i < blocks);
     }
 }
 
@@ -520,21 +559,16 @@ async function updateMemory() {
     try {
         const r = await fetch('/api/system/info');
         const data = await r.json();
-        const memUsed = data.memory_usage || Math.floor(Math.random() * 50 + 20);
-        document.getElementById('memValue').textContent = memUsed;
-        
-        const blocks = Math.floor(memUsed / 10);
-        for (let i = 0; i < 8; i++) {
-            const block = document.getElementById('mem' + i);
-            if (block) block.classList.toggle('used', i < blocks);
+        if (typeof data.memory_usage === 'number') {
+            document.getElementById('memValue').textContent = data.memory_usage;
+            setMemoryBlocks(data.memory_usage);
+        } else {
+            document.getElementById('memValue').textContent = '--';
+            setMemoryBlocks(0);
         }
     } catch {
-        const count = Math.floor(Math.random() * 4) + 4;
-        document.getElementById('memValue').textContent = count * 10;
-        for (let i = 0; i < 8; i++) {
-            const block = document.getElementById('mem' + i);
-            if (block) block.classList.toggle('used', i < count);
-        }
+        document.getElementById('memValue').textContent = '--';
+        setMemoryBlocks(0);
     }
 }
 
