@@ -25,7 +25,7 @@
     <div class="card-header">
         <span class="text-accent">&gt; ls -la reports/</span>
     </div>
-    <div class="card-body p-0">
+    <div class="card-body p-0" style="overflow-x: auto;">
         {% if reports|length == 0 %}
         <div class="p-3 text-muted">
             <span class="text-warning">No reports found.</span><br>
@@ -41,8 +41,8 @@
             <span class="ls-date">Date</span>
             <span class="ls-name">Name</span>
         </div>
-        <div class="ls-divider">────────────────────────────────────────────────────────────</div>
-        
+        <div class="ls-divider"></div>
+
         {% for report in reports %}
         <div class="ls-row report-item" data-name="{{ report.name }}" onclick="viewReport('{{ report.path }}')">
             <span class="ls-perms">-rw-r--r--</span>
@@ -53,8 +53,8 @@
             <span class="ls-name text-accent">{{ report.name }}</span>
         </div>
         {% endfor %}
-        
-        <div class="ls-divider">────────────────────────────────────────────────────────────</div>
+
+        <div class="ls-divider"></div>
         <div class="ls-total">
             <span class="text-muted">total {{ reports|length }} reports</span>
         </div>
@@ -118,10 +118,9 @@
 .ls-name { flex: 1; }
 
 .ls-divider {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.7rem;
-    color: var(--accent-dim);
-    padding: 0.25rem 1rem;
+    border-top: 1px dashed var(--accent-dim);
+    margin: 0 1rem;
+    opacity: 0.5;
 }
 
 .ls-total {

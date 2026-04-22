@@ -100,6 +100,11 @@
             top: 0;
             z-index: 1000;
         }
+
+        .navbar .container-fluid {
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
         
         .navbar-brand {
             font-weight: 600;
@@ -126,6 +131,8 @@
 
         .nav-pills {
             gap: 0.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
         }
         
         .nav-pills .nav-link:hover {
@@ -451,13 +458,12 @@
         }
         
         .chat-widget-btn {
-            position: fixed;
-            bottom: 1.5rem;
-            right: 1.5rem;
+            position: relative;
             width: 50px;
             height: 50px;
             background: var(--bg-dark);
             border: 2px solid var(--accent);
+            border-radius: 50%;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -466,6 +472,7 @@
             color: var(--accent);
             box-shadow: var(--terminal-glow);
             z-index: 9999;
+            flex-shrink: 0;
         }
 
         .chat-widget-btn .notification-badge {
@@ -542,7 +549,7 @@
         .chat-widget-popup {
             position: fixed;
             bottom: 5.5rem;
-            right: 1.5rem;
+            left: 1.5rem;
             width: 380px;
             height: 500px;
             background: var(--bg-card);
@@ -564,7 +571,7 @@
             width: calc(100vw - 2rem);
             height: calc(100vh - 6rem);
             bottom: 1rem;
-            right: 1rem;
+            left: 1rem;
         }
 
         @keyframes chatSlideUp {
@@ -1098,7 +1105,7 @@
             }
             .chat-widget-popup {
                 width: calc(100vw - 1rem);
-                right: 0.5rem;
+                left: 0.5rem;
                 bottom: 4rem;
             }
             .timer-widget {
@@ -1343,14 +1350,14 @@
                 </li>
             </ul>
             
-            <div class="status-badge ms-4">
+            <div class="status-badge ms-2 ms-lg-4">
                 <span class="status-dot online" id="globalStatus"></span>
                 <span id="statusText">Phantom Online</span>
             </div>
         </div>
     </nav>
 
-    <div class="container-fluid py-4">
+    <div class="container-fluid py-4" style="padding-bottom: 6rem;">
         {% block content %}{% endblock %}
     </div>
 

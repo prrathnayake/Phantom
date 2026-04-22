@@ -33,14 +33,9 @@
         </div>
     </div>
     <div class="col-6 col-md-3">
-        <div class="card">
-            <div class="card-body d-flex align-items-center justify-content-center gap-3">
-                <div>
-                    <div class="stat-value text-success" id="systemStatus">Running</div>
-                    <div class="stat-label">System Status</div>
-                </div>
-                <div class="status-dot online" style="width: 12px; height: 12px;"></div>
-            </div>
+        <div class="card stat-card green">
+            <div class="stat-value text-success" id="systemStatus">Running</div>
+            <div class="stat-label">System Status</div>
         </div>
     </div>
 </div>
@@ -54,7 +49,7 @@
                 Event Activity (Last Hour)
             </div>
             <div class="card-body">
-                <div class="d-flex align-items-end gap-1" id="activityGraph" style="height: 100px;">
+                <div class="d-flex align-items-end gap-1" id="activityGraph" style="height: 160px;">
                     <!-- Populated by JS -->
                 </div>
                 <div class="d-flex justify-content-between mt-2 text-muted small">
@@ -119,9 +114,9 @@ function loadActivity() {
     fetch('/api/activity?count=50')
         .then(r => r.json())
         .then(data => {
-            document.getElementById('totalEvents').textContent = data.events.length;
-            document.getElementById('totalDetections').textContent = data.detections.length;
-            
+            document.getElementById('totalEvents').textContent = data.events?.length || 0;
+            document.getElementById('totalDetections').textContent = data.detections?.length || 0;
+
             const eventsDiv = document.getElementById('eventsList');
             if (data.events && data.events.length > 0) {
                 eventsDiv.innerHTML = data.events.slice(0, 30).map(e => {
@@ -132,8 +127,10 @@ function loadActivity() {
                         <span class="text-light">${JSON.stringify(e.data).substring(0, 60)}...</span>
                     </div>`;
                 }).join('');
+            } else {
+                eventsDiv.innerHTML = '<div class="empty-state"><i class="bi bi-inbox"></i><p>No events recorded</p></div>';
             }
-            
+
             const detectionsDiv = document.getElementById('detectionsList');
             if (data.detections && data.detections.length > 0) {
                 detectionsDiv.innerHTML = data.detections.slice(0, 30).map(d => {
@@ -143,12 +140,18 @@ function loadActivity() {
                         <span class="text-light">${d.description || ''}</span>
                     </div>`;
                 }).join('');
+            } else {
+                detectionsDiv.innerHTML = '<div class="empty-state"><i class="bi bi-shield-check"></i><p>No detections recorded</p></div>';
             }
-            
+
             activityHistory = data.events || [];
             updateActivityGraph();
         })
-        .catch(err => console.error('Activity load error:', err));
+        .catch(err => {
+            console.error('Activity load error:', err);
+            document.getElementById('eventsList').innerHTML = '<div class="empty-state"><i class="bi bi-wifi-off"></i><p>Failed to load events</p></div>';
+            document.getElementById('detectionsList').innerHTML = '<div class="empty-state"><i class="bi bi-wifi-off"></i><p>Failed to load detections</p></div>';
+        });
 }
 
 function updateActivityGraph() {

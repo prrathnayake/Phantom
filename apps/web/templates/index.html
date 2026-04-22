@@ -15,89 +15,7 @@
             </div>
             <div class="agent-workspace" style="height: 680px; display: flex;">
                 <div class="orbit-container" style="flex: 1; min-width: 0;">
-                    <!-- Row 1: Core metrics -->
-                    <div class="info-widget-row">
-                        <!-- Processing -->
-                        <div class="orbital-widget-info">
-                            <div class="widget-title"><i class="bi bi-cpu"></i> Processing</div>
-                            <div class="mini-grid" id="miniGrid">
-                                <div class="mini-node"><i class="bi bi-diagram-3"></i></div>
-                                <div class="mini-node"><i class="bi bi-lightning-charge"></i></div>
-                                <div class="mini-node"><i class="bi bi-memory"></i></div>
-                                <div class="mini-node"><i class="bi bi-hdd"></i></div>
-                                <div class="mini-node"><i class="bi bi-terminal"></i></div>
-                            </div>
-                        </div>
-                        
-                        <!-- Memory -->
-                        <div class="orbital-widget-info">
-                            <div class="widget-title"><i class="bi bi-memory"></i> Memory</div>
-                            <div class="widget-value" id="memValue">--</div>
-                            <div class="widget-sub">MB used</div>
-                            <div class="mini-memory" id="miniMemory"></div>
-                        </div>
-                        
-                        <!-- Data Stream -->
-                        <div class="orbital-widget-info">
-                            <div class="widget-title"><i class="bi bi-receive"></i> Data Stream</div>
-                            <div class="mini-stream" id="miniStream">
-                                <div class="mini-stream-item">Waiting...</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Tasks -->
-                        <div class="orbital-widget-info">
-                            <div class="widget-title"><i class="bi bi-list-task"></i> Tasks</div>
-                            <div class="mini-tasks" id="miniTasks"></div>
-                        </div>
-                        
-                        <!-- Events -->
-                        <div class="orbital-widget-info">
-                            <div class="widget-title"><i class="bi bi-lightning-charge"></i> Events</div>
-                            <div class="widget-value" id="eventsWidget">--</div>
-                            <div class="widget-sub">24h total</div>
-                        </div>
-                    </div>
-
-                    <!-- Row 2: System status -->
-                    <div class="info-widget-row-2">
-                        <!-- Detections -->
-                        <div class="orbital-widget-info">
-                            <div class="widget-title"><i class="bi bi-shield-exclamation"></i> Detections</div>
-                            <div class="widget-value text-warning" id="detectionsWidget">--</div>
-                            <div class="widget-sub">active rules</div>
-                        </div>
-                        
-                        <!-- Schedules -->
-                        <div class="orbital-widget-info">
-                            <div class="widget-title"><i class="bi bi-clock"></i> Schedules</div>
-                            <div class="widget-value text-info" id="schedulesWidget">--</div>
-                            <div class="widget-sub">active</div>
-                        </div>
-                        
-                        <!-- Sensors -->
-                        <div class="orbital-widget-info">
-                            <div class="widget-title"><i class="bi bi-broadcast"></i> Sensors</div>
-                            <div class="widget-value text-success" id="sensorsWidget">--</div>
-                            <div class="widget-sub">online</div>
-                        </div>
-                        
-                        <!-- Uptime -->
-                        <div class="orbital-widget-info">
-                            <div class="widget-title"><i class="bi bi-hourglass-top"></i> Uptime</div>
-                            <div class="widget-value" id="uptimeWidget" style="font-size: 0.85rem;">--:--:--</div>
-                            <div class="widget-sub">HH:MM:SS</div>
-                        </div>
-                        
-                        <!-- Status -->
-                        <div class="orbital-widget-info">
-                            <div class="widget-title"><i class="bi bi-check-circle"></i> Status</div>
-                            <div class="widget-value text-success" id="statusWidget" style="font-size: 0.85rem;">OK</div>
-                            <div class="widget-sub">system</div>
-                        </div>
-                    </div>
-
-                    <!-- Reasoning messages panel (inside orbit) -->
+                    <!-- Reasoning messages panel -->
                     <div class="reasoning-panel" id="reasoningPanel">
                         <div class="reasoning-header">
                             <i class="bi bi-cloud"></i> Agent Reasoning
@@ -117,6 +35,91 @@
                             <span id="agentStatus">Active</span>
                         </div>
                         <div class="agent-task" id="agentTaskText">Loading...</div>
+                    </div>
+
+                    <!-- Metrics -->
+                    <div class="metrics-section">
+                        <!-- Row 1: Core metrics -->
+                        <div class="info-widget-row">
+                            <!-- Processing -->
+                            <div class="orbital-widget-info">
+                                <div class="widget-title"><i class="bi bi-cpu"></i> Processing</div>
+                                <div class="mini-grid" id="miniGrid">
+                                    <div class="mini-node"><i class="bi bi-diagram-3"></i></div>
+                                    <div class="mini-node"><i class="bi bi-lightning-charge"></i></div>
+                                    <div class="mini-node"><i class="bi bi-memory"></i></div>
+                                    <div class="mini-node"><i class="bi bi-hdd"></i></div>
+                                    <div class="mini-node"><i class="bi bi-terminal"></i></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Memory -->
+                            <div class="orbital-widget-info">
+                                <div class="widget-title"><i class="bi bi-memory"></i> Memory</div>
+                                <div class="widget-value" id="memValue">--</div>
+                                <div class="widget-sub">MB used</div>
+                                <div class="mini-memory" id="miniMemory"></div>
+                            </div>
+                            
+                            <!-- Data Stream -->
+                            <div class="orbital-widget-info">
+                                <div class="widget-title"><i class="bi bi-receive"></i> Data Stream</div>
+                                <div class="mini-stream" id="miniStream">
+                                    <div class="mini-stream-item">Waiting...</div>
+                                </div>
+                            </div>
+                            
+                            <!-- Tasks -->
+                            <div class="orbital-widget-info">
+                                <div class="widget-title"><i class="bi bi-list-task"></i> Tasks</div>
+                                <div class="mini-tasks" id="miniTasks"></div>
+                            </div>
+                            
+                            <!-- Events -->
+                            <div class="orbital-widget-info">
+                                <div class="widget-title"><i class="bi bi-lightning-charge"></i> Events</div>
+                                <div class="widget-value" id="eventsWidget">--</div>
+                                <div class="widget-sub">24h total</div>
+                            </div>
+                        </div>
+
+                        <!-- Row 2: System status -->
+                        <div class="info-widget-row-2">
+                            <!-- Detections -->
+                            <div class="orbital-widget-info">
+                                <div class="widget-title"><i class="bi bi-shield-exclamation"></i> Detections</div>
+                                <div class="widget-value text-warning" id="detectionsWidget">--</div>
+                                <div class="widget-sub">active rules</div>
+                            </div>
+                            
+                            <!-- Schedules -->
+                            <div class="orbital-widget-info">
+                                <div class="widget-title"><i class="bi bi-clock"></i> Schedules</div>
+                                <div class="widget-value text-info" id="schedulesWidget">--</div>
+                                <div class="widget-sub">active</div>
+                            </div>
+                            
+                            <!-- Sensors -->
+                            <div class="orbital-widget-info">
+                                <div class="widget-title"><i class="bi bi-broadcast"></i> Sensors</div>
+                                <div class="widget-value text-success" id="sensorsWidget">--</div>
+                                <div class="widget-sub">online</div>
+                            </div>
+                            
+                            <!-- Uptime -->
+                            <div class="orbital-widget-info">
+                                <div class="widget-title"><i class="bi bi-hourglass-top"></i> Uptime</div>
+                                <div class="widget-value" id="uptimeWidget" style="font-size: 0.85rem;">--:--:--</div>
+                                <div class="widget-sub">HH:MM:SS</div>
+                            </div>
+                            
+                            <!-- Status -->
+                            <div class="orbital-widget-info">
+                                <div class="widget-title"><i class="bi bi-check-circle"></i> Status</div>
+                                <div class="widget-value text-success" id="statusWidget" style="font-size: 0.85rem;">OK</div>
+                                <div class="widget-sub">system</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -205,7 +208,6 @@
             </div>
         </div>
     </div>
-</div>
 </div>
 {% endblock %}
 

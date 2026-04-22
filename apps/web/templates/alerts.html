@@ -59,29 +59,32 @@ function loadAlerts() {
         .then(r => r.json())
         .then(data => {
             const list = document.getElementById('alertsList');
-            
-            if (data.count === 0) {
+            const alerts = data.alerts || [];
+
+            if (alerts.length === 0) {
                 list.innerHTML = '<div class="text-center py-4 text-muted"><i class="bi bi-bell-slash" style="font-size: 2rem;"></i><p class="mt-2">No alerts</p></div>';
-                return;
+            } else {
+                list.innerHTML = alerts.map(a => '
+                    <div class="log-entry" style="justify-content: space-between;">
+                        <span class="log-badge ' + (a.severity === 'critical' ? 'detection' : a.severity === 'high' ? 'process' : 'file') + '">' + (a.severity || 'unknown').toUpperCase() + '</span>
+                        <span class="text-light flex-fill mx-2" style="min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><strong>' + (a.title || 'Alert') + '</strong></span>
+                        <span class="text-muted small" style="white-space: nowrap;">' + (a.created || '') + '</span>
+                        ' + (a.status === 'pending' ? '
+                        <button class="btn btn-sm btn-outline-accent ms-2" onclick="acknowledgeAlert(\'' + a.alert_id + '\')">
+                            <i class="bi bi-check"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-accent ms-1" onclick="resolveAlert(\'' + a.alert_id + '\')">
+                            <i class="bi bi-check-all"></i>
+                        </button>' : '') + '
+                    </div>
+                ').join('');
             }
-            
-            list.innerHTML = data.alerts.map(a => '
-                <div class="log-entry">
-                    <span class="log-badge ' + (a.severity === 'critical' ? 'detection' : a.severity === 'high' ? 'process' : 'file') + '">' + a.severity.toUpperCase() + '</span>
-                    <span class="flex-grow-1"><strong>' + a.title + '</strong></span>
-                    <span class="text-muted small">' + a.created + '</span>
-                    ' + (a.status === 'pending' ? '
-                    <button class="btn btn-sm btn-outline-accent ms-2" onclick="acknowledgeAlert(\'' + a.alert_id + '\')">
-                        <i class="bi bi-check"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-accent ms-1" onclick="resolveAlert(\'' + a.alert_id + '\')">
-                        <i class="bi bi-check-all"></i>
-                    </button>' : '') + '
-                </div>
-            ').join('');
         })
-        .catch(err => console.error('Error loading alerts:', err));
-    
+        .catch(err => {
+            console.error('Error loading alerts:', err);
+            document.getElementById('alertsList').innerHTML = '<div class="text-center py-4 text-muted"><i class="bi bi-wifi-off" style="font-size: 2rem;"></i><p class="mt-2">Failed to load alerts</p></div>';
+        });
+
     // Load stats
     fetch('/api/alert-stats')
         .then(r => r.json())
