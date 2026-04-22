@@ -14,7 +14,7 @@ The system currently uses **statistical methods** for anomaly detection:
 - **Moving Average**: Establishes baselines with rolling window calculations
 - **Rate of Change**: Detects sudden spikes or drops in metrics
 
-See `analysis/statistical_anomaly.py` for the current implementation.
+See `src/analysis/statistical_anomaly.py` for the current implementation.
 
 ---
 
@@ -224,7 +224,7 @@ def train_model(data_path):
 
 ### Step 2: Inference Integration
 ```python
-# In analysis/ml_anomaly.py
+# In src/analysis/ml_anomaly.py
 import joblib
 import numpy as np
 
@@ -279,14 +279,14 @@ class HybridDetector:
 
 ## Demo Mode
 
-The current `analysis/ml_anomaly.py` includes:
+The current `src/analysis/ml_anomaly.py` includes:
 - Synthetic data generation for testing
 - Placeholder class structure for ML integration
 - Clear comments on where to add real ML code
 
 Run in demo mode:
 ```bash
-python -c "from analysis.statistical_anomaly import StatisticalAnomalyDetector; d = StatisticalAnomalyDetector(); d.run_demo()"
+python -c "from src.analysis.statistical_anomaly import StatisticalAnomalyDetector; d = StatisticalAnomalyDetector(); d.run_demo()"
 ```
 
 ---

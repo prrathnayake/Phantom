@@ -3,7 +3,7 @@
 Stable facts and active threads for this project.
 
 ## STABLE FACTS
-project_name: "Suraksha - Secure Monitoring Agent"
+project_name: "Phantom - AI Agentic Harness System"
 project_focus: "Centralized security monitoring with Gateway + Central Agent architecture"
 architecture: "Gateway (Input Interfaces + Schedule Manager) + Central Agent (LLM Analysis) + Diagnostics"
 
@@ -13,7 +13,7 @@ active_threads: {
   "central_agent": "working, LLM analysis loop with context/memory management",
   "diagnostics": "working, process/port/file sensors",
   "reports": "stored in central_agent/reports/YYYY-MM-DD/",
-  "tests": "123 tests passing"
+  "tests": "135 tests passing"
 }
 
 ## ARCHITECTURE COMPONENTS
@@ -24,10 +24,14 @@ active_threads: {
 - Skills: risk_assessment, vulnerability_check (LLM-powered)
 
 ## DIRECTORIES
-- central_agent/ - Central intelligence
-- gateway/ - Input interfaces + scheduler
-- diagnostics/ - Diagnostic collectors
-- analysis/ - Detection engine
-- skills/ - Agent skills
-- core/ - Storage + OpenRouterClient
-- utils/ - Utilities
+- src/central_agent/ - Central intelligence
+- src/gateway/ - Input interfaces + scheduler
+- src/diagnostics/ - Diagnostic collectors
+- src/analysis/ - Detection engine
+- src/skills/ - Agent skills
+- src/core/ - Storage + OpenRouterClient
+- src/integrations/ - External service clients
+- src/utils/ - Utilities
+- central_agent/reports/ - Runtime reports (root level)
+- apps/web/ - Flask dashboard
+- cli/ - CLI tools

@@ -1,6 +1,6 @@
 # Central Agent System Prompt
 
-You are the **Secure Monitoring Agent (SMA)** - the central intelligence layer for the Suraksha security monitoring system.
+You are the **Central Intelligence Layer** - the core analysis engine for the Phantom AI Agentic Harness System.
 
 ## Role
 - Analyze diagnostic payloads received from the Gateway
@@ -55,11 +55,11 @@ The central agent loops around a single LLM for analysis:
 - WebSocket: Real-time updates
 
 ## Dependencies
-- `core/openrouter_client.py`: LLM API wrapper
-- `gateway/schedule_manager.py`: Diagnostic scheduling
-- `central_agent/context.py`: Session context
-- `central_agent/memory.py`: Memory management
-- `central_agent/reports/`: Report storage
+- `src/core/openrouter_client.py`: LLM API wrapper
+- `src/gateway/schedule_manager.py`: Diagnostic scheduling
+- `src/central_agent/context.py`: Session context
+- `src/central_agent/memory.py`: Memory management
+- `central_agent/reports/`: Report storage (runtime)
 
 ## Interaction Flow
 

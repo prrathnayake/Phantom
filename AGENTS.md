@@ -22,19 +22,30 @@ Do not create or use any alternate memory root.
 ## Project Structure & Important Directories
 
 ```
-central_agent/     # Central intelligence (LLM analysis loop)
-  system_prompt.md  # Single system prompt
-  context.py      # Session context manager
-  memory.py       # Session memory with TTL
-  agent.py        # Central Agent with LLM loop
-  reports/        # Generated reports (YYYY-MM-DD/)
+src/
+  central_agent/     # Central intelligence (LLM analysis loop)
+    system_prompt.md  # Single system prompt
+    context.py      # Session context manager
+    memory.py       # Session memory with TTL
+    agent.py        # Central Agent with LLM loop
+    skills/         # Skill implementations
+  gateway/          # Input interfaces + schedule manager
+    schedule_manager.py  # Autonomous diagnostic runs
+    payload_sender.py   # Sends payloads to Central Agent
+    interfaces/     # HTTP, CLI, Queue, File, WebSocket
+  diagnostics/      # Diagnostic collectors
+  analysis/         # Detection engine
+  core/             # Storage + OpenRouterClient + Tools
+  integrations/     # External service clients
+  utils/            # Utilities
+  skills/           # Legacy agent skills
 
-gateway/          # Input interfaces + schedule manager
-  schedule_manager.py  # Autonomous diagnostic runs
-  payload_sender.py   # Sends payloads to Central Agent
-  interfaces/     # HTTP, CLI, Queue, File, WebSocket
+central_agent/      # Runtime data (kept at root)
+  reports/          # Generated reports (YYYY-MM-DD/)
 
-diagnostics/      # Diagnostic collectors
+tests/              # Test suite
+apps/web/           # Flask web dashboard
+cli/                # CLI tools
 ```
 
 ## Build, Setup, and Run Commands
@@ -78,6 +89,9 @@ Use `./phantom` CLI for container management:
 - Test Diagnostics: `tests/test_diagnostics.py`
 - Test Integration: `tests/test_integration.py`
 - Test Core: `tests/test_core.py`
+- Test Analysis: `tests/test_analysis.py`
+- Test ThreadPool: `tests/test_threadpool.py`
+- Test Config: `tests/test_config.py`
 
 ## Comments & Docstrings
 

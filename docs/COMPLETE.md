@@ -39,7 +39,7 @@ Phantom (AI Agentic Harness System) is a comprehensive security monitoring platf
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────────┐
-│                              MONICA ARCHITECTURE                               │
+│                              PHANTOM ARCHITECTURE                              │
 ├─────────────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
 │  ┌──────────────────────────────────────────────────────────────────────┐  │
@@ -53,7 +53,7 @@ Phantom (AI Agentic Harness System) is a comprehensive security monitoring platf
 │  │  │ - Queue      │ │              │ │                            │ │  │
 │  │  │ - File      │ │              │ │                            │ │  │
 │  │  └────────────────┘ └────────────────┘ └────────────────────────────┘ │  │
-│  └────────────────���─────────────────────────────────────────────────────┘  │
+│  └──────────────────────────────────────────────────────────────────────┘  │
 │                                      │                                        │
 │                                      ▼ Payload                                │
 │  ┌──────────────────────────────────────────────────────────────────────┐  │
@@ -126,7 +126,7 @@ Phantom (AI Agentic Harness System) is a comprehensive security monitoring platf
 ### Gateway
 
 ```
-gateway/
+src/gateway/
 ├── __init__.py
 ├── server.py              # Main server entry point
 ├── schedule_manager.py   # Autonomous scheduler
@@ -149,14 +149,13 @@ gateway/
 ### Central Agent
 
 ```
-central_agent/
+src/central_agent/
 ├── __init__.py
 ├── system_prompt.md       # Single system prompt
 ├── context.py            # Session context manager
 ├── memory.py            # Session memory with TTL
 ├── agent.py             # Central Agent with LLM loop
 ├── reports_storage.py   # Report storage/retrieval
-├── reports/            # Generated reports (YYYY-MM-DD/)
 └── skills/
     ├── __init__.py
     ├── base.py
@@ -171,6 +170,8 @@ central_agent/
     └── system_diagnostics.py
 ```
 
+Reports are stored at runtime in `central_agent/reports/YYYY-MM-DD/`.
+
 **Central Agent Features**:
 - Session-based context management
 - Memory with TTL and tag-based search
@@ -181,7 +182,7 @@ central_agent/
 ### Diagnostics
 
 ```
-diagnostics/
+src/diagnostics/
 ├── __init__.py
 ├── process_sensor.py    # Process monitoring
 ├── port_sensor.py      # Network port monitoring
@@ -201,7 +202,7 @@ diagnostics/
 ### Analysis
 
 ```
-analysis/
+src/analysis/
 ├── __init__.py
 ├── detection.py           # Rule-based detection
 ├── statistical_anomaly.py # Statistical detection
@@ -217,7 +218,7 @@ analysis/
 ### Core
 
 ```
-core/
+src/core/
 ├── __init__.py
 ├── storage.py           # File-based storage
 ├── openrouter_client.py # LLM client
@@ -229,7 +230,6 @@ core/
     ├── shell_tool.py
     ├── file_tool.py
     ├── process_tool.py
-    ├── diagnostic_tool.py
     └── diagnostic_tool.py
 ```
 
@@ -296,7 +296,7 @@ core/
 │                          DETECTION FLOW                                    │
 └─────────────────────────────────────────────────────────────────────────────┘
 
-  Sensor Data ──▶ ─�──▶ Rule-Based Detection ──▶ Alert
+  Sensor Data ──▶ ────▶ Rule-Based Detection ──▶ Alert
                    │
                    ├──▶ Statistical Detection ──▶ Alert
                    │
@@ -589,4 +589,4 @@ Check logs in `AGENT_LOG_DIR`:
 
 ---
 
-*Last Updated: 2024*
+*Last Updated: 2026-04-22*

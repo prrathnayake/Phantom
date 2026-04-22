@@ -13,7 +13,7 @@ AGENTS.md -> .codex_memories/_agent_rules.md -> .codex_memories/project_state.md
 5. **Session Revival:** On the *first task of a new day*, read yesterday's folder. Write a `revival_summary.md` inside *today's* folder to bootstrap context.
 
 ## Navigation & Work Logic
-6. **Architectural Guardrails:** Target project architecture is in `/ARCHITECTURE.md` and UI design is in `/DESIGN.md`. Do NOT use these files for your AI engine memory. They are strictly for the application you are building.
+6. **Architectural Guardrails:** Target project architecture is in `/docs/COMPLETE.md` and UI design is described in `/README.md`. Do NOT use these files for your AI engine memory. They are strictly for the application you are building.
 7. **Dynamic Discovery:** Whenever you enter a code directory, look for a `folder_map.md`. If missing, generate one so future agents can parse the directory structure without reading every dense codebase file.
 
 ## End of Task Checklist

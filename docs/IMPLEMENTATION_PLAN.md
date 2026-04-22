@@ -207,7 +207,7 @@ See `docs/ML_ANOMALY_DETECTION.md` for detailed ML integration guide.
 ## File Structure Changes
 
 ```
-diagnostics/
+src/diagnostics/
   + service_sensor.py    (NEW)
   + registry_sensor.py   (NEW)
   + dns_sensor.py        (NEW)
@@ -215,7 +215,7 @@ diagnostics/
   + certificate_sensor.py (NEW)
   + hardware_sensor.py   (NEW)
 
-analysis/
+src/analysis/
   + alert_manager.py     (NEW)
   + correlation.py       (NEW)
   + trends.py            (NEW)
@@ -226,7 +226,7 @@ analysis/
   ~ detection.py         (MODIFY - add risk scoring)
   ~ summariser.py        (MODIFY - integrate alerts)
 
-integrations/
+src/integrations/
   + __init__.py
   + siem_client.py
   + slack_client.py
@@ -235,7 +235,7 @@ integrations/
   + elk_client.py
   + cloudwatch_client.py
 
-gateway/interfaces/
+src/gateway/interfaces/
   ~ http_handler.py      (MODIFY - add approval endpoints)
   
 apps/web/
@@ -293,12 +293,12 @@ CLOUDWATCH_REGION = os.environ.get("AWS_DEFAULT_REGION")
 
 | Phase | Status |
 |-------|--------|
-| Phase 1: Alert & Integrations | ⬜ Planned |
-| Phase 2: Approval Workflow | ⬜ Planned |
-| Phase 3: Anomaly Detection | ⬜ Planned |
-| Phase 4: New Sensors | ⬜ Planned |
-| Phase 5: ML Demo | ⬜ Planned |
-| Phase 6: Auto-Response | ⬜ Planned |
+| Phase 1: Alert & Integrations | ✅ Implemented |
+| Phase 2: Approval Workflow | ✅ Implemented |
+| Phase 3: Anomaly Detection | ✅ Implemented |
+| Phase 4: New Sensors | ✅ Implemented |
+| Phase 5: ML Demo | ✅ Implemented |
+| Phase 6: Auto-Response | ✅ Implemented |
 
 ---
 

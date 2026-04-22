@@ -39,41 +39,49 @@ A centralized security monitoring system with Gateway + Central Agent architectu
 ## Directory Layout
 
 ```
-phantom/
+Phantom/
 ├── main.py              # Entry point
 ├── config.py           # Configuration
-├── central_agent/      # Central intelligence
-│   ├── __init__.py
-│   ├── system_prompt.md
-│   ├── context.py     # Session context manager
-│   ├── memory.py     # Session memory with TTL
-│   ├── agent.py      # Central Agent with LLM loop
-│   ├── reports_storage.py
-│   └── reports/      # Generated reports
-├── gateway/           # Input interfaces + scheduler
-│   ├── __init__.py
-│   ├── server.py
-│   ├── schedule_manager.py
-│   ├── payload_sender.py
-│   └── interfaces/  # HTTP, CLI, Queue, File, WebSocket
-├── diagnostics/      # Diagnostic collectors
-│   ├── __init__.py
-│   ├── process_sensor.py
-│   ├── port_sensor.py
-│   └── file_sensor.py
-├── analysis/         # Detection engine
-│   ├── __init__.py
-│   ├── detection.py
-│   └── summariser.py
-├── skills/           # Agent skills
-│   ├── __init__.py
-│   ├── risk_assessment.py
-│   └── vulnerability_check.py
-├── core/            # Framework components
-│   ├── __init__.py
-│   ├── storage.py
-│   └── openrouter_client.py
-└── utils/          # Utilities
+├── dashboard.py        # TUI dashboard (Textual)
+├── cli/                # CLI tools
+├── apps/web/           # Flask web dashboard
+├── src/                # Backend source code
+│   ├── central_agent/  # Central intelligence
+│   │   ├── system_prompt.md
+│   │   ├── context.py      # Session context manager
+│   │   ├── memory.py       # Session memory with TTL
+│   │   ├── agent.py        # Central Agent with LLM loop
+│   │   ├── reports_storage.py
+│   │   └── skills/         # Agent skills
+│   ├── gateway/        # Input interfaces + scheduler
+│   │   ├── server.py
+│   │   ├── schedule_manager.py
+│   │   ├── payload_sender.py
+│   │   └── interfaces/     # HTTP, CLI, Queue, File, WebSocket
+│   ├── diagnostics/    # Diagnostic collectors
+│   │   ├── process_sensor.py
+│   │   ├── port_sensor.py
+│   │   ├── file_sensor.py
+│   │   ├── network_sensor.py
+│   │   ├── memory_sensor.py
+│   │   ├── auth_sensor.py
+│   │   └── ...
+│   ├── analysis/       # Detection engine
+│   │   ├── detection.py
+│   │   ├── alert_manager.py
+│   │   ├── correlation.py
+│   │   ├── trends.py
+│   │   └── summariser.py
+│   ├── core/           # Framework components
+│   │   ├── storage.py
+│   │   ├── openrouter_client.py
+│   │   └── tools/
+│   ├── integrations/   # External service clients
+│   └── utils/          # Utilities
+├── tests/              # Test suite
+├── central_agent/      # Runtime data (reports, session memory)
+│   └── reports/
+└── docs/               # Documentation
 ```
 
 ## Quick Start (Local)
@@ -150,8 +158,11 @@ Copy `.env.docker` to `.env` and configure:
 ## Testing
 
 ```bash
-# Run all tests
-pytest tests/
+# Run the agent
+python main.py
+
+# Run the TUI dashboard
+python dashboard.py
 ```
 
 ## Reports
