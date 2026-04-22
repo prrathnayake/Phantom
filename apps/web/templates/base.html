@@ -748,8 +748,7 @@
             position: relative;
             min-height: 500px;
             display: flex;
-            align-items: center;
-            justify-content: center;
+            align-items: stretch;
         }
 
         /* Workspace Sidebar - Equal Height Cards */
@@ -805,6 +804,8 @@
             align-items: center;
             justify-content: center;
             z-index: 10;
+            flex: 1;
+            min-height: 180px;
         }
 
         .agent-avatar {
@@ -893,8 +894,12 @@
             width: calc(100% - 270px);
             height: 100%;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            gap: 1rem;
+            overflow: hidden;
         }
 
         .orbit-ring {
@@ -950,28 +955,20 @@
         .orbital-widget.bottom-left { animation-delay: 1.2s; }
         .orbital-widget.bottom-right { animation-delay: 1.7s; }
 
-        /* Info widget row - bottom line */
-        .info-widget-row {
-            position: absolute;
-            bottom: 55px;
-            left: 0;
-            right: 0;
+        /* Metrics section */
+        .metrics-section {
+            width: 100%;
             display: flex;
+            flex-direction: column;
             gap: 0.75rem;
-            z-index: 5;
-            flex-wrap: wrap;
-            justify-content: center;
-            padding: 0 0.5rem;
+            flex-shrink: 0;
         }
 
+        /* Info widget rows */
+        .info-widget-row,
         .info-widget-row-2 {
-            position: absolute;
-            bottom: 5px;
-            left: 0;
-            right: 0;
             display: flex;
             gap: 0.75rem;
-            z-index: 5;
             flex-wrap: wrap;
             justify-content: center;
             padding: 0 0.5rem;
@@ -1000,17 +997,17 @@
             font-size: 0.55rem;
         }
 
-        /* Reasoning panel - position at top of workspace */
+        /* Reasoning panel */
         .reasoning-panel {
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 560px;
+            width: 100%;
+            max-width: 560px;
             max-height: 160px;
             background: var(--bg-dark);
             border: 1px solid var(--accent-dim);
+            border-radius: 0.5rem;
+            overflow: hidden;
             z-index: 6;
+            flex-shrink: 0;
         }
 
         .reasoning-messages {
@@ -1025,18 +1022,7 @@
             .orbit-container {
                 width: 100%;
             }
-            .info-widget-row {
-                bottom: 45px;
-            }
-            .info-widget-row-2 {
-                bottom: 5px;
-            }
             .info-widget-row, .info-widget-row-2 {
-                position: absolute;
-                left: 0;
-                right: 0;
-                transform: none;
-                max-width: 100%;
                 justify-content: center;
                 gap: 0.375rem;
             }
@@ -1046,14 +1032,13 @@
                 padding: 0.4rem;
             }
             .orbital-widget-info .widget-title {
-                font-size: 0.4rem;
+                font-size: 0.5rem;
             }
             .orbital-widget-info .widget-value {
                 font-size: 1.1rem;
             }
             .reasoning-panel {
-                width: 320px;
-                top: 5px;
+                max-width: 320px;
             }
         }
 
