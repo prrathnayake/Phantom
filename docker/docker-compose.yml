@@ -53,10 +53,13 @@ services:
     environment:
       - AGENT_LOG_DIR=/app/.logs
       - FLASK_ENV=production
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - OPENROUTER_MODEL=${OPENROUTER_MODEL:-openrouter/gpt-3.5-turbo}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     volumes:
-      - agent-logs:/app/.logs:ro
+      - ../:/app
+      - agent-logs:/app/.logs
     ports:
       - "5000:5000"
     depends_on:
