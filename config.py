@@ -71,8 +71,22 @@ DETECTION_THRESHOLDS = {
 }
 
 def ensure_log_dir():
-    """Ensure that the log directory exists."""
-    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    """Ensure that the log directory exists.
+    
+    Falls back to a temporary directory if the configured path is on a
+    read-only filesystem or cannot be created.
+    """
+    global LOG_DIR
+    try:
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        # Verify we can actually write to it
+        test_file = LOG_DIR / ".write_test"
+        test_file.write_text("test")
+        test_file.unlink()
+    except OSError:
+        import tempfile
+        LOG_DIR = Path(tempfile.gettempdir()) / "phantom_logs"
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 
 TIMELINE_MAX_EVENTS = int(os.environ.get("AGENT_TIMELINE_MAX_EVENTS", 50))

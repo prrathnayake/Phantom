@@ -31,9 +31,16 @@ class Storage:
         self.detections_file = config.LOG_DIR / "detections.log"
 
     def _write_record(self, file_path: Path, record: Dict[str, Any]):
-        """Append a JSON record to the specified file."""
-        with file_path.open("a", encoding="utf-8") as f:
-            f.write(json.dumps(record) + "\n")
+        """Append a JSON record to the specified file.
+        
+        Silently ignores write failures (e.g. read-only filesystem) so that
+        logging never crashes the agent.
+        """
+        try:
+            with file_path.open("a", encoding="utf-8") as f:
+                f.write(json.dumps(record) + "\n")
+        except OSError as e:
+            debug_logger.warning("Storage write failed", {"path": str(file_path), "error": str(e)})
 
     def log_event(self, sensor: str, payload: Dict[str, any]):
         """Record a sensor event.
