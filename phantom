@@ -1,139 +1,579 @@
-#!/usr/bin/env python
-"""Phantom Docker Management CLI - Main entry point."""
+#!/usr/bin/env python3
+"""Phantom Docker Management CLI.
 
+A proper argparse-based CLI for managing Phantom containers with
+pre-flight checks, colorized output, health verification, and
+cross-platform support.
+"""
+
+import argparse
+import os
+import platform
 import subprocess
 import sys
-import os
+import time
 from pathlib import Path
 
-PROJECT_DIR = Path(__file__).parent
+PROJECT_DIR = Path(__file__).parent.resolve()
+COMPOSE_FILE = PROJECT_DIR / "docker" / "docker-compose.yml"
+
+# ── Colors ──────────────────────────────────────────────────────────
+_IS_WINDOWS = platform.system() == "Windows"
+_NO_COLOR = os.environ.get("NO_COLOR", "")
 
 
-def run_cmd(cmd, check=True):
-    return subprocess.run(cmd, cwd=PROJECT_DIR, check=check, shell=True)
+def _supports_color() -> bool:
+    if _NO_COLOR:
+        return False
+    if _IS_WINDOWS:
+        return os.environ.get("TERM") is not None or os.environ.get("FORCE_COLOR")
+    return sys.stdout.isatty()
 
 
-def cmd_status():
-    print("\n[PHANTOM CONTAINERS]")
-    run_cmd('docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"', check=False)
+_USE_COLOR = _supports_color()
 
 
-def cmd_start():
-    print("\n[STARTING CONTAINERS]")
-    run_cmd('docker compose -f docker/docker-compose.yml up -d', check=False)
-    print("Containers started.")
+def _c(code: str, text: str) -> str:
+    """Wrap text in ANSI color if supported."""
+    if not _USE_COLOR:
+        return text
+    return f"\033[{code}m{text}\033[0m"
 
 
-def cmd_stop():
-    print("\n[STOPPING CONTAINERS]")
-    try:
-        run_cmd('docker compose -f docker/docker-compose.yml stop', check=False)
-    except:
-        run_cmd('docker-compose -f docker/docker-compose.yml stop', check=False)
-    print("Containers stopped.")
-    status_check()
+def bold(text: str) -> str:
+    return _c("1", text)
 
 
-def status_check():
-    print("\n[CONTAINER STATUS]")
-    run_cmd('docker ps --format "table {{.Names}}\t{{.Status}}"', check=False)
+def dim(text: str) -> str:
+    return _c("2", text)
 
 
-def cmd_restart(service=None):
-    if service:
-        print(f"\n[RESTARTING: {service}]")
-        run_cmd(f"docker restart phantom-{service}", check=False)
-    else:
-        print("\n[RESTARTING ALL]")
-        run_cmd('docker compose -f docker/docker-compose.yml restart', check=False)
+def green(text: str) -> str:
+    return _c("32", text)
 
 
-def cmd_logs(service="agent", lines=50):
-    print(f"\n[LOGS: {service}]")
-    run_cmd(f"docker logs --tail {lines} phantom-{service}", check=False)
+def red(text: str) -> str:
+    return _c("31", text)
 
 
-def cmd_logs_follow(service="agent"):
-    print(f"\n[FOLLOWING LOGS: {service}] (Ctrl+C to exit)")
-    try:
-        run_cmd(f"docker logs -f --tail 50 phantom-{service}", check=False)
-    except KeyboardInterrupt:
-        pass
+def yellow(text: str) -> str:
+    return _c("33", text)
 
 
-def cmd_ps():
-    run_cmd('docker compose -f docker/docker-compose.yml ps', check=False)
+def cyan(text: str) -> str:
+    return _c("36", text)
 
 
-def cmd_build():
-    print("\n[BUILDING CONTAINERS]")
-    run_cmd('docker compose -f docker/docker-compose.yml build --no-cache', check=False)
-    print("Build complete.")
+# ── Utilities ───────────────────────────────────────────────────────
+def run_cmd(cmd: str, check: bool = False, capture: bool = False, cwd: Path = PROJECT_DIR) -> subprocess.CompletedProcess:
+    """Run a shell command with optional capture."""
+    if _VERBOSE:
+        print(dim(f"  → {cmd}"))
+    kwargs = {"cwd": cwd, "shell": True, "check": check}
+    if capture:
+        kwargs["capture_output"] = True
+        kwargs["text"] = True
+    return subprocess.run(cmd, **kwargs)  # noqa: S602
 
 
-def cmd_clean():
-    print("\n[CLEANING CONTAINERS & VOLUMES]")
-    confirm = input("Remove all containers and volumes? (y/N): ")
-    if confirm.lower() == "y":
-        run_cmd('docker compose -f docker-compose.yml down -v', check=False)
-        print("Cleaned.")
-    else:
-        print("Cancelled.")
+def docker_available() -> bool:
+    """Check if Docker daemon is reachable."""
+    result = run_cmd("docker version --format '{{.Server.Version}}'", capture=True)
+    return result.returncode == 0 and result.stdout.strip()
 
 
-def cmd_exec(service, command):
-    print(f"\n[EXEC: {service}] $ {command}")
-    run_cmd(f'docker exec -it phantom-{service} sh -c "{command}"', check=False)
+def compose_cmd(action: str, *args: str, check: bool = False) -> subprocess.CompletedProcess:
+    """Build and run a docker compose command."""
+    extra = " ".join(args)
+    cmd = f'docker compose -f "{COMPOSE_FILE}" {action} {extra}'
+    return run_cmd(cmd, check=check)
 
 
-def main():
-    args = sys.argv[1:]
-    cmd = args[0] if args else "status"
+def get_services() -> list[str]:
+    """Return list of service names from compose file."""
+    result = run_cmd(
+        f'docker compose -f "{COMPOSE_FILE}" config --services',
+        capture=True,
+    )
+    if result.returncode == 0:
+        return [s.strip() for s in result.stdout.splitlines() if s.strip()]
+    return []
 
-    if cmd == "status" or cmd == "st":
-        cmd_status()
-    elif cmd == "start" or cmd == "up":
-        cmd_start()
-    elif cmd == "stop" or cmd == "down":
-        cmd_stop()
-    elif cmd == "restart" or cmd == "re":
-        cmd_restart(args[1] if len(args) > 1 else None)
-    elif cmd == "logs" or cmd == "log":
-        cmd_logs(args[1] if len(args) > 1 else "agent")
-    elif cmd == "logs-follow":
-        cmd_logs_follow(args[1] if len(args) > 1 else "agent")
-    elif cmd == "ps":
-        cmd_ps()
-    elif cmd == "build":
-        cmd_build()
-    elif cmd == "clean":
-        cmd_clean()
-    elif cmd == "exec":
-        if len(args) < 3:
-            print("Usage: ./phantom exec <service> <command>")
+
+def container_name(service: str) -> str:
+    """Return the expected Docker container name for a service."""
+    return f"phantom-{service}"
+
+
+def validate_service(name: str) -> str:
+    """Validate a service name and return the canonical form."""
+    services = get_services()
+    if not services:
+        raise SystemExit(red("Error: Could not read docker-compose.yml. Is Docker running?"))
+    if name in services:
+        return name
+    # Allow shorthand aliases
+    aliases = {"agent": ["agent", "a"], "dashboard": ["dashboard", "dash", "web", "ui"],
+               "tui": ["tui", "console"], "redis": ["redis", "cache"],
+               "postgres": ["postgres", "db", "pg", "database"],
+               "elasticsearch": ["elasticsearch", "es", "elastic", "search"],
+               "kibana": ["kibana", "kb"], "cli": ["cli"]}
+    for svc, names in aliases.items():
+        if name.lower() in names and svc in services:
+            return svc
+    avail = ", ".join(services)
+    raise SystemExit(red(f"Error: Unknown service '{name}'. Available: {avail}"))
+
+
+# ── Commands ────────────────────────────────────────────────────────
+def cmd_status(args: argparse.Namespace) -> None:
+    """Show container status."""
+    print()
+    print(bold("[PHANTOM CONTAINERS]"))
+    result = run_cmd(
+        'docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"',
+        capture=True,
+    )
+    lines = result.stdout.splitlines()
+    if len(lines) <= 1:
+        print(dim("  No containers running."))
+        return
+    header = lines[0]
+    print(f"  {dim(header)}")
+    for line in lines[1:]:
+        parts = line.split("\t")
+        if len(parts) >= 2:
+            status = parts[1].lower()
+            if "up" in status and "healthy" in status:
+                color = green
+            elif "up" in status:
+                color = yellow
+            else:
+                color = red
+            parts[1] = color(parts[1])
+        print(f"  {'\t'.join(parts)}")
+
+
+def cmd_start(args: argparse.Namespace) -> None:
+    """Start all containers."""
+    print()
+    print(bold("[STARTING CONTAINERS]"))
+    if _DRY_RUN:
+        print(dim("  (dry-run) docker compose up -d"))
+        return
+    compose_cmd("up", "-d")
+    print(green("  Containers started."))
+    if args.wait:
+        cmd_wait(args)
+
+
+def cmd_stop(args: argparse.Namespace) -> None:
+    """Stop all containers."""
+    print()
+    print(bold("[STOPPING CONTAINERS]"))
+    if _DRY_RUN:
+        print(dim("  (dry-run) docker compose stop"))
+        return
+    compose_cmd("stop")
+    print(green("  Containers stopped."))
+
+
+def cmd_restart(args: argparse.Namespace) -> None:
+    """Restart all or a specific service."""
+    if args.service:
+        svc = validate_service(args.service)
+        print()
+        print(bold(f"[RESTARTING: {svc}]"))
+        if _DRY_RUN:
+            print(dim(f"  (dry-run) docker restart phantom-{svc}"))
             return
-        cmd_exec(args[1], " ".join(args[2:]))
-    elif cmd == "help" or cmd == "-h" or cmd == "--help":
-        print("""
-Phantom Docker Management CLI
-
-Commands:
-  start              Start all containers
-  stop               Stop all containers
-  status             Show container status
-  restart [service]  Restart all or specific service
-  logs [service]     Show logs (default: agent)
-  logs-follow        Follow logs in real-time
-  ps                 Show running services
-  build              Rebuild containers
-  clean              Remove containers and volumes
-  exec service cmd   Execute command in container
-  help               Show this help
-        """)
+        run_cmd(f"docker restart phantom-{svc}")
+        print(green(f"  phantom-{svc} restarted."))
     else:
-        print(f"Unknown command: {cmd}")
-        print("Run './phantom help' for available commands")
+        print()
+        print(bold("[RESTARTING ALL]"))
+        if _DRY_RUN:
+            print(dim("  (dry-run) docker compose restart"))
+            return
+        compose_cmd("restart")
+        print(green("  All services restarted."))
+
+
+def cmd_logs(args: argparse.Namespace) -> None:
+    """Show logs for a service."""
+    svc = validate_service(args.service) if args.service else "agent"
+    lines = args.lines or 50
+    print()
+    print(bold(f"[LOGS: {svc}] (last {lines} lines)"))
+    if _DRY_RUN:
+        print(dim(f"  (dry-run) docker logs --tail {lines} phantom-{svc}"))
+        return
+    run_cmd(f"docker logs --tail {lines} phantom-{svc}")
+
+
+def cmd_logs_follow(args: argparse.Namespace) -> None:
+    """Follow logs for a service."""
+    svc = validate_service(args.service) if args.service else "agent"
+    print()
+    print(bold(f"[FOLLOWING LOGS: {svc}]"))
+    print(dim("  Press Ctrl+C to exit"))
+    print()
+    try:
+        run_cmd(f"docker logs -f --tail 50 phantom-{svc}")
+    except KeyboardInterrupt:
+        print()
+        print(dim("  Stopped."))
+
+
+def cmd_ps(args: argparse.Namespace) -> None:
+    """List compose services."""
+    compose_cmd("ps")
+
+
+def cmd_build(args: argparse.Namespace) -> None:
+    """Rebuild containers."""
+    print()
+    print(bold("[BUILDING CONTAINERS]"))
+    if _DRY_RUN:
+        print(dim("  (dry-run) docker compose build"))
+        return
+    extra = "--no-cache" if args.no_cache else ""
+    compose_cmd("build", extra)
+    print(green("  Build complete."))
+
+
+def cmd_clean(args: argparse.Namespace) -> None:
+    """Remove containers and volumes."""
+    print()
+    print(bold("[CLEANING CONTAINERS & VOLUMES]"))
+    if not args.yes:
+        confirm = input(yellow("  Remove all containers and volumes? (y/N): "))
+        if confirm.lower() != "y":
+            print(dim("  Cancelled."))
+            return
+    if _DRY_RUN:
+        print(dim("  (dry-run) docker compose down -v"))
+        return
+    compose_cmd("down", "-v")
+    print(green("  Cleaned."))
+
+
+def cmd_exec(args: argparse.Namespace) -> None:
+    """Execute a command in a container."""
+    svc = validate_service(args.service)
+    command = " ".join(args.command)
+    print()
+    print(bold(f"[EXEC: {svc}]"))
+    print(f"  $ {command}")
+    if _DRY_RUN:
+        print(dim("  (dry-run)"))
+        return
+    # Use exec form to avoid shell quoting issues
+    shell = "powershell.exe" if _IS_WINDOWS else "sh"
+    run_cmd(f'docker exec -it phantom-{svc} {shell} -c "{command}"')
+
+
+def cmd_shell(args: argparse.Namespace) -> None:
+    """Open an interactive shell in a container."""
+    svc = validate_service(args.service)
+    print()
+    print(bold(f"[SHELL: {svc}]"))
+    print(dim("  Type 'exit' to leave"))
+    print()
+    shell = "powershell.exe" if _IS_WINDOWS else "bash"
+    # Fallback to sh if bash not available
+    run_cmd(f"docker exec -it phantom-{svc} {shell}", check=False)
+
+
+def cmd_health(args: argparse.Namespace) -> None:
+    """Check health of all services."""
+    print()
+    print(bold("[HEALTH CHECK]"))
+    services = get_services()
+    if not services:
+        print(red("  Could not read docker-compose.yml"))
+        return
+    for svc in services:
+        result = run_cmd(
+            f"docker inspect --format='{{{{.State.Health.Status}}}}' phantom-{svc}",
+            capture=True,
+        )
+        status = result.stdout.strip() if result.returncode == 0 else "unknown"
+        # Check if running at all
+        if result.returncode != 0:
+            result = run_cmd(
+                f"docker inspect --format='{{{{.State.Status}}}}' phantom-{svc}",
+                capture=True,
+            )
+            status = result.stdout.strip() if result.returncode == 0 else "not running"
+
+        if status == "healthy":
+            icon = green("✓")
+            status_str = green(status)
+        elif status == "starting":
+            icon = yellow("◐")
+            status_str = yellow(status)
+        elif status in ("unhealthy", "exited"):
+            icon = red("✗")
+            status_str = red(status)
+        else:
+            icon = dim("○")
+            status_str = dim(status)
+        print(f"  {icon} {svc:<18} {status_str}")
+
+
+def cmd_wait(args: argparse.Namespace) -> None:
+    """Wait for services to be healthy."""
+    timeout = args.timeout or 120
+    services = get_services()
+    print()
+    print(bold(f"[WAITING FOR SERVICES] (timeout: {timeout}s)"))
+    start = time.time()
+    while time.time() - start < timeout:
+        all_healthy = True
+        statuses = []
+        for svc in services:
+            result = run_cmd(
+                f"docker inspect --format='{{{{.State.Health.Status}}}}' phantom-{svc}",
+                capture=True,
+            )
+            status = result.stdout.strip() if result.returncode == 0 else "missing"
+            statuses.append((svc, status))
+            if status != "healthy":
+                all_healthy = False
+        if all_healthy:
+            print(green("  All services healthy!"))
+            return
+        # Print progress line
+        parts = [f"{svc}={s}" for svc, s in statuses]
+        elapsed = int(time.time() - start)
+        print(f"  [{elapsed}s] {', '.join(parts)}", end="\r", flush=True)
+        time.sleep(2)
+    print()
+    print(red("  Timeout waiting for services."))
+    raise SystemExit(1)
+
+
+def cmd_config(args: argparse.Namespace) -> None:
+    """Show configuration summary."""
+    print()
+    print(bold("[PHANTOM CONFIGURATION]"))
+    env_file = PROJECT_DIR / ".env"
+    if env_file.exists():
+        print(f"  Env file: {cyan(str(env_file))}")
+        lines = env_file.read_text().splitlines()
+        for line in lines:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            if "=" in line:
+                key, val = line.split("=", 1)
+                if "password" in key.lower() or "key" in key.lower() or "secret" in key.lower():
+                    val = "***"
+                print(f"    {key}={val}")
+    else:
+        print(yellow("  No .env file found."))
+
+    compose_file = COMPOSE_FILE
+    print(f"\n  Compose file: {cyan(str(compose_file))}")
+    if compose_file.exists():
+        result = run_cmd(
+            f'docker compose -f "{compose_file}" config --services',
+            capture=True,
+        )
+        if result.returncode == 0:
+            svcs = [s.strip() for s in result.stdout.splitlines() if s.strip()]
+            print(f"  Services: {', '.join(svcs)}")
+
+
+def cmd_top(args: argparse.Namespace) -> None:
+    """Show resource usage for Phantom containers."""
+    print()
+    print(bold("[RESOURCE USAGE]"))
+    result = run_cmd(
+        'docker stats --no-stream --format "table {{.Name}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}"',
+        capture=True,
+    )
+    lines = result.stdout.splitlines()
+    if len(lines) <= 1:
+        print(dim("  No containers running."))
+        return
+    print(f"  {dim(lines[0])}")
+    for line in lines[1:]:
+        if line.startswith("phantom-"):
+            print(f"  {line}")
+
+
+def cmd_version(args: argparse.Namespace) -> None:
+    """Show version info."""
+    print()
+    print(bold("Phantom Docker CLI"))
+    print(f"  Project dir: {PROJECT_DIR}")
+    print(f"  Compose file: {COMPOSE_FILE}")
+    result = run_cmd("docker version --format '{{.Client.Version}}'", capture=True)
+    docker_ver = result.stdout.strip() if result.returncode == 0 else "unknown"
+    print(f"  Docker client: {docker_ver}")
+    result = run_cmd(
+        f'docker compose -f "{COMPOSE_FILE}" version --short',
+        capture=True,
+    )
+    compose_ver = result.stdout.strip() if result.returncode == 0 else "unknown"
+    print(f"  Docker Compose: {compose_ver}")
+
+
+# ── Argument Parser ─────────────────────────────────────────────────
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="phantom",
+        description="Phantom Docker Management CLI",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  %(prog)s status              Show running containers
+  %(prog)s start               Start all services
+  %(prog)s start --wait        Start and wait for health checks
+  %(prog)s restart dashboard   Restart the dashboard service
+  %(prog)s logs agent -n 100   Show last 100 lines of agent logs
+  %(prog)s follow dashboard    Follow dashboard logs live
+  %(prog)s shell agent         Open a shell in the agent container
+  %(prog)s health              Check health of all services
+  %(prog)s top                 Show CPU/memory usage
+  %(prog)s config              Show configuration summary
+        """,
+    )
+    parser.add_argument("-v", "--verbose", action="store_true", help="Show executed commands")
+    parser.add_argument("-n", "--dry-run", action="store_true", help="Print commands without executing")
+    parser.add_argument("--version", action="store_true", help="Show version and exit")
+
+    sub = parser.add_subparsers(dest="command", help="Available commands")
+
+    # status
+    sub.add_parser("status", aliases=["st"], help="Show container status")
+
+    # start
+    p_start = sub.add_parser("start", aliases=["up"], help="Start all containers")
+    p_start.add_argument("-w", "--wait", action="store_true", help="Wait for services to be healthy")
+
+    # stop
+    sub.add_parser("stop", aliases=["down"], help="Stop all containers")
+
+    # restart
+    p_restart = sub.add_parser("restart", aliases=["re"], help="Restart all or a specific service")
+    p_restart.add_argument("service", nargs="?", help="Service name (e.g. agent, dashboard)")
+
+    # logs
+    p_logs = sub.add_parser("logs", aliases=["log"], help="Show logs for a service")
+    p_logs.add_argument("service", nargs="?", default="agent", help="Service name (default: agent)")
+    p_logs.add_argument("-n", "--lines", type=int, default=50, help="Number of lines (default: 50)")
+
+    # follow
+    p_follow = sub.add_parser("follow", aliases=["logs-follow", "tail"], help="Follow logs for a service")
+    p_follow.add_argument("service", nargs="?", default="agent", help="Service name (default: agent)")
+
+    # ps (compose ps)
+    sub.add_parser("ps", aliases=["list"], help="List compose services")
+
+    # build
+    p_build = sub.add_parser("build", help="Rebuild containers")
+    p_build.add_argument("--no-cache", action="store_true", help="Build without cache")
+
+    # clean
+    p_clean = sub.add_parser("clean", help="Remove containers and volumes")
+    p_clean.add_argument("-y", "--yes", action="store_true", help="Skip confirmation")
+
+    # exec
+    p_exec = sub.add_parser("exec", help="Execute a command in a container")
+    p_exec.add_argument("service", help="Service name")
+    p_exec.add_argument("command", nargs=argparse.REMAINDER, help="Command to run")
+
+    # shell
+    p_shell = sub.add_parser("shell", help="Open an interactive shell in a container")
+    p_shell.add_argument("service", nargs="?", default="agent", help="Service name (default: agent)")
+
+    # health
+    sub.add_parser("health", aliases=["hc"], help="Check health of all services")
+
+    # wait
+    p_wait = sub.add_parser("wait", help="Wait for services to become healthy")
+    p_wait.add_argument("-t", "--timeout", type=int, default=120, help="Timeout in seconds (default: 120)")
+
+    # config
+    sub.add_parser("config", help="Show configuration summary")
+
+    # top
+    sub.add_parser("top", aliases=["stats"], help="Show resource usage")
+
+    return parser
+
+
+_COMMANDS = {
+    "status": cmd_status,
+    "st": cmd_status,
+    "start": cmd_start,
+    "up": cmd_start,
+    "stop": cmd_stop,
+    "down": cmd_stop,
+    "restart": cmd_restart,
+    "re": cmd_restart,
+    "logs": cmd_logs,
+    "log": cmd_logs,
+    "follow": cmd_logs_follow,
+    "logs-follow": cmd_logs_follow,
+    "tail": cmd_logs_follow,
+    "ps": cmd_ps,
+    "list": cmd_ps,
+    "build": cmd_build,
+    "clean": cmd_clean,
+    "exec": cmd_exec,
+    "shell": cmd_shell,
+    "health": cmd_health,
+    "hc": cmd_health,
+    "wait": cmd_wait,
+    "config": cmd_config,
+    "top": cmd_top,
+    "stats": cmd_top,
+}
+
+_VERBOSE = False
+_DRY_RUN = False
+
+
+def main() -> int:
+    parser = build_parser()
+    args = parser.parse_args()
+
+    global _VERBOSE, _DRY_RUN
+    _VERBOSE = args.verbose
+    _DRY_RUN = args.dry_run
+
+    if args.version:
+        cmd_version(args)
+        return 0
+
+    if not args.command:
+        cmd_status(args)
+        return 0
+
+    # Pre-flight: verify Docker is available (skip for config/version)
+    if args.command not in ("config", "version"):
+        if not docker_available():
+            print(red("Error: Docker is not running or not installed."))
+            print(dim("  Please start Docker Desktop or install Docker."))
+            return 1
+
+    handler = _COMMANDS.get(args.command)
+    if handler:
+        try:
+            handler(args)
+        except SystemExit as e:
+            return e.code if isinstance(e.code, int) else 1
+    else:
+        print(red(f"Unknown command: {args.command}"))
+        parser.print_help()
+        return 1
+
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
