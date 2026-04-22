@@ -5,7 +5,7 @@ Provides WebSocket for real-time updates.
 import json
 import uuid
 import asyncio
-from datetime import datetime
+from datetime import datetime, timezone
 from threading import Thread
 from typing import Any, Callable, Dict, FrozenSet, Optional, Set
 
@@ -72,7 +72,13 @@ class WebSocketHandler:
         self._running = False
         
         if self._server:
-            asyncio.run(self._server.ws_server.close())
+            try:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                loop.run_until_complete(self._server.close())
+                loop.close()
+            except Exception as e:
+                debug_logger.warning("WebSocket stop error", {"error": str(e)})
         
         debug_logger.info("WebSocket stopped")
     
@@ -139,7 +145,7 @@ class WebSocketHandler:
                 response = {
                     "type": "status",
                     "connections": len(self._connections),
-                    "timestamp": datetime.utcnow().isoformat()
+                    "timestamp": datetime.now(timezone.utc).isoformat()
                 }
                 await ws.send(json.dumps(response))
         

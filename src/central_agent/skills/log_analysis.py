@@ -7,7 +7,7 @@ import os
 import platform
 from pathlib import Path
 
-from central_agent.skills.base import (
+from src.central_agent.skills.base import (
     BaseSkill,
     SkillCategory,
     SkillMetadata,

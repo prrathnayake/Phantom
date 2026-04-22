@@ -4,7 +4,7 @@ Provides webhook integration for sending alerts and approval requests to Slack.
 """
 import json
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from urllib.parse import urljoin
 
@@ -96,7 +96,7 @@ class SlackClient:
             text=description[:500],
             fields=fields,
             footer="Suraksha Security Agent",
-            ts=int(datetime.utcnow().timestamp())
+            ts=int(datetime.now(timezone.utc).timestamp())
         )
         
         blocks = [
@@ -248,7 +248,7 @@ class SlackClient:
                     "title": f"Action Required: {action}",
                     "text": reason[:300],
                     "footer": "Suraksha Approval System",
-                    "ts": int(datetime.utcnow().timestamp())
+                    "ts": int(datetime.now(timezone.utc).timestamp())
                 }
             ],
             "blocks": blocks
@@ -327,7 +327,7 @@ class SlackClient:
             "text": description,
             "fields": fields,
             "footer": "Suraksha Detection Engine",
-            "ts": int(datetime.utcnow().timestamp())
+            "ts": int(datetime.now(timezone.utc).timestamp())
         }
         
         payload = {

@@ -4,7 +4,7 @@ Manages approval requests for automated actions with human-in-the-loop workflow.
 """
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from threading import Lock
 from typing import Any, Dict, List, Optional
@@ -54,7 +54,7 @@ class ApprovalRequest:
     detection_rule: Optional[str] = None
     correlation_id: Optional[str] = None
     status: str = "pending"
-    created_at: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+    created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     expires_at: Optional[str] = None
     approved_at: Optional[str] = None
     approved_by: Optional[str] = None
@@ -88,13 +88,13 @@ class ApprovalManager:
         })
     
     def _get_expiry_time(self) -> str:
-        expiry = datetime.utcnow() + timedelta(minutes=self.timeout_minutes)
+        expiry = datetime.now(timezone.utc) + timedelta(minutes=self.timeout_minutes)
         return expiry.isoformat()
     
     def is_expired(self, approval: ApprovalRequest) -> bool:
         if approval.expires_at:
             expiry = datetime.fromisoformat(approval.expires_at)
-            return datetime.utcnow() > expiry
+            return datetime.now(timezone.utc) > expiry
         return False
     
     def create_approval_request(
@@ -226,7 +226,7 @@ class ApprovalManager:
                 return request
             
             request.status = "approved"
-            request.approved_at = datetime.utcnow().isoformat()
+            request.approved_at = datetime.now(timezone.utc).isoformat()
             request.approved_by = approved_by
         
         self.storage.log_event("approval_approved", {
@@ -275,7 +275,7 @@ class ApprovalManager:
                 return None
             
             request.status = "denied"
-            request.denied_at = datetime.utcnow().isoformat()
+            request.denied_at = datetime.now(timezone.utc).isoformat()
             request.denied_by = denied_by
             if reason:
                 request.metadata["denial_reason"] = reason
@@ -322,12 +322,12 @@ class ApprovalManager:
                 return None
             
             request.status = "executed"
-            request.executed_at = datetime.utcnow().isoformat()
+            request.executed_at = datetime.now(timezone.utc).isoformat()
             request.execution_result = execution_result
         
         self._executed_actions[approval_id] = {
             "result": execution_result,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
         
         self.storage.log_event("approval_executed", {

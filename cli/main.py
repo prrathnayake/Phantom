@@ -274,7 +274,7 @@ def config_set(args):
         print("Usage: agent config set <key> <value>")
         return 1
 
-    key, value = args[0], " ".join(args[1])
+    key, value = args[0], " ".join(args[1:])
 
     env_file = Path(".env")
     if not env_file.exists():

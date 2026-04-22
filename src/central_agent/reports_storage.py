@@ -3,7 +3,7 @@
 Manages report storage, retrieval, and organization.
 """
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from threading import Lock
 from typing import Any, List, Optional
@@ -47,11 +47,11 @@ class ReportStorage:
         Returns:
             Path to saved report
         """
-        date_str = datetime.utcnow().strftime("%Y-%m-%d")
+        date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         report_dir = self.reports_dir / date_str
         report_dir.mkdir(parents=True, exist_ok=True)
         
-        timestamp = datetime.utcnow().isoformat().replace(":", "-")
+        timestamp = datetime.now(timezone.utc).isoformat().replace(":", "-")
         filename = f"report_{session_id}_{timestamp}.md"
         report_path = report_dir / filename
         

@@ -10,7 +10,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from flask import Flask, render_template, request, jsonify, session
 from threading import Lock
 
@@ -23,7 +23,7 @@ from src.diagnostics import process_sensor, port_sensor, file_sensor
 app = Flask(__name__)
 app.secret_key = "phantom-mission-control-key"
 
-start_time = datetime.utcnow()
+start_time = datetime.now(timezone.utc)
 chat_history = []
 chat_lock = Lock()
 
@@ -49,9 +49,9 @@ def init_app():
     agent = create_central_agent()
     schedule_manager = ScheduleManager()
     
-    from analysis.approval_manager import create_approval_manager
-    from analysis.alert_manager import create_alert_manager
-    from analysis.response_actions import create_response_engine
+    from src.analysis.approval_manager import create_approval_manager
+    from src.analysis.alert_manager import create_alert_manager
+    from src.analysis.response_actions import create_response_engine
     approval_mgr = create_approval_manager()
     alert_mgr = create_alert_manager()
     resp_engine = create_response_engine()
@@ -149,7 +149,7 @@ def chat_api():
         chat_history.append({
             "role": "user",
             "content": user_message,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         })
     
     context_summary = _get_recent_context()
@@ -186,7 +186,7 @@ Respond as a helpful security assistant."""
         chat_history.append({
             "role": "assistant",
             "content": response,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.now(timezone.utc).isoformat()
         })
     
     return jsonify({
@@ -260,7 +260,7 @@ def run_diagnostic_api():
         if agent and result:
             analysis = agent.analyze(
                 payload={"source": f"web_{diagnostic}", "data": result},
-                session_id=f"web-{diagnostic}-{datetime.utcnow().timestamp()}",
+                session_id=f"web-{diagnostic}-{datetime.now(timezone.utc).timestamp()}",
                 trigger="manual"
             )
             
@@ -379,7 +379,7 @@ def update_schedule_interval_api(name):
             schedule = schedule_manager._schedules.get(name)
             if schedule:
                 schedule.interval = new_interval
-                schedule.next_run = datetime.utcnow() + timedelta(seconds=new_interval)
+                schedule.next_run = datetime.now(timezone.utc) + timedelta(seconds=new_interval)
                 return jsonify({"success": True, "message": f"Interval updated to {new_interval}s"})
         return jsonify({"success": False, "error": "Schedule not found"}), 404
     return jsonify({"success": False, "error": "No schedule manager"}), 500
@@ -399,14 +399,14 @@ def status_api():
         event_count = len(events)
         detection_count = len(detections)
         
-        one_day_ago = datetime.utcnow() - timedelta(hours=24)
+        one_day_ago = datetime.now(timezone.utc) - timedelta(hours=24)
         events_24h = sum(1 for e in events if datetime.fromisoformat(e.get('timestamp', '2020-01-01')) > one_day_ago)
         detections_24h = sum(1 for d in detections if datetime.fromisoformat(d.get('timestamp', '2020-01-01')) > one_day_ago)
     else:
         events_24h = 0
         detections_24h = 0
     
-    uptime_seconds = (datetime.utcnow() - start_time).total_seconds()
+    uptime_seconds = (datetime.now(timezone.utc) - start_time).total_seconds()
     hrs = int(uptime_seconds // 3600)
     mins = int((uptime_seconds % 3600) // 60)
     secs = int(uptime_seconds % 60)
@@ -417,7 +417,7 @@ def status_api():
     
     return jsonify({
         "status": "running",
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "uptime": uptime_str,
         "events_logged": event_count,
         "detections": detection_count,
@@ -425,7 +425,7 @@ def status_api():
         "detections_24h": detections_24h,
         "active_sensors": 3,
         "last_activity": last_activity_time,
-        "schedules": len(schedule_manager._schedules) if schedule_manager else 0
+        "schedules": schedule_manager.schedule_count() if schedule_manager else 0
     })
 
 

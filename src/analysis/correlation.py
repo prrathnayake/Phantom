@@ -3,7 +3,7 @@
 Analyzes patterns across multiple sensors to detect complex attack patterns.
 """
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from threading import Lock
 from typing import Any, Dict, List, Optional
@@ -163,7 +163,7 @@ class CorrelationEngine:
                 self._sensor_cache[sensor_name] = []
             
             entry = {
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "data": data
             }
             
@@ -179,7 +179,7 @@ class CorrelationEngine:
             List of detected correlation events
         """
         events = []
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         window_start = now - self._correlation_window
         
         for rule in self._rules:
@@ -259,7 +259,7 @@ class CorrelationEngine:
         self,
         rule: CorrelationRule
     ) -> Optional[CorrelationEvent]:
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         correlation_id = f"{rule.pattern.value}-{now.strftime('%Y%m%d%H%M%S')}"
         
         details = {}
@@ -313,12 +313,12 @@ class CorrelationEngine:
         
         if source in self._sensor_cache:
             self._sensor_cache[source].append({
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "data": payload
             })
         else:
             self._sensor_cache[source] = [{
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "data": payload
             }]
         

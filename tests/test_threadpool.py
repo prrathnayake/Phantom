@@ -15,14 +15,10 @@ def test_singleton_pattern():
     pool1 = ThreadPool.get_instance(4)
     pool2 = ThreadPool.get_instance(4)
 
-    if pool1 is pool2:
-        print("  get_instance returns same instance: OK")
-    else:
-        print("  get_instance returns same instance: FAILED")
-        return False
+    assert pool1 is pool2, "get_instance should return same instance"
+    print("  get_instance returns same instance: OK")
 
     ThreadPool.reset_instance()
-    return True
 
 
 def test_initialization():
@@ -34,16 +30,11 @@ def test_initialization():
 
     time.sleep(0.5)
 
-    if len(pool._workers) == 4:
-        print(f"  worker threads created: {len(pool._workers)} OK")
-    else:
-        print(f"  worker threads created: {len(pool._workers)} FAILED")
-        pool.shutdown()
-        return False
+    assert len(pool._workers) == 4, f"expected 4 workers, got {len(pool._workers)}"
+    print(f"  worker threads created: {len(pool._workers)} OK")
 
     pool.shutdown()
     ThreadPool.reset_instance()
-    return True
 
 
 def test_submit_tasks():
@@ -65,17 +56,11 @@ def test_submit_tasks():
     pool.wait_completion(timeout=5.0)
 
     errors = pool.get_errors()
-    if errors:
-        print(f"  errors during execution: {len(errors)}")
-        for e in errors:
-            print(f"    - {e}")
-        pool.shutdown()
-        return False
+    assert not errors, f"errors during execution: {errors}"
 
     print(f"  tasks executed: {len(results)} OK")
     pool.shutdown()
     ThreadPool.reset_instance()
-    return True
 
 
 def test_parallel_execution():
@@ -101,14 +86,11 @@ def test_parallel_execution():
     pool.wait_completion(timeout=5.0)
     elapsed = time.time() - start_time
 
-    if elapsed < 0.5:
-        print(f"  8 tasks (0.1s each) completed in {elapsed:.2f}s: OK (parallel)")
-    else:
-        print(f"  8 tasks completed in {elapsed:.2f}s: SLOW (may be sequential)")
+    assert elapsed < 0.5, f"8 tasks completed in {elapsed:.2f}s: SLOW (may be sequential)"
+    print(f"  8 tasks (0.1s each) completed in {elapsed:.2f}s: OK (parallel)")
 
     pool.shutdown()
     ThreadPool.reset_instance()
-    return True
 
 
 def test_error_handling():
@@ -128,18 +110,13 @@ def test_error_handling():
     pool.wait_completion(timeout=5.0)
 
     errors = pool.get_errors()
-    if len(errors) == 3:
-        print(f"  captured {len(errors)} exceptions: OK")
-        for e in errors:
-            print(f"    - {type(e).__name__}: {e}")
-    else:
-        print(f"  captured {len(errors)} exceptions: FAILED (expected 3)")
-        pool.shutdown()
-        return False
+    assert len(errors) == 3, f"captured {len(errors)} exceptions, expected 3"
+    print(f"  captured {len(errors)} exceptions: OK")
+    for e in errors:
+        print(f"    - {type(e).__name__}: {e}")
 
     pool.shutdown()
     ThreadPool.reset_instance()
-    return True
 
 
 def test_shutdown():
@@ -161,13 +138,10 @@ def test_shutdown():
 
     pool.shutdown(wait=True)
 
-    if len(results) == 5:
-        print(f"  tasks completed before shutdown: {len(results)} OK")
-    else:
-        print(f"  tasks completed: {len(results)} (may be timing issue)")
+    assert len(results) >= 4, f"tasks completed: {len(results)}, expected at least 4"
+    print(f"  tasks completed before shutdown: {len(results)} OK")
 
     ThreadPool.reset_instance()
-    return True
 
 
 def test_get_active_tasks():
@@ -187,12 +161,12 @@ def test_get_active_tasks():
     time.sleep(0.1)
     active = pool.get_active_tasks()
 
+    assert active >= 0, f"expected active tasks >= 0, got {active}"
     print(f"  active tasks during execution: {active} OK")
 
     pool.wait_completion(timeout=5.0)
     pool.shutdown()
     ThreadPool.reset_instance()
-    return True
 
 
 def test_init_helper():
@@ -202,15 +176,11 @@ def test_init_helper():
     pool = init_threadpool(num_threads=4)
     time.sleep(0.5)
 
-    if pool._initialized:
-        print("  init_threadpool: OK")
-    else:
-        print("  init_threadpool: FAILED")
-        return False
+    assert pool._initialized, "init_threadpool failed to initialize"
+    print("  init_threadpool: OK")
 
     pool.shutdown()
     ThreadPool.reset_instance()
-    return True
 
 
 if __name__ == "__main__":
@@ -234,10 +204,11 @@ if __name__ == "__main__":
 
     for test in tests:
         try:
-            if test():
-                passed += 1
-            else:
-                failed += 1
+            test()
+            passed += 1
+        except AssertionError as e:
+            print(f"ASSERTION FAILED in {test.__name__}: {e}")
+            failed += 1
         except Exception as e:
             print(f"EXCEPTION in {test.__name__}: {e}")
             import traceback

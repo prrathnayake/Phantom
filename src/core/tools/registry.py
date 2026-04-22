@@ -8,7 +8,7 @@ import logging
 import threading
 import time
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Callable, Optional
 
 from .base import BaseTool, ToolCategory, ToolDescriptor, ToolResult, ToolStatus
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 class LoadedTool:
     """Container for loaded tool instance."""
     tool: BaseTool
-    loaded_at: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+    loaded_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     use_count: int = 0
     last_used: Optional[str] = None
 
@@ -127,19 +127,24 @@ class ToolRegistry:
     def register_loader(
         self,
         name: str,
-        loader: Callable[[], BaseTool]
+        loader: Callable[[], BaseTool],
+        descriptor: Optional[ToolDescriptor] = None
     ) -> None:
         """Register a tool loader function.
         
         Args:
             name: Tool name
             loader: Function that returns tool instance
+            descriptor: Optional pre-built descriptor to avoid early instantiation
         """
         with self._lock:
             self._loaders[name] = loader
             
-            tool = loader()
-            self._descriptors[name] = tool.descriptor
+            if descriptor is not None:
+                self._descriptors[name] = descriptor
+            else:
+                tool = loader()
+                self._descriptors[name] = tool.descriptor
             
             logger.info("Tool loader registered", {"name": name})
     

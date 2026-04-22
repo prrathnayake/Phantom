@@ -1,11 +1,12 @@
 """Port sensor collects information about open TCP and UDP ports.
 
-The payload includes the total number of listening sockets and a list of
-the ports and protocols in use.  It uses psutil when available and
+The payload includes the total number of listening sockets and a list of the
+ports and protocols in use.  It uses psutil when available and
 falls back to parsing the output of `netstat`.
 """
 from typing import Dict, Any, List
 import logging
+import socket
 
 from src.utils.debug_log import debug_logger
 
@@ -20,7 +21,7 @@ def _collect_with_psutil() -> Dict[str, Any]:
         # Only interested in listening sockets
         if conn.status == psutil.CONN_LISTEN:
             laddr = f"{conn.laddr.ip}:{conn.laddr.port}"
-            proto = "tcp" if hasattr(psutil, 'SOCK_STREAM') and conn.family == psutil.AF_INET else "udp"
+            proto = "tcp" if conn.type == socket.SOCK_STREAM else "udp"
             ports.append({"protocol": proto, "address": laddr})
     return {
         "count": len(ports),

@@ -9,7 +9,7 @@ To add a new diagnostic simply create a new module within this package
 that implements a `collect(context) -> dict` function.
 """
 
-from src.diagnostics import (
+from . import (
     process_sensor,
     port_sensor,
     file_sensor,

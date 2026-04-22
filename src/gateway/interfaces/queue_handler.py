@@ -4,7 +4,7 @@ Provides message queue consumer (Redis/RabbitMQ).
 """
 import json
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from threading import Thread
 from typing import Any, Callable, Dict, List, Optional
 
@@ -109,6 +109,11 @@ class QueueHandler:
         
         if self._client and self.queue_type == "rabbitmq":
             try:
+                if hasattr(self, '_channel') and self._channel:
+                    self._client.add_callback_threadsafe(self._channel.stop_consuming)
+            except Exception:
+                pass
+            try:
                 self._client.close()
             except Exception:
                 pass
@@ -138,6 +143,9 @@ class QueueHandler:
     def _consume_rabbitmq(self) -> None:
         """Consume from RabbitMQ."""
         def callback(ch, method, properties, body):
+            if not self._running:
+                ch.stop_consuming()
+                return
             self._process_message(body)
             ch.basic_ack(delivery_tag=method.delivery_tag)
         
@@ -146,7 +154,12 @@ class QueueHandler:
             queue=self.queue_name,
             on_message_callback=callback
         )
-        self._channel.start_consuming()
+        
+        while self._running:
+            try:
+                self._channel.connection.process_data_events(time_limit=1)
+            except Exception:
+                break
     
     def _process_message(self, data: bytes) -> None:
         """Process queue message."""
@@ -202,7 +215,7 @@ class QueueHandler:
         
         message = {
             "session_id": session_id,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "trigger": trigger,
             "payload": payload
         }

@@ -5,9 +5,9 @@ Provides drop folder monitoring for file-based triggers.
 import json
 import uuid
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
-from threading import Thread
+from threading import Lock, Thread
 from typing import Any, Callable, Dict, Optional
 
 from src.utils.debug_log import debug_logger
@@ -40,6 +40,7 @@ class FileTrigger:
         self._running = False
         self._thread = None
         self._seen_files: set = set()
+        self._scan_lock = Lock()
         
         self.watch_path.mkdir(parents=True, exist_ok=True)
         
@@ -68,9 +69,10 @@ class FileTrigger:
     
     def _scan_initial(self) -> None:
         """Scan for existing files on start."""
-        for f in self.watch_path.iterdir():
-            if f.is_file():
-                self._seen_files.add(f.name)
+        with self._scan_lock:
+            for f in self.watch_path.iterdir():
+                if f.is_file():
+                    self._seen_files.add(f.name)
     
     def _monitor_loop(self) -> None:
         """Monitor loop."""
@@ -84,18 +86,22 @@ class FileTrigger:
     
     def _check_for_new_files(self) -> None:
         """Check for new files in watch folder."""
-        for f in self.watch_path.iterdir():
-            if not f.is_file():
-                continue
-            
-            if f.name in self._seen_files:
-                continue
-            
-            if f.suffix not in self.file_extensions:
-                continue
-            
-            self._seen_files.add(f.name)
-            
+        new_files = []
+        with self._scan_lock:
+            for f in self.watch_path.iterdir():
+                if not f.is_file():
+                    continue
+                
+                if f.name in self._seen_files:
+                    continue
+                
+                if f.suffix not in self.file_extensions:
+                    continue
+                
+                self._seen_files.add(f.name)
+                new_files.append(f)
+        
+        for f in new_files:
             self._process_file(f)
     
     def _process_file(self, file_path: Path) -> None:
@@ -145,7 +151,7 @@ class FileTrigger:
             archive_dir = self.watch_path / "processed"
             archive_dir.mkdir(exist_ok=True)
             
-            timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+            timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
             new_name = f"{file_path.stem}_{timestamp}{file_path.suffix}"
             
             file_path.rename(archive_dir / new_name)

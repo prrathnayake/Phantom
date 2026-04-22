@@ -70,10 +70,11 @@ def _collect_windows() -> Dict[str, Any]:
             parts = line.strip().split()
             if len(parts) >= 3:
                 try:
-                    name = " ".join(parts[:-1])
-                    pid = int(parts[-1])
-                    memory_kb = 0
+                    pid = int(parts[-2])
+                    working_set = int(parts[-1])
+                    memory_kb = working_set / 1024
                     memory_mb = memory_kb / 1024
+                    name = " ".join(parts[:-2])
                     top_processes.append({
                         "pid": pid,
                         "name": name,

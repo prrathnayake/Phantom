@@ -16,7 +16,7 @@ Each record contains a timestamp in ISO‑8601 format.  Use
 """
 import json
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 import config
 from src.utils.datetime_utils import utcnow_iso
@@ -30,7 +30,7 @@ class Storage:
         self.events_file = config.LOG_DIR / "events.log"
         self.detections_file = config.LOG_DIR / "detections.log"
 
-    def _write_record(self, file_path: Path, record: Dict[str, any]):
+    def _write_record(self, file_path: Path, record: Dict[str, Any]):
         """Append a JSON record to the specified file."""
         with file_path.open("a", encoding="utf-8") as f:
             f.write(json.dumps(record) + "\n")

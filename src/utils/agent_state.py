@@ -74,26 +74,34 @@ class AgentState:
             events: List of event dictionaries
         """
         proc_updated = port_updated = file_updated = False
+        new_process = None
+        new_port = None
+        new_file = None
         
         for event in reversed(events):
             sensor = event.get("sensor", "")
             data = event.get("data", {})
             
-            with self._lock:
-                if sensor == "process_sensor" and not proc_updated:
-                    self._state.process = data
-                    proc_updated = True
-                elif sensor == "port_sensor" and not port_updated:
-                    self._state.port = data
-                    port_updated = True
-                elif sensor == "file_sensor" and not file_updated:
-                    self._state.file = data
-                    file_updated = True
-                
-                if proc_updated and port_updated and file_updated:
-                    break
+            if sensor == "process_sensor" and not proc_updated:
+                new_process = data
+                proc_updated = True
+            elif sensor == "port_sensor" and not port_updated:
+                new_port = data
+                port_updated = True
+            elif sensor == "file_sensor" and not file_updated:
+                new_file = data
+                file_updated = True
+            
+            if proc_updated and port_updated and file_updated:
+                break
         
         with self._lock:
+            if new_process is not None:
+                self._state.process = new_process
+            if new_port is not None:
+                self._state.port = new_port
+            if new_file is not None:
+                self._state.file = new_file
             self._state.timestamp = time.time()
     
     def get_process(self) -> dict[str, Any]:

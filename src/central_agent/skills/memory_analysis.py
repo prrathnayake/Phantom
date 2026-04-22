@@ -5,7 +5,7 @@ Wraps memory_sensor for skill-based execution.
 """
 from typing import Any, Dict
 
-from central_agent.skills.base import (
+from src.central_agent.skills.base import (
     BaseSkill,
     SkillCategory,
     SkillMetadata,

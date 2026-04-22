@@ -4,7 +4,7 @@ Provides HTTP API endpoints for remote triggers.
 """
 import json
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from threading import Thread
 from typing import Any, Callable, Dict, Optional
@@ -51,7 +51,7 @@ class HTTPHandler(BaseHTTPRequestHandler):
         if self.path == "/status":
             self._send_json_response({
                 "status": "running",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "schedules": self._get_schedule_info()
             })
         elif self.path == "/schedules":
@@ -63,7 +63,7 @@ class HTTPHandler(BaseHTTPRequestHandler):
             self._get_report(session_id)
         elif self.path == "/api/approvals":
             self._handle_list_approvals({})
-        elif self.path.startswith("/api/approvals/") and not self.path.startswith("/api/approvals/"):
+        elif self.path.startswith("/api/approvals/") and len(self.path) > len("/api/approvals/"):
             approval_id = self.path.split("/api/approvals/")[-1]
             self._get_approval(approval_id)
         elif self.path == "/api/alerts":
@@ -95,6 +95,8 @@ class HTTPHandler(BaseHTTPRequestHandler):
         elif self.path.startswith("/trigger/"):
             skill = self.path.split("/")[-1]
             self._handle_trigger(skill, data)
+        elif self.path == "/api/approvals":
+            self._handle_create_approval(data)
         elif self.path.startswith("/api/approvals/"):
             parts = self.path.split("/")
             if len(parts) >= 4:
@@ -106,8 +108,6 @@ class HTTPHandler(BaseHTTPRequestHandler):
                     self._handle_deny(approval_id, data)
                 else:
                     self._send_json_response({"error": "Not found"}, status=404)
-            elif self.path == "/api/approvals":
-                self._handle_list_approvals(data)
             else:
                 self._send_json_response({"error": "Not found"}, status=404)
         elif self.path.startswith("/api/alerts/"):

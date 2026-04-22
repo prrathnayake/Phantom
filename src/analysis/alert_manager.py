@@ -4,7 +4,7 @@ Manages alert creation, routing, and dispatch to external services.
 """
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from threading import Lock
 from typing import Any, Dict, List, Optional
@@ -30,7 +30,7 @@ class AlertSeverity(Enum):
 class AlertStatus(Enum):
     PENDING = "pending"
     ROUTED = "routed"
-    ACKNOWLEDGED = "acknowledGED"
+    ACKNOWLEDGED = "acknowledged"
     RESOLVED = "resolved"
     EXPIRED = "expired"
 
@@ -44,7 +44,7 @@ class Alert:
     source: str
     recommended_action: str
     affected_assets: List[str] = field(default_factory=list)
-    timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     status: str = "pending"
     detection_rule: Optional[str] = None
     risk_score: int = 0
@@ -75,7 +75,7 @@ class AlertManager:
         debug_logger.info("AlertManager initialized")
     
     def _is_throttled(self, alert_key: str) -> bool:
-        now = datetime.utcnow().timestamp()
+        now = datetime.now(timezone.utc).timestamp()
         if alert_key in self._throttle_cache:
             if now - self._throttle_cache[alert_key] < self.throttle_window:
                 return True
@@ -362,7 +362,7 @@ class AlertManager:
         Returns:
             Number of alerts cleared
         """
-        cutoff = datetime.utcnow() - timedelta(hours=hours)
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
         cleared = 0
         
         with self._lock:

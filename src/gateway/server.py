@@ -89,8 +89,10 @@ class Gateway:
         
         try:
             self.queue_handler.start_consuming()
+        except ImportError as e:
+            debug_logger.info("Queue handler not available", {"error": str(e)})
         except Exception as e:
-            debug_logger.warning("Queue handler not started", {"error": str(e)})
+            debug_logger.warning("Queue handler connection failed", {"error": str(e)})
         
         self.file_trigger.start()
         debug_logger.info("File trigger started")

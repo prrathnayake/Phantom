@@ -7,6 +7,7 @@ Cross-platform using psutil with fallback to netstat/ss.
 from typing import Dict, Any, List
 import platform
 import logging
+import ipaddress
 
 from src.utils.debug_log import debug_logger
 
@@ -107,9 +108,12 @@ def _parse_netstat() -> Dict[str, Any]:
             if state == "ESTABLISHED":
                 established_count += 1
                 if ":" in remote_addr:
-                    ip = remote_addr.rsplit(":", 1)[0]
-                    if not ip.startswith(("127.", "10.", "192.168.", "172.")):
-                        external_ips.append(ip)
+                    ip_str = remote_addr.rsplit(":", 1)[0]
+                    try:
+                        if not ipaddress.ip_address(ip_str).is_private:
+                            external_ips.append(ip_str)
+                    except ValueError:
+                        pass
         except (ValueError, IndexError):
             continue
 

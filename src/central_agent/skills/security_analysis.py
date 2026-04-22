@@ -5,7 +5,7 @@ Analyzes system for security vulnerabilities, weak configurations, and suspiciou
 from typing import Any, Dict, List
 import platform
 
-from central_agent.skills.base import (
+from src.central_agent.skills.base import (
     BaseSkill,
     SkillCategory,
     SkillMetadata,

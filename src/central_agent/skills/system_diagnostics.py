@@ -5,7 +5,7 @@ Collects comprehensive system information including hardware, OS, and services.
 from typing import Any, Dict
 import platform
 
-from central_agent.skills.base import (
+from src.central_agent.skills.base import (
     BaseSkill,
     SkillCategory,
     SkillMetadata,

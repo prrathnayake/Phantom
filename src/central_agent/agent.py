@@ -17,9 +17,9 @@ from src.core import OpenRouterClient
 from src.core.tools import get_tool_registry, get_tool_executor
 from src.utils.debug_log import debug_logger
 
-from central_agent.context import ContextManager, create_context_manager
-from central_agent.memory import SessionMemory, create_session_memory
-from central_agent.skills import (
+from src.central_agent.context import ContextManager, create_context_manager
+from src.central_agent.memory import SessionMemory, create_session_memory
+from src.central_agent.skills import (
     get_skill_registry,
     SkillCategory,
     SkillStatus,
@@ -90,13 +90,13 @@ class CentralAgent:
     
     def _register_skills(self) -> None:
         """Register all available skills."""
-        from central_agent.skills.network_analysis import NetworkAnalysisSkill
-        from central_agent.skills.process_analysis import ProcessAnalysisSkill
-        from central_agent.skills.memory_analysis import MemoryAnalysisSkill
-        from central_agent.skills.port_analysis import PortAnalysisSkill
-        from central_agent.skills.log_analysis import LogAnalysisSkill
-        from central_agent.skills.security_analysis import SecurityAnalysisSkill
-        from central_agent.skills.system_diagnostics import SystemDiagnosticsSkill
+        from src.central_agent.skills.network_analysis import NetworkAnalysisSkill
+        from src.central_agent.skills.process_analysis import ProcessAnalysisSkill
+        from src.central_agent.skills.memory_analysis import MemoryAnalysisSkill
+        from src.central_agent.skills.port_analysis import PortAnalysisSkill
+        from src.central_agent.skills.log_analysis import LogAnalysisSkill
+        from src.central_agent.skills.security_analysis import SecurityAnalysisSkill
+        from src.central_agent.skills.system_diagnostics import SystemDiagnosticsSkill
         
         skills = [
             NetworkAnalysisSkill(),

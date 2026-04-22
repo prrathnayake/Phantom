@@ -56,29 +56,34 @@ class SkillRegistry:
     def register_loader(
         self,
         name: str,
-        loader: Callable[[], BaseSkill]
+        loader: Callable[[], BaseSkill],
+        descriptor: Optional[SkillDescriptor] = None
     ) -> None:
         """Register a skill loader function.
         
         Args:
             name: Skill name
             loader: Function that returns skill instance
+            descriptor: Optional pre-built descriptor to avoid early instantiation
         """
         with self._lock:
             self._loaders[name] = loader
             
-            desc = loader().metadata
-            descriptor = SkillDescriptor(
-                name=desc.name,
-                category=desc.category,
-                description=desc.description,
-                version=desc.version,
-                requires=desc.requires,
-                tags=desc.tags,
-                is_parallel=desc.is_parallel,
-                timeout_seconds=desc.timeout_seconds,
-            )
-            self._store.register(descriptor)
+            if descriptor is not None:
+                self._store.register(descriptor)
+            else:
+                desc = loader().metadata
+                skill_descriptor = SkillDescriptor(
+                    name=desc.name,
+                    category=desc.category,
+                    description=desc.description,
+                    version=desc.version,
+                    requires=desc.requires,
+                    tags=desc.tags,
+                    is_parallel=desc.is_parallel,
+                    timeout_seconds=desc.timeout_seconds,
+                )
+                self._store.register(skill_descriptor)
         
         logger.info("Skill loader registered", {"name": name})
     

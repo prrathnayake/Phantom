@@ -3,7 +3,7 @@
 Provides integration with Elasticsearch for centralized logging.
 """
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from urllib.parse import urljoin
 
@@ -38,7 +38,7 @@ class ELKClient:
         return headers
     
     def _get_index(self, doc_type: str) -> str:
-        date = datetime.utcnow().strftime("%Y.%m.%d")
+        date = datetime.now(timezone.utc).strftime("%Y.%m.%d")
         return f"{self.index_prefix}-{doc_type}-{date}"
     
     def _send_bulk(self, operations: List[Dict[str, Any]]) -> bool:
@@ -112,7 +112,7 @@ class ELKClient:
             True if sent successfully
         """
         doc = {
-            "@timestamp": timestamp or datetime.utcnow().isoformat(),
+            "@timestamp": timestamp or datetime.now(timezone.utc).isoformat(),
             "sensor": sensor,
             "data": data,
             "source": "phantom-sensor"
@@ -145,7 +145,7 @@ class ELKClient:
             True if sent successfully
         """
         doc = {
-            "@timestamp": datetime.utcnow().isoformat(),
+            "@timestamp": datetime.now(timezone.utc).isoformat(),
             "alert_id": alert_id,
             "title": title,
             "description": description,
@@ -177,7 +177,7 @@ class ELKClient:
             True if sent successfully
         """
         doc = {
-            "@timestamp": datetime.utcnow().isoformat(),
+            "@timestamp": datetime.now(timezone.utc).isoformat(),
             "rule": rule,
             "description": description,
             "details": details,
@@ -208,7 +208,7 @@ class ELKClient:
             True if sent successfully
         """
         doc = {
-            "@timestamp": datetime.utcnow().isoformat(),
+            "@timestamp": datetime.now(timezone.utc).isoformat(),
             "approval_id": approval_id,
             "action": action,
             "reason": reason,

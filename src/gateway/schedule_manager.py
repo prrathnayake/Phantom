@@ -304,6 +304,15 @@ class ScheduleManager:
             for name in self._schedules.keys()
         }
     
+    def schedule_count(self) -> int:
+        """Get number of registered schedules.
+        
+        Returns:
+            Number of schedules
+        """
+        with self._lock:
+            return len(self._schedules)
+    
     def run_autonomous(self) -> None:
         """Run all scheduled diagnostics autonomously.
         

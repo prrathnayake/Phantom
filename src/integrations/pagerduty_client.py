@@ -4,7 +4,7 @@ Provides integration with PagerDuty for incident management.
 """
 import json
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 import requests
@@ -112,7 +112,7 @@ class PagerDutyClient:
             "summary": f"[{severity.upper()}] {title}",
             "severity": self._get_severity(severity),
             "source": "phantom-agent",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "custom_details": {
                 "alert_id": alert_id,
                 "description": description,
@@ -145,7 +145,7 @@ class PagerDutyClient:
             "summary": f"[APPROVAL] {action} - Risk: {risk_level.upper()}",
             "severity": self._get_severity(risk_level),
             "source": "phantom-approval",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "custom_details": {
                 "approval_id": approval_id,
                 "action": action,
@@ -215,7 +215,7 @@ class PagerDutyClient:
             "summary": f"[DETECTION] {rule}: {description[:100]}",
             "severity": self._get_severity(severity),
             "source": "phantom-detection",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "custom_details": {
                 "rule": rule,
                 "description": description,
@@ -223,7 +223,7 @@ class PagerDutyClient:
             }
         }
         
-        dedup_key = f"detection-{rule}-{datetime.utcnow().strftime('%Y%m%d%H%M')}"
+        dedup_key = f"detection-{rule}-{datetime.now(timezone.utc).strftime('%Y%m%d%H%M')}"
         return self._send_event("trigger", payload, dedup_key=dedup_key)
 
 

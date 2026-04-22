@@ -3,7 +3,7 @@
 Defines automated response actions that require approval before execution.
 """
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from threading import Lock
 from typing import Any, Dict, List, Optional, Callable
@@ -138,7 +138,7 @@ class ResponseEngine:
             
             with self._lock:
                 self._execution_history.append({
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
                     "action_type": action_type,
                     "parameters": parameters,
                     "result": result

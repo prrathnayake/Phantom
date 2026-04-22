@@ -51,7 +51,7 @@ def _collect_windows() -> Dict[str, Any]:
         logger.debug(f"Get-LocalUser failed: {e}")
 
     try:
-        cutoff = (datetime.now() - timedelta(hours=24)).strftime("%Y-%m-%d")
+        cutoff = (datetime.now() - timedelta(hours=24)).strftime("%Y-%m-%dT%H:%M:%S")
         ps_command = (
             "Get-WinEvent -FilterHashtable @{LogName='Security'; "
             "StartTime='" + cutoff + "'} -MaxEvents 100 | "

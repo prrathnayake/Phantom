@@ -3,7 +3,7 @@
 Adds weighted risk scoring, trend analysis, and predictive alerting.
 """
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from threading import Lock
 from typing import Any, Dict, List, Optional
 
@@ -245,7 +245,7 @@ class RiskScorer:
             score=total_score,
             level=level,
             factors=factors,
-            timestamp=datetime.utcnow().isoformat()
+            timestamp=datetime.now(timezone.utc).isoformat()
         )
     
     def _score_to_level(self, score: int) -> str:
@@ -353,7 +353,7 @@ class TrendAnalyzer:
                 self._sensor_history[sensor] = []
             
             entry = {
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "value": value,
                 "metadata": metadata or {}
             }

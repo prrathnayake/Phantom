@@ -7,7 +7,7 @@ import logging
 import threading
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 
 from .base import BaseTool, ToolResult, ToolStatus
@@ -22,7 +22,7 @@ class ExecutionRecord:
     tool_name: str
     status: ToolStatus
     duration_ms: float
-    timestamp: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     error: Optional[str] = None
 
 
@@ -244,7 +244,7 @@ class ToolExecutor:
             if state.state == "open":
                 if state.last_attempt:
                     last_attempt_time = datetime.fromisoformat(state.last_attempt)
-                    if datetime.utcnow() - last_attempt_time > timedelta(seconds=self._circuit_timeout):
+                    if datetime.now(timezone.utc) - last_attempt_time > timedelta(seconds=self._circuit_timeout):
                         state.state = "half-open"
                         logger.info("Circuit half-open", {"tool": tool_name})
                         return False
@@ -271,7 +271,7 @@ class ToolExecutor:
             state = self._circuit_breakers[tool_name]
             state.failures += 1
             state.last_failure = error
-            state.last_attempt = datetime.utcnow().isoformat()
+            state.last_attempt = datetime.now(timezone.utc).isoformat()
             
             if state.failures >= self._circuit_threshold:
                 state.state = "open"

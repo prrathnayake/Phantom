@@ -32,10 +32,7 @@ class Colors:
     BOLD = '\033[1m'
     END = '\033[0m'
 
-web_server = None
-shutdown_event = None
 flask_process = None
-flask_pid = None
 
 
 def start_web_dashboard():
@@ -55,9 +52,20 @@ def start_web_dashboard():
     )
     
     import time
-    time.sleep(3)
+    import urllib.request
     
-    print("Flask started.")
+    for _ in range(10):
+        time.sleep(0.5)
+        try:
+            urllib.request.urlopen("http://127.0.0.1:5000/health", timeout=1)
+            print("Flask started.")
+            return
+        except Exception:
+            if flask_process.poll() is not None:
+                print("Flask failed to start.")
+                return
+    
+    print("Flask started (health check timeout).")
 
 
 def stop_web_dashboard():
@@ -110,14 +118,6 @@ def main() -> None:
     
     central_agent = create_central_agent()
     gateway = create_gateway(central_agent=central_agent)
-    
-    for diagnostic_name, interval in config.POLL_INTERVALS.items():
-        module_name = diagnostic_name.replace("_sensor", "")
-        gateway.schedule_manager.add_schedule(
-            name=diagnostic_name,
-            interval=interval,
-            script_module=module_name
-        )
     
     debug_logger.info(f"Registered {len(config.POLL_INTERVALS)} diagnostic schedules")
     

@@ -10,7 +10,7 @@ import json
 import socket
 import ssl
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional
 from urllib.parse import urljoin
@@ -63,7 +63,7 @@ class SIEMClient:
         )
     
     def _is_duplicate(self, event_id: str) -> bool:
-        now = datetime.utcnow().timestamp()
+        now = datetime.now(timezone.utc).timestamp()
         if event_id in self._deduplication_cache:
             if now - self._deduplication_cache[event_id] < self._deduplication_window:
                 return True
@@ -111,7 +111,7 @@ class SIEMClient:
     
     def _build_payload(self, event: Dict[str, Any], event_type: str) -> Dict[str, Any]:
         return {
-            "time": datetime.utcnow().isoformat(),
+            "time": datetime.now(timezone.utc).isoformat(),
             "host": self.config.host,
             "source": "phantom-agent",
             "sourcetype": f"phantom:{event_type}",
@@ -145,7 +145,7 @@ class SIEMClient:
     
     def _send_wazuh(self, event: Dict[str, Any], event_type: str) -> bool:
         payload = {
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "rule": {
                 "level": event.get("severity", 3),
                 "description": event.get("title", "Suraksha Alert")
@@ -177,7 +177,7 @@ class SIEMClient:
         return False
     
     def _send_elastic(self, event: Dict[str, Any], event_type: str) -> bool:
-        index_name = self.config.index or f"phantom-{event_type}-{datetime.utcnow().strftime('%Y.%m.%d')}"
+        index_name = self.config.index or f"phantom-{event_type}-{datetime.now(timezone.utc).strftime('%Y.%m.%d')}"
         url = urljoin(self.config.url, f"/{index_name}/_doc/")
         
         headers = {"Content-Type": "application/json"}
@@ -200,7 +200,7 @@ class SIEMClient:
     
     def _send_qradar(self, event: Dict[str, Any], event_type: str) -> bool:
         payload = {
-            "event_timestamp": datetime.utcnow().isoformat(),
+            "event_timestamp": datetime.now(timezone.utc).isoformat(),
             "log_source_name": "Suraksha Agent",
             "qid": event.get("qid", 9999999),
             "severity": self._map_severity(event.get("severity", "medium")),
@@ -225,8 +225,10 @@ class SIEMClient:
     
     def _send_syslog(self, event: Dict[str, Any], event_type: str) -> bool:
         try:
-            host, port = self.config.url.split(":")
-            port = int(port)
+            from urllib.parse import urlparse
+            parsed = urlparse(self.config.url)
+            host = parsed.hostname or self.config.url
+            port = parsed.port or 514
         except (ValueError, AttributeError):
             host = self.config.url
             port = 514
@@ -314,7 +316,7 @@ class SIEMClient:
             "source": "phantom-detection"
         }
         
-        return self.send_event(event, "detection", f"{rule}-{datetime.utcnow().timestamp()}")
+        return self.send_event(event, "detection", f"{rule}-{datetime.now(timezone.utc).timestamp()}")
     
     def send_approval(
         self,

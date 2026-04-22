@@ -4,7 +4,7 @@ Sends diagnostic payloads to Central Agent for analysis.
 """
 import json
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from threading import Thread
 from typing import Any, Callable, Dict, List, Optional
 
@@ -61,7 +61,7 @@ class PayloadSender:
         
         message = {
             "session_id": session_id,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "trigger": trigger,
             "payload": payload
         }
@@ -128,7 +128,7 @@ class PayloadSender:
         
         batch_payload = {
             "source": "batch",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "payloads": payloads,
             "count": len(payloads)
         }
@@ -194,7 +194,7 @@ class PayloadSender:
         
         batch_payload = {
             "source": "batch",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "payloads": payloads,
             "count": len(payloads)
         }

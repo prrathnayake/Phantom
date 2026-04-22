@@ -39,17 +39,18 @@ def _collect_with_ps() -> Dict[str, Any]:
     import platform
     
     if platform.system() == "Windows":
+        import csv
         result = subprocess.run(["tasklist", "/FO", "CSV", "/NH"], capture_output=True, text=True)
         lines = result.stdout.strip().splitlines()
         count = len(lines)
         processes: List[Dict[str, Any]] = []
-        for line in lines:
-            parts = line.split(",")
-            if len(parts) >= 3:
+        reader = csv.reader(lines)
+        for row in reader:
+            if len(row) >= 3:
                 try:
                     processes.append({
-                        "pid": int(parts[1].strip().strip('"')),
-                        "name": parts[0].strip().strip('"'),
+                        "pid": int(row[1].strip().strip('"')),
+                        "name": row[0].strip().strip('"'),
                         "username": "N/A",
                         "cpu_percent": 0.0,
                         "memory_percent": 0.0,

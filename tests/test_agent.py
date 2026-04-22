@@ -7,56 +7,20 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 def test_imports():
     """Test all imports work correctly."""
     print("Testing imports...")
-    try:
-        import config
-        print("  config: OK")
-    except Exception as e:
-        print(f"  config: FAILED - {e}")
-        return False
-    
-    try:
-        from core import Storage, OpenRouterClient
-        print("  core: OK")
-    except Exception as e:
-        print(f"  core: FAILED - {e}")
-        return False
-    
-    try:
-        from central_agent import CentralAgent
-        print("  central_agent: OK")
-    except Exception as e:
-        print(f"  central_agent: FAILED - {e}")
-        return False
-    
-    try:
-        from gateway import ScheduleManager, Gateway
-        print("  gateway: OK")
-    except Exception as e:
-        print(f"  gateway: FAILED - {e}")
-        return False
-    
-    try:
-        from diagnostics import file_sensor, process_sensor, port_sensor
-        print("  diagnostics: OK")
-    except Exception as e:
-        print(f"  diagnostics: FAILED - {e}")
-        return False
-    
-    try:
-        from analysis import detection
-        print("  analysis: OK")
-    except Exception as e:
-        print(f"  analysis: FAILED - {e}")
-        return False
-    
-    try:
-        from skills import risk_assessment, vulnerability_check
-        print("  skills: OK")
-    except Exception as e:
-        print(f"  skills: FAILED - {e}")
-        return False
-    
-    return True
+    import config
+    print("  config: OK")
+    from core import Storage, OpenRouterClient
+    print("  core: OK")
+    from central_agent import CentralAgent
+    print("  central_agent: OK")
+    from gateway import ScheduleManager, Gateway
+    print("  gateway: OK")
+    from diagnostics import file_sensor, process_sensor, port_sensor
+    print("  diagnostics: OK")
+    from analysis import detection
+    print("  analysis: OK")
+    from skills import risk_assessment, vulnerability_check
+    print("  skills: OK")
 
 
 def test_config():
@@ -67,7 +31,7 @@ def test_config():
     print(f"  POLL_INTERVALS: {config.POLL_INTERVALS}")
     print(f"  WATCH_DIRECTORY: {config.WATCH_DIRECTORY}")
     print(f"  OPENROUTER_API_KEY set: {bool(config.OPENROUTER_API_KEY)}")
-    return True
+    assert config.LOG_DIR is not None
 
 
 def test_storage():
@@ -88,7 +52,7 @@ def test_storage():
     detections = storage.get_recent_detections(count=5)
     print(f"  get_recent_detections: OK ({len(detections)} detections)")
     
-    return True
+    assert len(events) > 0
 
 
 def test_diagnostics():
@@ -100,14 +64,15 @@ def test_diagnostics():
     
     result = file_sensor.collect(context)
     print(f"  file_sensor: OK (changes: {result.get('change_count', 0)})")
+    assert isinstance(result, dict)
     
     result = process_sensor.collect(context)
     print(f"  process_sensor: OK (count: {result.get('count', 0)})")
+    assert isinstance(result, dict)
     
     result = port_sensor.collect(context)
     print(f"  port_sensor: OK (count: {result.get('count', 0)})")
-    
-    return True
+    assert isinstance(result, dict)
 
 
 def test_gateway():
@@ -117,11 +82,11 @@ def test_gateway():
     
     mgr = ScheduleManager()
     print("  ScheduleManager: OK")
+    assert mgr is not None
     
     gw = Gateway(autonomous=False)
     print("  Gateway: OK")
-    
-    return True
+    assert gw is not None
 
 
 def test_central_agent():
@@ -131,12 +96,12 @@ def test_central_agent():
     
     agent = CentralAgent()
     print("  CentralAgent: OK")
+    assert agent is not None
     
     payload = {"source": "test", "data": {"key": "value"}}
     result = agent.analyze(payload, session_id="test-session")
     print(f"  analyze: OK (session: {result.session_id})")
-    
-    return True
+    assert result.session_id == "test-session"
 
 
 def test_openrouter_client():
@@ -149,7 +114,7 @@ def test_openrouter_client():
     print(f"  base_url: {client.base_url}")
     print(f"  model: {client.model}")
     
-    return True
+    assert client.base_url is not None
 
 
 def test_detection():
@@ -157,18 +122,19 @@ def test_detection():
     print("\nTesting detection...")
     from analysis import detection
     from core import Storage
+    import config
     
     storage = Storage()
     context = {}
     
-    context["process_sensor_last"] = {"count": 300, "top_processes": []}
-    context["port_sensor_last"] = {"count": 60, "listening": []}
-    context["file_sensor_last"] = {"change_count": 150, "added": [], "removed": [], "modified": []}
+    context["process_sensor_last"] = {"count": 500, "top_processes": []}
+    context["port_sensor_last"] = {"count": 150, "listening": []}
+    context["file_sensor_last"] = {"change_count": 600, "added": [], "removed": [], "modified": []}
     
     anomalies = detection.detect(context, storage)
     print(f"  detection: {len(anomalies)} anomalies detected")
     
-    return True
+    assert len(anomalies) > 0
 
 
 if __name__ == "__main__":
@@ -192,10 +158,11 @@ if __name__ == "__main__":
     
     for test in tests:
         try:
-            if test():
-                passed += 1
-            else:
-                failed += 1
+            test()
+            passed += 1
+        except AssertionError as e:
+            print(f"ASSERTION FAILED in {test.__name__}: {e}")
+            failed += 1
         except Exception as e:
             print(f"EXCEPTION in {test.__name__}: {e}")
             failed += 1
