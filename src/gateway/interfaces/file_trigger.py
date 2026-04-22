@@ -33,7 +33,8 @@ class FileTrigger:
         file_extensions: Optional[list] = None,
         poll_interval: int = 5
     ):
-        self.watch_path = watch_path or Path("gateway") / "triggers"
+        import config
+        self.watch_path = watch_path or config.LOG_DIR / "triggers"
         self.central_agent = central_agent
         self.file_extensions = file_extensions or [".json", ".txt", ".log"]
         self.poll_interval = poll_interval
