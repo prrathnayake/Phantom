@@ -23,7 +23,7 @@ Do not create or use any alternate memory root.
 
 ```
 src/
-  central_agent/     # Central intelligence (LLM analysis loop)
+  agent/     # Intelligence (LLM analysis loop)
     system_prompt.md  # Single system prompt
     context.py      # Session context manager
     memory.py       # Session memory with TTL
@@ -40,7 +40,7 @@ src/
   utils/            # Utilities
   skills/           # Legacy agent skills
 
-central_agent/      # Runtime data (kept at root)
+agent/      # Runtime data (kept at root)
   reports/          # Generated reports (YYYY-MM-DD/)
 
 tests/              # Test suite
@@ -84,7 +84,7 @@ Use `./phantom` CLI for container management:
 ## Testing Commands & Conventions
 
 - Preferred test root: `tests/`
-- Test Agent: `tests/test_central_agent.py`
+- Test Agent: `tests/test_agent_unit.py`
 - Test Gateway: `tests/test_gateway.py`
 - Test Diagnostics: `tests/test_diagnostics.py`
 - Test Integration: `tests/test_integration.py`

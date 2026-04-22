@@ -46,7 +46,7 @@ Phantom/
 ├── cli/                # CLI tools
 ├── apps/web/           # Flask web dashboard
 ├── src/                # Backend source code
-│   ├── central_agent/  # Central intelligence
+│   ├── agent/  # Intelligence
 │   │   ├── system_prompt.md
 │   │   ├── context.py      # Session context manager
 │   │   ├── memory.py       # Session memory with TTL
@@ -79,7 +79,7 @@ Phantom/
 │   ├── integrations/   # External service clients
 │   └── utils/          # Utilities
 ├── tests/              # Test suite
-├── central_agent/      # Runtime data (reports, session memory)
+├── agent/      # Runtime data (reports, session memory)
 │   └── reports/
 └── docs/               # Documentation
 ```

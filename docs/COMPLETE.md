@@ -149,7 +149,7 @@ src/gateway/
 ### Agent
 
 ```
-src/central_agent/
+src/agent/
 ├── __init__.py
 ├── system_prompt.md       # Single system prompt
 ├── context.py            # Session context manager
@@ -512,7 +512,7 @@ Real-time updates including:
 pytest tests/ -v
 
 # Individual suites
-pytest tests/test_central_agent.py
+pytest tests/test_agent_unit.py
 pytest tests/test_gateway.py
 pytest tests/test_diagnostics.py
 pytest tests/test_integration.py

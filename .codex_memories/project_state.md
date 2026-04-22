@@ -10,7 +10,7 @@ architecture: "Gateway (Input Interfaces + Schedule Manager) + Agent (LLM Analys
 ## ACTIVE CONTEXT
 active_threads: {
   "gateway": "working, input interfaces (HTTP/CLI/Queue/File/WS) + autonomous schedule manager",
-  "central_agent": "working, LLM analysis loop with context/memory management and sanitized LLM health/fallback reporting",
+  "agent": "working, LLM analysis loop with context/memory management and sanitized LLM health/fallback reporting",
   "diagnostics": "working, configured process/port/file/network/memory/disk_io/auth/service/registry/dns/driver/certificate/hardware sensors supported by dashboard scheduling",
   "reports": "stored in agent/reports/YYYY-MM-DD/",
   "dashboard": "Flask dashboard refined for safer report viewing, live status, mobile layouts, and accessible controls",
@@ -25,7 +25,7 @@ active_threads: {
 - Skills: risk_assessment, vulnerability_check (LLM-powered)
 
 ## DIRECTORIES
-- src/central_agent/ - Central intelligence
+- src/agent/ - Intelligence
 - src/gateway/ - Input interfaces + scheduler
 - src/diagnostics/ - Diagnostic collectors
 - src/analysis/ - Detection engine

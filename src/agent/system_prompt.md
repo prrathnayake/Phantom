@@ -57,8 +57,8 @@ The agent loops around a single LLM for analysis:
 ## Dependencies
 - `src/core/openrouter_client.py`: LLM API wrapper
 - `src/gateway/schedule_manager.py`: Diagnostic scheduling
-- `src/central_agent/context.py`: Session context
-- `src/central_agent/memory.py`: Memory management
+- `src/agent/context.py`: Session context
+- `src/agent/memory.py`: Memory management
 - `agent/reports/`: Report storage (runtime)
 
 ## Interaction Flow

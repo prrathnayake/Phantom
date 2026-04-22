@@ -202,7 +202,7 @@
                         </tr>
                         <tr>
                             <td><span class="text-accent">Agent</span></td>
-                            <td><code>central_agent/</code></td>
+                            <td><code>agent/</code></td>
                             <td>LLM analysis loop + context + memory</td>
                         </tr>
                         <tr>
@@ -725,7 +725,7 @@
 pytest tests/ -v
 
 # Test suites
-pytest tests/test_central_agent.py   # Agent tests
+pytest tests/test_agent_unit.py   # Agent tests
 pytest tests/test_gateway.py       # Gateway tests
 pytest tests/test_diagnostics.py # Diagnostics tests
 pytest tests/test_integration.py   # Integration tests
