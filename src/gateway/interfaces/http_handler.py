@@ -35,14 +35,14 @@ class HTTPHandler(BaseHTTPRequestHandler):
     Class attributes set by server:
     - gateway: Gateway instance
     - schedule_manager: ScheduleManager instance
-    - central_agent: CentralAgent instance
+    -         agent: Agent instance
     - approval_manager: ApprovalManager instance
     - alert_manager: AlertManager instance
     """
     
     gateway = None
     schedule_manager = None
-    central_agent = None
+    agent = None
     approval_manager = None
     alert_manager = None
     
@@ -150,8 +150,8 @@ class HTTPHandler(BaseHTTPRequestHandler):
             "trigger": trigger
         })
         
-        if self.central_agent:
-            result = self.central_agent.analyze(
+        if self.agent:
+            result = self.agent.analyze(
                 payload=payload,
                 session_id=session_id,
                 trigger=trigger
@@ -242,8 +242,8 @@ class HTTPHandler(BaseHTTPRequestHandler):
     
     def _get_report(self, session_id: str) -> None:
         """Get report for session."""
-        if self.central_agent:
-            report_path = self.central_agent.get_report(session_id)
+        if self.agent:
+            report_path = self.agent.get_report(session_id)
             if report_path:
                 content = report_path.read_text()
                 self._send_json_response({
@@ -253,7 +253,7 @@ class HTTPHandler(BaseHTTPRequestHandler):
             else:
                 self._send_json_response({"error": "Report not found"}, status=404)
         else:
-            self._send_json_response({"error": "CentralAgent not configured"}, status=500)
+            self._send_json_response({"error": "Agent not configured"}, status=500)
     
     def _handle_list_approvals(self, data: Dict[str, Any]) -> None:
         """Handle list approvals request."""
@@ -418,7 +418,7 @@ class GatewayHTTPServer:
         host: str = "127.0.0.1",
         port: int = 8000,
         schedule_manager: Optional[Any] = None,
-        central_agent: Optional[Any] = None,
+        agent: Optional[Any] = None,
         approval_manager: Optional[Any] = None,
         alert_manager: Optional[Any] = None
     ):
@@ -428,7 +428,7 @@ class GatewayHTTPServer:
         self.thread = None
         
         HTTPHandler.schedule_manager = schedule_manager
-        HTTPHandler.central_agent = central_agent
+        HTTPHandler.agent = agent
         HTTPHandler.approval_manager = approval_manager
         HTTPHandler.alert_manager = alert_manager
         
@@ -472,7 +472,7 @@ def create_http_server(
         host=host,
         port=port,
         schedule_manager=schedule_manager,
-        central_agent=central_agent,
+        agent=agent,
         approval_manager=approval_manager,
         alert_manager=alert_manager
     )

@@ -20,7 +20,7 @@ class QueueHandler:
     Attributes:
         queue_type: Type of queue (redis/rabbitmq)
         queue_url: Queue connection URL
-        central_agent: CentralAgent instance
+        agent: Agent instance
     """
     
     def __init__(
@@ -28,12 +28,12 @@ class QueueHandler:
         queue_type: str = "redis",
         queue_url: str = "redis://localhost:6379",
         queue_name: str = "phantom:payloads",
-        central_agent: Optional[Any] = None
+        agent: Optional[Any] = None
     ):
         self.queue_type = queue_type
         self.queue_url = queue_url
         self.queue_name = queue_name
-        self.central_agent = central_agent
+        self.agent = agent
         self._running = False
         self._thread = None
         self._client = None
@@ -175,8 +175,8 @@ class QueueHandler:
                 "trigger": trigger
             })
             
-            if self.central_agent:
-                result = self.central_agent.analyze(
+            if self.agent:
+                result = self.agent.analyze(
                     payload=payload,
                     session_id=session_id,
                     trigger=trigger
@@ -187,7 +187,7 @@ class QueueHandler:
                     "risk_level": result.risk_level
                 })
             else:
-                debug_logger.warning("No central agent configured")
+                debug_logger.warning("No agent configured")
         
         except json.JSONDecodeError as e:
             debug_logger.error("Invalid message JSON", {"error": str(e)})
@@ -256,5 +256,5 @@ def create_queue_handler(
         queue_type=queue_type,
         queue_url=queue_url,
         queue_name=queue_name,
-        central_agent=central_agent
+        agent=agent
     )

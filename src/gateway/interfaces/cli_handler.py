@@ -20,16 +20,16 @@ class CLIHandler:
     
     Attributes:
         schedule_manager: ScheduleManager instance
-        central_agent: CentralAgent instance
+        agent: Agent instance
     """
     
     def __init__(
         self,
         schedule_manager: Optional[Any] = None,
-        central_agent: Optional[Any] = None
+        agent: Optional[Any] = None
     ):
         self.schedule_manager = schedule_manager
-        self.central_agent = central_agent
+        self.agent = agent
         
         debug_logger.info("CLIHandler initialized")
     
@@ -98,11 +98,11 @@ class CLIHandler:
         else:
             print("ScheduleManager: Not configured")
         
-        if self.central_agent:
-            report_count = len(self.central_agent.get_recent_reports())
+        if self.agent:
+            report_count = len(self.agent.get_recent_reports())
             print(f"Reports: {report_count}")
         else:
-            print("CentralAgent: Not configured")
+            print("Agent: Not configured")
         
         print()
         return 0
@@ -194,8 +194,8 @@ class CLIHandler:
     
     def _cmd_analyze(self, args: List[str]) -> int:
         """Trigger analysis."""
-        if not self.central_agent:
-            print("CentralAgent not configured")
+        if not self.agent:
+            print("Agent not configured")
             return 1
         
         payload = {
@@ -203,7 +203,7 @@ class CLIHandler:
             "data": args if args else {}
         }
         
-        result = self.central_agent.analyze(
+            result = self.agent.analyze(
             payload=payload,
             trigger="cli"
         )
@@ -217,8 +217,8 @@ class CLIHandler:
     
     def _cmd_reports(self, args: List[str]) -> int:
         """Manage reports."""
-        if not self.central_agent:
-            print("CentralAgent not configured")
+        if not self.agent:
+            print("Agent not configured")
             return 1
         
         if not args:
@@ -229,7 +229,7 @@ class CLIHandler:
     
     def _list_reports(self) -> int:
         """List recent reports."""
-        reports = self.central_agent.get_recent_reports()
+            reports = self.agent.get_recent_reports()
         
         if not reports:
             print("No reports found")
@@ -244,7 +244,7 @@ class CLIHandler:
     
     def _view_report(self, session_id: str) -> int:
         """View specific report."""
-        report_path = self.central_agent.get_report(session_id)
+        report_path = self.agent.get_report(session_id)
         
         if not report_path:
             print(f"Report not found: {session_id}")
@@ -268,5 +268,5 @@ def create_cli_handler(
     """
     return CLIHandler(
         schedule_manager=schedule_manager,
-        central_agent=central_agent
+        agent=agent
     )

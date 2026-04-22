@@ -11,8 +11,8 @@ def test_imports():
     print("  config: OK")
     from core import Storage, OpenRouterClient
     print("  core: OK")
-    from central_agent import CentralAgent
-    print("  central_agent: OK")
+    from agent import Agent
+    print("  agent: OK")
     from gateway import ScheduleManager, Gateway
     print("  gateway: OK")
     from diagnostics import file_sensor, process_sensor, port_sensor
@@ -89,13 +89,13 @@ def test_gateway():
     assert gw is not None
 
 
-def test_central_agent():
-    """Test Central Agent."""
-    print("\nTesting central_agent...")
-    from central_agent import CentralAgent
+def test_agent():
+    """Test Agent."""
+    print("\nTesting agent...")
+    from agent import Agent
     
-    agent = CentralAgent()
-    print("  CentralAgent: OK")
+    agent = Agent()
+    print("  Agent: OK")
     assert agent is not None
     
     payload = {"source": "test", "data": {"key": "value"}}
@@ -148,7 +148,7 @@ if __name__ == "__main__":
         test_storage,
         test_diagnostics,
         test_gateway,
-        test_central_agent,
+        test_agent,
         test_openrouter_client,
         test_detection,
     ]

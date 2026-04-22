@@ -14,12 +14,12 @@ class TestFullArchitecture:
     """Test complete architecture flow."""
 
     def test_gateway_to_central_flow(self):
-        """Test full Gateway -> Central Agent flow."""
-        from central_agent import create_central_agent
+        """Test full Gateway -> Agent flow."""
+        from agent import create_agent
         from gateway import ScheduleManager, PayloadSender
         
         schedule_mgr = ScheduleManager()
-        agent = create_central_agent()
+        agent = create_agent()
         sender = PayloadSender(endpoint="http://127.0.0.1:9999/analyze")
         
         def test_diagnostic(ctx):
@@ -33,11 +33,11 @@ class TestFullArchitecture:
         sent = sender.send(result, trigger="test")
         assert sent is False
 
-    def test_central_agent_analyze_flow(self):
-        """Test Central Agent analyze flow."""
-        from central_agent import create_central_agent
+    def test_agent_analyze_flow(self):
+        """Test Agent analyze flow."""
+        from agent import create_agent
         
-        agent = create_central_agent()
+        agent = create_agent()
         
         payload = {
             "source": "integration-test",
@@ -68,9 +68,9 @@ class TestFullArchitecture:
 
     def test_report_generation_flow(self):
         """Test report generation flow."""
-        from central_agent import create_central_agent
+        from agent import create_agent
         
-        agent = create_central_agent()
+        agent = create_agent()
         
         payload = {
             "source": "report-test",
@@ -83,9 +83,9 @@ class TestFullArchitecture:
 
     def test_context_and_memory_flow(self):
         """Test context and memory integration."""
-        from central_agent import create_central_agent
+        from agent import create_agent
         
-        agent = create_central_agent()
+        agent = create_agent()
         
         agent.context_mgr.update_context("mem-test", {"data": "test"})
         
@@ -99,14 +99,14 @@ class TestFullArchitecture:
 
 
 class TestDiagnosticsToCentral:
-    """Test diagnostics integration with Central Agent."""
+    """Test diagnostics integration with Agent."""
 
     def test_process_diagnostic_to_agent(self):
-        """Test process diagnostic to Central Agent."""
+        """Test process diagnostic to Agent."""
         from diagnostics import process_sensor
-        from central_agent import create_central_agent
+        from agent import create_agent
         
-        agent = create_central_agent()
+        agent = create_agent()
         
         context = {}
         payload = process_sensor.collect(context)
@@ -117,11 +117,11 @@ class TestDiagnosticsToCentral:
         assert result.session_id == "proc-test-1"
 
     def test_port_diagnostic_to_agent(self):
-        """Test port diagnostic to Central Agent."""
+        """Test port diagnostic to Agent."""
         from diagnostics import port_sensor
-        from central_agent import create_central_agent
+        from agent import create_agent
         
-        agent = create_central_agent()
+        agent = create_agent()
         
         context = {}
         payload = port_sensor.collect(context)
@@ -185,11 +185,11 @@ class TestEndToEnd:
 
     def test_complete_flow(self):
         """Test complete system flow."""
-        from central_agent import CentralAgent
+        from agent import Agent
         from gateway import ScheduleManager
         from diagnostics import process_sensor
         
-        agent = CentralAgent()
+        agent = Agent()
         mgr = ScheduleManager()
         
         def proc_diag(ctx):

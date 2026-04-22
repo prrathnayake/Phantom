@@ -10,5 +10,5 @@
 ## Constraints Remembered
 - Reusable memory must stay under `.codex_memories/`.
 - Keep the refined terminal/SOC identity rather than a full rebrand.
-- Runtime reports remain under `central_agent/reports/`.
+- Runtime reports remain under `agent/reports/`.
 - Do not expose OpenRouter keys in UI, logs, reports, errors, or final notes.

@@ -2,7 +2,7 @@
 
 Architecture:
 - Gateway: Input interfaces + Schedule Manager
-- Central Agent: LLM analysis loop + Reports
+- Agent: LLM analysis loop + Reports
 - Diagnostics: process, port, file sensors
 """
 import sys
@@ -13,7 +13,7 @@ import signal
 from pathlib import Path
 
 import config
-from src.central_agent import create_central_agent
+from src.agent import create_agent
 from src.gateway import create_gateway
 from src.utils.debug_log import debug_logger
 
@@ -116,8 +116,8 @@ def main() -> None:
     
     debug_logger.info("Starting Phantom")
     
-    central_agent = create_central_agent()
-    gateway = create_gateway(central_agent=central_agent)
+    agent = create_agent()
+    gateway = create_gateway(agent=agent)
     
     debug_logger.info(f"Registered {len(config.POLL_INTERVALS)} diagnostic schedules")
     

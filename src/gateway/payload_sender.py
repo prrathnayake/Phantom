@@ -1,6 +1,6 @@
 """Payload Sender for Gateway.
 
-Sends diagnostic payloads to Central Agent for analysis.
+Sends diagnostic payloads to Agent for analysis.
 """
 import json
 import uuid
@@ -14,9 +14,9 @@ from src.utils.debug_log import debug_logger
 
 
 class PayloadSender:
-    """Sends payloads to Central Agent.
+    """Sends payloads to Agent.
     
-    Handles payload transmission to central agent endpoint
+    Handles payload transmission to agent endpoint
     with retry logic and async support.
     
     Attributes:
@@ -46,7 +46,7 @@ class PayloadSender:
         session_id: Optional[str] = None,
         trigger: str = "schedule"
     ) -> bool:
-        """Send payload to central agent.
+        """Send payload to agent.
         
         Args:
             payload: Diagnostic payload dict

@@ -47,7 +47,7 @@ Phantom (AI Agentic Harness System) is a comprehensive security monitoring platf
 │  │  ┌────────────────┐ ┌────────────────┐ ┌────────────────────────────┐ │  │
 │  │  │ Input         │ │ Schedule      │ │ Payload                     │ │  │
 │  │  │ Interfaces    │ │ Manager       │ │ Sender                     │ │  │
-│  │  │ - HTTP:8000   │ │ Autonomouse    │ │ → Central Agent           │ │  │
+│  │  │ - HTTP:8000   │ │ Autonomouse    │ │ → Agent           │ │  │
 │  │  │ - WebSocket   │ │ Runs          │ │                            │ │  │
 │  │  │ - CLI        │ │ (cron-like)   │ │                            │ │  │
 │  │  │ - Queue      │ │              │ │                            │ │  │
@@ -106,7 +106,7 @@ Phantom (AI Agentic Harness System) is a comprehensive security monitoring platf
 - **Purpose**: Collect system metrics and events
 - **Sensors**: Process, Port, File, Network, Memory, Disk I/O, Auth, Service, Registry, DNS, Driver, Certificate, Hardware
 
-#### Layer 4: Central Agent
+#### Layer 4: Agent
 - **Purpose**: AI-powered security analysis
 - **Components**: System Prompt, Context Manager, Memory Manager, Analysis Loop
 - **LLM**: OpenRouter client for GPT models
@@ -130,7 +130,7 @@ src/gateway/
 ├── __init__.py
 ├── server.py              # Main server entry point
 ├── schedule_manager.py   # Autonomous scheduler
-├── payload_sender.py     # Sends payloads to Central Agent
+├── payload_sender.py     # Sends payloads to Agent
 └── interfaces/
     ├── http_handler.py       # REST API (port 8000)
     ├── websocket_handler.py   # WebSocket (port 8001)
@@ -146,7 +146,7 @@ src/gateway/
 - Manual trigger capability
 - Result collection
 
-### Central Agent
+### Agent
 
 ```
 src/central_agent/
@@ -154,7 +154,7 @@ src/central_agent/
 ├── system_prompt.md       # Single system prompt
 ├── context.py            # Session context manager
 ├── memory.py            # Session memory with TTL
-├── agent.py             # Central Agent with LLM loop
+├── agent.py             # Agent with LLM loop
 ├── reports_storage.py   # Report storage/retrieval
 └── skills/
     ├── __init__.py
@@ -170,9 +170,9 @@ src/central_agent/
     └── system_diagnostics.py
 ```
 
-Reports are stored at runtime in `central_agent/reports/YYYY-MM-DD/`.
+Reports are stored at runtime in `agent/reports/YYYY-MM-DD/`.
 
-**Central Agent Features**:
+**Agent Features**:
 - Session-based context management
 - Memory with TTL and tag-based search
 - Skills framework for extensible capabilities
@@ -408,7 +408,7 @@ Events stored as JSON lines:
 
 ### Report Format
 
-Markdown reports in `central_agent/reports/YYYY-MM-DD/`:
+Markdown reports in `agent/reports/YYYY-MM-DD/`:
 
 ```markdown
 # Security Analysis Report
@@ -522,7 +522,7 @@ pytest tests/test_analysis.py
 
 ### Test Coverage Areas
 
-- Central Agent: Session management, LLM calls, skills
+- Agent: Session management, LLM calls, skills
 - Gateway: Scheduler, interfaces, payload sending
 - Diagnostics: All sensor collectors
 - Analysis: Detection rules, thresholds

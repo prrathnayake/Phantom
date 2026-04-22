@@ -17,7 +17,7 @@ Do not create or use any alternate memory root.
 ## Project Identity
 
 **Project**: Phantom - AI Agentic Harness System
-**Focus**: Centralized security monitoring with Gateway + Central Agent architecture
+**Focus**: Centralized security monitoring with Gateway + Agent architecture
 
 ## Project Structure & Important Directories
 
@@ -27,11 +27,11 @@ src/
     system_prompt.md  # Single system prompt
     context.py      # Session context manager
     memory.py       # Session memory with TTL
-    agent.py        # Central Agent with LLM loop
+    agent.py        # Agent with LLM loop
     skills/         # Skill implementations
   gateway/          # Input interfaces + schedule manager
     schedule_manager.py  # Autonomous diagnostic runs
-    payload_sender.py   # Sends payloads to Central Agent
+    payload_sender.py   # Sends payloads to Agent
     interfaces/     # HTTP, CLI, Queue, File, WebSocket
   diagnostics/      # Diagnostic collectors
   analysis/         # Detection engine
@@ -84,7 +84,7 @@ Use `./phantom` CLI for container management:
 ## Testing Commands & Conventions
 
 - Preferred test root: `tests/`
-- Test Central Agent: `tests/test_central_agent.py`
+- Test Agent: `tests/test_central_agent.py`
 - Test Gateway: `tests/test_gateway.py`
 - Test Diagnostics: `tests/test_diagnostics.py`
 - Test Integration: `tests/test_integration.py`

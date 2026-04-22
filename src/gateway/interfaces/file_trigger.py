@@ -21,7 +21,7 @@ class FileTrigger:
     
     Attributes:
         watch_path: Path to watch for new files
-        central_agent: CentralAgent instance
+        agent: Agent instance
         file_extensions: Extensions to monitor
         poll_interval: Check interval in seconds
     """
@@ -29,13 +29,13 @@ class FileTrigger:
     def __init__(
         self,
         watch_path: Optional[Path] = None,
-        central_agent: Optional[Any] = None,
+        agent: Optional[Any] = None,
         file_extensions: Optional[list] = None,
         poll_interval: int = 5
     ):
         import config
         self.watch_path = watch_path or config.LOG_DIR / "triggers"
-        self.central_agent = central_agent
+        self.agent = agent
         self.file_extensions = file_extensions or [".json", ".txt", ".log"]
         self.poll_interval = poll_interval
         self._running = False
@@ -126,8 +126,8 @@ class FileTrigger:
                     "content": content
                 }
             
-            if self.central_agent:
-                result = self.central_agent.analyze(
+            if self.agent:
+                result = self.agent.analyze(
                     payload=payload,
                     session_id=session_id,
                     trigger="file"
@@ -198,5 +198,5 @@ def create_file_trigger(
     """
     return FileTrigger(
         watch_path=watch_path,
-        central_agent=central_agent
+        agent=agent
     )

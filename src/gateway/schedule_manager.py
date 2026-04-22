@@ -1,7 +1,7 @@
 """Schedule Manager for Gateway.
 
 Manages scheduled diagnostic script runs autonomously.
-Collects results and sends payloads to Central Agent.
+Collects results and sends payloads to Agent.
 """
 import time
 import importlib
@@ -60,19 +60,19 @@ class ScheduleManager:
     """Manages scheduled diagnostic script runs.
     
     Runs diagnostics autonomously at configured intervals,
-    collects results, and sends payloads to Central Agent.
+    collects results, and sends payloads to Agent.
     
     Attributes:
-        central_agent_endpoint: URL for central agent endpoint
+        agent_endpoint: URL for agent endpoint
         autonomous_mode: Whether to run autonomously
     """
     
     def __init__(
         self,
-        central_agent_endpoint: Optional[str] = None,
+        agent_endpoint: Optional[str] = None,
         autonomous_mode: bool = True
     ):
-        self.endpoint = central_agent_endpoint
+        self.endpoint = agent_endpoint
         self.autonomous_mode = autonomous_mode
         self._schedules: Dict[str, Schedule] = {}
         self._running = False
@@ -80,7 +80,7 @@ class ScheduleManager:
         
         debug_logger.info("ScheduleManager initialized", {
             "autonomous": autonomous_mode,
-            "endpoint": central_agent_endpoint
+            "endpoint": agent_endpoint
         })
     
     def add_schedule(
@@ -398,7 +398,7 @@ def create_schedule_manager() -> ScheduleManager:
         Configured ScheduleManager instance
     """
     manager = ScheduleManager(
-        central_agent_endpoint=None,
+        agent_endpoint=None,
         autonomous_mode=True
     )
     

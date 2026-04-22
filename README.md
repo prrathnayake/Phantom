@@ -1,6 +1,6 @@
 # Phantom - AI Agentic Harness System
 
-A centralized security monitoring system with Gateway + Central Agent architecture.
+A centralized security monitoring system with Gateway + Agent architecture.
 
 ## Architecture
 
@@ -50,7 +50,7 @@ Phantom/
 │   │   ├── system_prompt.md
 │   │   ├── context.py      # Session context manager
 │   │   ├── memory.py       # Session memory with TTL
-│   │   ├── agent.py        # Central Agent with LLM loop
+│   │   ├── agent.py        # Agent with LLM loop
 │   │   ├── reports_storage.py
 │   │   └── skills/         # Agent skills
 │   ├── gateway/        # Input interfaces + scheduler
@@ -169,7 +169,7 @@ python dashboard.py
 
 Generated reports stored in:
 ```
-central_agent/reports/YYYY-MM-DD/report_{session_id}_{timestamp}.md
+agent/reports/YYYY-MM-DD/report_{session_id}_{timestamp}.md
 ```
 
 ## Key Features

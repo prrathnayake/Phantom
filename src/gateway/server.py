@@ -1,7 +1,7 @@
 """Gateway Server.
 
 Main server that wires together all input interfaces,
-schedule manager, and central agent.
+schedule manager, and agent.
 """
 from pathlib import Path
 from threading import Thread
@@ -22,7 +22,7 @@ class Gateway:
     """Gateway Server for Phantom.
     
     Manages all input interfaces and schedules,
-    sends payloads to central agent for analysis.
+    sends payloads to agent for analysis.
     
     Interfaces:
     - HTTP API (port 8000)
@@ -34,12 +34,12 @@ class Gateway:
     
     def __init__(
         self,
-        central_agent: Optional[Any] = None,
+        agent: Optional[Any] = None,
         http_port: int = 8000,
         ws_port: int = 8001,
         autonomous: bool = True
     ):
-        self.central_agent = central_agent
+        self.agent = agent
         self.http_port = http_port
         self.ws_port = ws_port
         self.autonomous = autonomous
@@ -50,19 +50,19 @@ class Gateway:
         self.http_server = create_http_server(
             port=http_port,
             schedule_manager=self.schedule_manager,
-            central_agent=central_agent
+            agent=agent
         )
         
         self.cli_handler = create_cli_handler(
             schedule_manager=self.schedule_manager,
-            central_agent=central_agent
+            agent=agent
         )
         
         self.queue_handler = create_queue_handler(central_agent=central_agent)
         self.file_trigger = create_file_trigger(central_agent=central_agent)
         self.ws_handler = create_websocket_handler(
             port=ws_port,
-            central_agent=central_agent
+            agent=agent
         )
         
         self._running = False

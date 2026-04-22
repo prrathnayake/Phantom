@@ -5,7 +5,7 @@
 - Diagnostic scheduling and core diagnostic tool dynamic imports now use `src.diagnostics.*`.
 - `ScheduleManager.run_schedule()` captures returned collector payloads while retaining shared context for snapshot-style sensors.
 - `/api/status` handles naive, aware, missing, and malformed timestamps and returns live schedule/sensor counts, memory usage, and sanitized LLM health.
-- Report viewer now uses relative report paths and confines reads to `central_agent/reports`.
+- Report viewer now uses relative report paths and confines reads to `agent/reports`.
 - Manual diagnostics return `analysis_status: "llm_unavailable"` plus a local fallback summary when LLM analysis fails.
 - Dashboard templates received accessibility, mobile, safe-rendering, and refined terminal styling updates.
 - Alerts and Approvals pages no longer contain invalid multiline JavaScript strings.

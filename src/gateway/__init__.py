@@ -1,7 +1,7 @@
 """Gateway package for Phantom.
 
 Handles input interfaces and scheduled diagnostic runs.
-Sends payloads to Central Agent for analysis.
+Sends payloads to Agent for analysis.
 """
 from .schedule_manager import (
     ScheduleManager,

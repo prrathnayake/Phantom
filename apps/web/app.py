@@ -18,7 +18,7 @@ from threading import Lock
 
 import config
 from src.core import Storage, OpenRouterClient
-from src.central_agent import create_central_agent
+from src.agent import create_agent
 from src.gateway import create_schedule_manager
 
 app = Flask(__name__)
@@ -88,7 +88,7 @@ approval_manager = None
 alert_manager = None
 response_engine = None
 
-REPORTS_ROOT = ROOT_DIR / "central_agent" / "reports"
+REPORTS_ROOT = ROOT_DIR / "agent" / "reports"
 SENSOR_TYPES = {
     "process": "process_sensor",
     "port": "port_sensor",
@@ -117,7 +117,7 @@ def init_app():
     global agent, schedule_manager, storage, approval_manager, alert_manager, response_engine
     
     storage = Storage()
-    agent = create_central_agent()
+    agent = create_agent()
     schedule_manager = create_schedule_manager()
     
     from src.analysis.approval_manager import create_approval_manager

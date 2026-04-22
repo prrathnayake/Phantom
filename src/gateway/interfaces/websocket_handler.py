@@ -21,18 +21,18 @@ class WebSocketHandler:
     Attributes:
         host: Host to bind to
         port: Port to listen on
-        central_agent: CentralAgent instance
+        agent: Agent instance
     """
     
     def __init__(
         self,
         host: str = "127.0.0.1",
         port: int = 8001,
-        central_agent: Optional[Any] = None
+        agent: Optional[Any] = None
     ):
         self.host = host
         self.port = port
-        self.central_agent = central_agent
+        self.agent = agent
         self._connections: Set[Any] = set()
         self._running = False
         self._server = None
@@ -125,8 +125,8 @@ class WebSocketHandler:
                 "session_id": session_id
             })
             
-            if action == "analyze" and self.central_agent:
-                result = self.central_agent.analyze(
+            if action == "analyze" and self.agent:
+                result = self.agent.analyze(
                     payload=payload,
                     session_id=session_id,
                     trigger="websocket"
@@ -197,5 +197,5 @@ def create_websocket_handler(
     return WebSocketHandler(
         host=host,
         port=port,
-        central_agent=central_agent
+        agent=agent
     )

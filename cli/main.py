@@ -187,7 +187,7 @@ def create_directories():
 
     dirs = [
         config.LOG_DIR,
-        Path("central_agent/reports"),
+        Path("agent/reports"),
         Path(".codex_memories"),
     ]
 
@@ -461,13 +461,14 @@ def cmd_run(args):
 def cmd_reports(args):
     from pathlib import Path
 
-    reports_dir = Path("central_agent/reports")
+    reports_dir = Path("agent/reports")
 
     if not reports_dir.exists():
         print("No reports found")
         return 0
 
-    reports = sorted(reports_dir.glob("*.md"), key=lambda p: p.stat().st_mtime, reverse=True)
+    # Recurse into date subdirectories
+    reports = sorted(reports_dir.rglob("*.md"), key=lambda p: p.stat().st_mtime, reverse=True)
 
     if not reports:
         print("No reports found")
@@ -480,13 +481,14 @@ def cmd_reports(args):
         return 0
 
     if args:
-        report_file = reports_dir / f"{args[0]}.md"
-        if report_file.exists():
-            print(report_file.read_text())
-            return 0
-        else:
-            print(f"Report not found: {args[0]}")
-            return 1
+        # Search by stem across all date dirs
+        target_stem = args[0]
+        for r in reports:
+            if r.stem == target_stem:
+                print(r.read_text(encoding="utf-8"))
+                return 0
+        print(f"Report not found: {target_stem}")
+        return 1
 
     print(f"Found {len(reports)} reports. Use 'agent reports list' to see all.")
     print(f"Latest: {reports[0].name}")
