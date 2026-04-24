@@ -203,32 +203,89 @@ http://localhost:5000
 
 ### Dashboard Features
 
-- **Agent Workspace**: Animated orbital view with agent status
+- **Agent Workspace**: Animated orbital view with agent status and activity
 - **Info Widgets**: Events, Detections, Schedules, Sensors (bottom row)
-- **Reasoning Panel**: Real-time agent reasoning messages
-- **Schedules Panel**: View/manage scheduled diagnostics
-- **Approvals Panel**: Pending action approvals
-- **Alerts Panel**: Active security alerts
+- **Reasoning Panel**: Real-time agent reasoning messages streamed from the analysis loop
+- **Schedules Panel**: View/manage scheduled diagnostics with enable/disable, manual run, interval editing, create, and remove
+- **Approvals Panel**: Pending action approvals with one-click approve/deny and action preview
+- **Alerts Panel**: Active security alerts with severity filters, acknowledge, and resolve actions
+- **Chat Widget**: Persistent cross-page chat with the agent, file-backed session history, and specific LLM error feedback
+- **Reports Viewer**: Paginated Markdown report browser with date-based organization
+- **Settings Page**: Runtime configuration for thresholds, intervals, and external integrations
+- **Logs Viewer**: Filtered system logs (events, detections, LLM activity) with statistics and clearing
 
 ### Routes
 
 | Route | Description |
 |-------|-------------|
 | `/` | Main dashboard |
-| `/diagnostics` | Diagnostic collectors view |
-| `/monitor` | System monitor |
-| `/reports` | Generated reports |
+| `/diagnostics` | Diagnostic collectors view and manual runner |
+| `/monitor` | Real-time system monitor |
+| `/reports` | Generated reports (paginated) |
 | `/alerts` | Alert management |
 | `/approvals` | Approval queue |
+| `/settings` | Runtime settings configuration |
+| `/logs` | System logs and LLM activity monitor |
 | `/docs` | API documentation |
+| `/health` | Health check endpoint |
 
 ## API Endpoints
 
-### HTTP (port 8000)
-- `POST /analyze` - Submit payload for analysis
-- `GET /schedules` - Get schedule status
-- `POST /schedules/{name}/run` - Run specific schedule
+### Gateway HTTP (port 8000)
+- `POST /analyze` - Submit payload for agent analysis
+- `GET /schedules` - Get all schedule statuses
+- `POST /schedules/{name}/run` - Run specific schedule manually
 - `GET /status` - Gateway status
+- `GET /health` - Health check
+
+### Web Dashboard API (port 5000)
+
+**Chat**:
+- `POST /api/chat` - Chat with the agent
+- `GET /api/chat/history` - Get chat history
+- `POST /api/chat/clear` - Clear chat history
+
+**Diagnostics & Schedules**:
+- `POST /api/diagnostics/run` - Run a diagnostic manually
+- `GET /api/schedules` - Get schedules
+- `POST /api/schedules/{name}/enable` - Enable schedule
+- `POST /api/schedules/{name}/disable` - Disable schedule
+- `POST /api/schedules/{name}/remove` - Remove schedule
+- `POST /api/schedules/{name}/run` - Run schedule manually
+- `POST /api/schedules/create` - Create new schedule
+- `POST /api/schedules/{name}/interval` - Update schedule interval
+
+**Activity & Status**:
+- `GET /api/activity` - Recent events and detections
+- `GET /api/status` - Full system status (uptime, events, sensors, LLM health)
+- `GET /api/system/info` - System information
+- `GET /api/llm/health` - Sanitized LLM health
+
+**Reports**:
+- `GET /api/report/<path>` - Get report Markdown content
+- `GET /api/reports/count` - Total report count
+
+**Approvals**:
+- `GET /api/approvals` - Pending approvals
+- `POST /api/approvals/{id}/approve` - Approve action
+- `POST /api/approvals/{id}/deny` - Deny action
+- `GET /api/approval-stats` - Approval statistics
+
+**Alerts**:
+- `GET /api/alerts` - Active alerts
+- `POST /api/alerts/{id}/acknowledge` - Acknowledge alert
+- `POST /api/alerts/{id}/resolve` - Resolve alert
+- `GET /api/alert-stats` - Alert statistics
+
+**Settings**:
+- `GET /api/settings` - Get settings (masked)
+- `POST /api/settings` - Update settings
+- `POST /api/settings/reset` - Reset to defaults
+
+**Logs**:
+- `GET /api/logs` - Get logs by type (`events`, `detections`, `llm`)
+- `GET /api/logs/llm-stats` - LLM call statistics
+- `POST /api/logs/clear` - Clear logs by type
 
 ### WebSocket (port 8001)
-Real-time analysis updates and notifications.
+Real-time updates including analysis progress, detection alerts, system status, and schedule execution results.

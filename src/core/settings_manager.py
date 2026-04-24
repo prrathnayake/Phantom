@@ -7,7 +7,7 @@ over config.py defaults.
 import json
 import os
 from pathlib import Path
-from threading import Lock
+from threading import RLock
 from typing import Any, Dict, List, Optional
 
 import config
@@ -69,7 +69,7 @@ class SettingsManager:
     def __init__(self, settings_file: Optional[Path] = None):
         config.ensure_log_dir()
         self.settings_file = settings_file or (config.LOG_DIR / "settings.json")
-        self._lock = Lock()
+        self._lock = RLock()
         self._settings: Dict[str, Any] = {}
         self._load()
 

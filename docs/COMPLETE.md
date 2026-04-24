@@ -789,39 +789,49 @@ The Textual-based TUI dashboard provides a real-time Security Operations Center 
 
 ### Web Dashboard (`apps/web/app.py`)
 
-The Flask web dashboard provides a browser-based monitoring interface.
+The Flask web dashboard provides a browser-based monitoring interface running on port 5000.
 
-**Routes**:
+**Page Routes**:
 | Route | Description |
 |-------|-------------|
-| `/` | Main dashboard with agent workspace and info widgets |
-| `/diagnostics` | Sensor collector status and configuration |
-| `/monitor` | Real-time system monitor with charts |
-| `/reports` | Browse generated Markdown reports by date |
-| `/alerts` | Active security alerts with severity filters |
-| `/approvals` | Pending action approval queue |
-| `/chat` | Interactive chat interface |
-| `/docs` | API documentation |
+| `/` | Main dashboard with agent workspace, info widgets, and reasoning panel |
+| `/diagnostics` | Sensor collector status, manual diagnostic runner, and schedule management |
+| `/monitor` | Real-time system monitor with activity timeline and sensor grid |
+| `/reports` | Browse generated Markdown reports by date with pagination |
+| `/alerts` | Active security alerts with severity filters, acknowledge, and resolve |
+| `/approvals` | Pending action approval queue with one-click approve/deny |
+| `/settings` | Runtime settings configuration (thresholds, intervals, integrations) |
+| `/logs` | System logs viewer and LLM activity monitor with filtering |
+| `/docs` | Embedded API documentation |
 | `/health` | Health check endpoint for load balancers |
+| `/shutdown` | Graceful server shutdown (POST) |
 
-**Architecture**:
+**Key Features**:
 - **Agent Workspace**: Animated orbital visualization showing agent status and activity.
 - **Info Widgets**: Bottom-row cards for Events, Detections, Schedules, and Sensors.
 - **Reasoning Panel**: Displays real-time agent reasoning messages streamed from the analysis loop.
-- **Schedules Panel**: View/manage scheduled diagnostics with enable/disable toggles.
-- **Approvals Panel**: One-click approve/deny buttons for high-risk auto-response actions.
-- **Alerts Panel**: Active security alerts with severity coloring and detail expansion.
+- **Schedules Panel**: View/manage scheduled diagnostics with enable/disable toggles, interval editing, manual run, and create/remove schedules.
+- **Approvals Panel**: One-click approve/deny buttons for high-risk auto-response actions. Approved actions execute via the response engine and generate alerts.
+- **Alerts Panel**: Active security alerts with severity coloring, detail expansion, acknowledge, and resolve actions.
+- **Chat Widget**: Persistent cross-page chat with the agent. File-backed session history (`_get_session_id()`). Provides specific LLM error messages (timeout, rate limit, auth error) instead of generic failures.
+- **Reports Viewer**: Pagination support (`limit`/`offset` query params). Reports sorted by modification time newest-first.
+- **Settings Page**: Runtime configuration via `SettingsManager` with masked sensitive values.
+- **Logs Page**: Filters by event type (`events`, `detections`, `llm`). Shows LLM call statistics and allows clearing LLM logs.
 - **Mobile Layout**: Responsive CSS grid adapts to narrow viewports.
 
 **API Integration**:
-- Polls `/api/status` for gateway health and schedule state.
-- Fetches `/api/events` and `/api/detections` for live data.
+- Polls `/api/status` for gateway health, uptime, event counts, active sensors, and LLM health.
+- Fetches `/api/activity` for recent events and detections.
+- Calls `/api/diagnostics/run` to execute sensors manually from the diagnostics page.
+- Uses `/api/chat` for interactive agent chat with context injection.
 - WebSocket endpoint (port 8001) pushes real-time analysis progress and detection alerts.
 
 **Security**:
-- Report paths are validated to prevent directory traversal (`..` blocked).
+- Report paths are validated via `_resolve_report_path()` to prevent directory traversal (`..` blocked, paths confined to `src/agent/reports/`).
+- Only `.md` files can be served from the reports directory.
 - LLM health endpoint returns sanitized info without exposing API keys.
-- All file reads are confined to `src/agent/reports/`.
+- Settings API masks sensitive values (API keys, passwords) in responses.
+- Flask `app.secret_key` should be overridden via `PHANTOM_DASHBOARD_SECRET` environment variable in production.
 
 ---
 
@@ -865,16 +875,85 @@ POLL_INTERVALS = {
 
 ## API Reference
 
-### HTTP Endpoints (port 8000)
+### Gateway HTTP Endpoints (port 8000)
+
+These endpoints are served by the Gateway input interfaces:
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `/analyze` | POST | Submit payload |
-| `/schedules` | GET | Get schedules |
-| `/schedules/{name}/run` | POST | Run schedule |
+| `/analyze` | POST | Submit payload for agent analysis |
+| `/schedules` | GET | Get all schedule statuses |
+| `/schedules/{name}/run` | POST | Run a specific schedule manually |
 | `/status` | GET | Gateway status |
-| `/trigger/{skill}` | POST | Trigger skill |
+| `/trigger/{skill}` | POST | Trigger a skill directly |
 | `/health` | GET | Health check |
+
+### Web Dashboard API Endpoints (port 5000)
+
+These endpoints are served by the Flask web dashboard (`apps/web/app.py`):
+
+**Chat**:
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/chat` | POST | Send a message to the agent chat. Returns `response` and `history`. |
+| `/api/chat/history` | GET | Get last 20 chat messages for the current session. |
+| `/api/chat/clear` | POST | Clear chat history for the current session. |
+
+**Diagnostics & Schedules**:
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/diagnostics/run` | POST | Run a diagnostic manually. Body: `{"diagnostic": "process"}`. Returns sensor result + LLM analysis. |
+| `/api/schedules` | GET | Get all schedule statuses. |
+| `/api/schedules/{name}/enable` | POST | Enable a schedule. |
+| `/api/schedules/{name}/disable` | POST | Disable a schedule. |
+| `/api/schedules/{name}/remove` | POST | Remove a schedule. |
+| `/api/schedules/{name}/run` | POST | Run a schedule manually. |
+| `/api/schedules/create` | POST | Create a new schedule. Body: `{"name": "...", "interval": 300, "sensor": "process"}`. |
+| `/api/schedules/{name}/interval` | POST | Update schedule interval. Body: `{"interval": 60}`. |
+
+**Activity & Status**:
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/activity` | GET | Get recent events and detections. Query: `?count=50`. |
+| `/api/status` | GET | Full system status: uptime, event counts, active sensors, LLM health, memory usage. |
+| `/api/system/info` | GET | System information: platform, Python version, hostname, processor. |
+| `/api/llm/health` | GET | Sanitized LLM client health without exposing API keys. |
+
+**Reports**:
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/report/<path>` | GET | Get raw Markdown content of a specific report. Path validated against directory traversal. |
+| `/api/reports/count` | GET | Get total count of generated reports. |
+
+**Approvals**:
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/approvals` | GET | Get pending approval requests with action summaries. |
+| `/api/approvals/{id}/approve` | POST | Approve an action request. Executes via response engine and creates an alert. |
+| `/api/approvals/{id}/deny` | POST | Deny an action request. |
+| `/api/approval-stats` | GET | Get approval statistics (pending, approved, denied counts). |
+
+**Alerts**:
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/alerts` | GET | Get active alerts with severity, status, and source. Query: `?limit=50`. |
+| `/api/alerts/{id}/acknowledge` | POST | Acknowledge an alert. |
+| `/api/alerts/{id}/resolve` | POST | Resolve an alert. |
+| `/api/alert-stats` | GET | Get alert statistics by severity and status. |
+
+**Settings**:
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/settings` | GET | Get current settings with sensitive values masked. |
+| `/api/settings` | POST | Update settings. Body: `{"key": "value"}`. Returns validation errors if any. |
+| `/api/settings/reset` | POST | Reset all settings to defaults. |
+
+**Logs**:
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/logs` | GET | Get system logs. Query: `?type=events&count=50` (types: `events`, `detections`, `llm`). |
+| `/api/logs/llm-stats` | GET | Get LLM call statistics. Query: `?hours=24`. |
+| `/api/logs/clear` | POST | Clear logs by type. Body: `{"type": "llm"}`. |
 
 ### WebSocket (port 8001)
 
@@ -882,6 +961,7 @@ Real-time updates including:
 - Analysis progress
 - Detection alerts
 - System status
+- Schedule execution results
 
 ---
 
