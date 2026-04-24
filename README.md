@@ -36,6 +36,17 @@ A centralized security monitoring system with Gateway + Agent architecture.
                     └─────────────────────────────┘
 ```
 
+### Design Philosophy
+
+Phantom follows a **Gateway + Agent** pattern designed for autonomous security monitoring:
+
+- **Separation of Concerns**: The Gateway handles I/O, scheduling, and payload routing. The Agent handles intelligence, analysis, and decision-making. This separation allows each layer to scale and fail independently.
+- **Sensor-Agnostic**: The scheduler dynamically imports any module in `src/diagnostics/` that exposes a `collect(context)` function. Adding a new sensor requires zero changes to the Gateway or Agent.
+- **Context-Aware Analysis**: Every analysis runs within a session context that accumulates payloads, findings, and memory. The LLM sees not just the current sensor reading but the historical context of the session.
+- **Read-Only by Default**: Skills (analysis) are read-only. Tools (remediation) are opt-in and require safety checks or human approval. This prevents autonomous actions from causing harm.
+- **Silent Failure**: All storage operations, sensor collections, and external API calls fail silently and log to `debug.log`. The agent never crashes because a sensor or integration is unavailable.
+- **Human-in-the-Loop**: High-risk auto-response actions create approval requests in the dashboard. The system can operate fully autonomously (`AUTONOMOUS` mode), with human oversight (`ACTIVE` mode), or purely observationally (`PASSIVE` mode).
+
 ## Directory Layout
 
 ```

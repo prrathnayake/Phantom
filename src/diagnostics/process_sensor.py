@@ -23,8 +23,8 @@ def _collect_with_psutil() -> Dict[str, Any]:
             processes.append(info)
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             continue
-    # Sort by CPU usage descending
-    processes.sort(key=lambda p: p.get("cpu_percent", 0), reverse=True)
+    # Sort by CPU usage descending (handle None values gracefully)
+    processes.sort(key=lambda p: p.get("cpu_percent") or 0, reverse=True)
     # Sample top 5
     top = processes[:5]
     return {

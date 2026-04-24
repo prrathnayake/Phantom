@@ -280,22 +280,22 @@ class ReportStorage:
             all_reports = list(self.reports_dir.glob("**/*.md"))
             all_reports.sort(key=lambda p: p.stat().st_mtime, reverse=True)
             
-            now = datetime.now(timezone.utc)
-            cutoff = now - timedelta(days=max_age_days) if max_age_days else None
+        now = datetime.now(timezone.utc)
+        cutoff = now - timedelta(days=max_age_days) if max_age_days is not None else None
+        
+        for idx, report_path in enumerate(all_reports):
+            should_delete = False
             
-            for idx, report_path in enumerate(all_reports):
-                should_delete = False
-                
-                try:
-                    mtime = datetime.fromtimestamp(report_path.stat().st_mtime, tz=timezone.utc)
-                except OSError:
-                    continue
-                
-                if cutoff and mtime < cutoff:
-                    should_delete = True
-                
-                if max_count and idx >= max_count:
-                    should_delete = True
+            try:
+                mtime = datetime.fromtimestamp(report_path.stat().st_mtime, tz=timezone.utc)
+            except OSError:
+                continue
+            
+            if cutoff is not None and mtime < cutoff:
+                should_delete = True
+            
+            if max_count is not None and idx >= max_count:
+                should_delete = True
                 
                 if should_delete:
                     try:

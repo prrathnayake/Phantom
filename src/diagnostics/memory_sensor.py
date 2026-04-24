@@ -22,8 +22,8 @@ def _collect_with_psutil() -> Dict[str, Any]:
     for proc in psutil.process_iter(attrs=["pid", "name", "username", "memory_percent", "memory_info"]):
         try:
             info = proc.info
-            mem_info = info.get("memory_info", {})
-            memory_mb = mem_info.rss / (1024 * 1024) if mem_info else 0
+            mem_info = info.get("memory_info")
+            memory_mb = getattr(mem_info, "rss", 0) / (1024 * 1024) if mem_info else 0
             processes.append({
                 "pid": info.get("pid"),
                 "name": info.get("name"),

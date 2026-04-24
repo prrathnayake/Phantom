@@ -155,7 +155,7 @@ class SkillRegistry:
             
             if loaded and self._cache_instances:
                 loaded_at = datetime.fromisoformat(loaded.loaded_at)
-                age = (datetime.now(timezone.utc) - datetime.fromisoformat(loaded_at)).total_seconds()
+                age = (datetime.now(timezone.utc) - loaded_at).total_seconds()
                 
                 if age < self._max_cache_age:
                     loaded.use_count += 1

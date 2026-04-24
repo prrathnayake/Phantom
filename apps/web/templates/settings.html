@@ -1,0 +1,488 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - Phantom Mission Control{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .settings-section {
+        margin-bottom: 1.5rem;
+    }
+    .settings-section-title {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--accent);
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--accent-dim);
+    }
+    .setting-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid var(--accent-dim);
+        gap: 1rem;
+    }
+    .setting-row:last-child {
+        border-bottom: none;
+    }
+    .setting-info {
+        flex: 1;
+        min-width: 0;
+    }
+    .setting-label {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--text-primary);
+        margin-bottom: 0.25rem;
+    }
+    .setting-desc {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+    }
+    .setting-control {
+        min-width: 200px;
+        max-width: 300px;
+    }
+    .setting-control input[type="text"],
+    .setting-control input[type="number"],
+    .setting-control select {
+        width: 100%;
+        padding: 0.375rem 0.75rem;
+        font-size: 0.8rem;
+    }
+    .setting-control .form-check-input {
+        width: 2.5rem;
+        height: 1.25rem;
+        margin-top: 0;
+        cursor: pointer;
+    }
+    .setting-control .form-check {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        margin-bottom: 0;
+    }
+    .save-indicator {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        display: none;
+    }
+    .save-indicator.show {
+        display: inline-block;
+    }
+    .save-indicator.success {
+        background: rgba(53, 242, 125, 0.15);
+        color: var(--success);
+    }
+    .save-indicator.error {
+        background: rgba(255, 92, 92, 0.15);
+        color: var(--danger);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+    <div class="col-12">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h5 class="text-accent mb-0"><i class="bi bi-gear me-2"></i>System Settings</h5>
+            <div class="d-flex align-items-center gap-2">
+                <span class="save-indicator success" id="saveSuccess"><i class="bi bi-check-circle me-1"></i>Saved</span>
+                <span class="save-indicator error" id="saveError"><i class="bi bi-x-circle me-1"></i>Error</span>
+                <button class="btn btn-accent btn-sm" onclick="saveAllSettings()">
+                    <i class="bi bi-save me-1"></i>Save Changes
+                </button>
+                <button class="btn btn-outline-accent btn-sm" onclick="resetSettings()">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="settings-section">
+                    <div class="settings-section-title"><i class="bi bi-cpu me-2"></i>LLM Configuration</div>
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <div class="setting-label">Model</div>
+                            <div class="setting-desc">OpenRouter model identifier</div>
+                        </div>
+                        <div class="setting-control">
+                            <input type="text" id="openrouter_model" class="form-control" value="{{ settings.openrouter_model }}">
+                        </div>
+                    </div>
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <div class="setting-label">Base URL</div>
+                            <div class="setting-desc">API endpoint URL</div>
+                        </div>
+                        <div class="setting-control">
+                            <input type="text" id="openrouter_base_url" class="form-control" value="{{ settings.openrouter_base_url }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="settings-section">
+                    <div class="settings-section-title"><i class="bi bi-shield-check me-2"></i>Agent Behavior</div>
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <div class="setting-label">Default Mode</div>
+                            <div class="setting-desc">Agent operating mode</div>
+                        </div>
+                        <div class="setting-control">
+                            <select id="default_agent_mode" class="form-control">
+                                <option value="PASSIVE" {% if settings.default_agent_mode == 'PASSIVE' %}selected{% endif %}>PASSIVE</option>
+                                <option value="ACTIVE" {% if settings.default_agent_mode == 'ACTIVE' %}selected{% endif %}>ACTIVE</option>
+                                <option value="AUTONOMOUS" {% if settings.default_agent_mode == 'AUTONOMOUS' %}selected{% endif %}>AUTONOMOUS</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <div class="setting-label">Debug Mode</div>
+                            <div class="setting-desc">Enable verbose debug logging</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="debug_mode" {% if settings.debug_mode %}checked{% endif %}>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <div class="setting-label">Auto Approve Low Risk</div>
+                            <div class="setting-desc">Automatically approve low-risk actions</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="auto_approve_low_risk" {% if settings.auto_approve_low_risk %}checked{% endif %}>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <div class="setting-label">Approval Risk Threshold</div>
+                            <div class="setting-desc">Risk score requiring approval (0-100)</div>
+                        </div>
+                        <div class="setting-control">
+                            <input type="number" id="approval_risk_threshold" class="form-control" value="{{ settings.approval_risk_threshold }}" min="0" max="100">
+                        </div>
+                    </div>
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <div class="setting-label">Enable Auto Response</div>
+                            <div class="setting-desc">Allow automated response actions</div>
+                        </div>
+                        <div class="setting-control">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="enable_auto_response" {% if settings.enable_auto_response %}checked{% endif %}>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="settings-section">
+                    <div class="settings-section-title"><i class="bi bi-bell me-2"></i>Alert Configuration</div>
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <div class="setting-label">Alert Throttle (seconds)</div>
+                            <div class="setting-desc">Minimum time between duplicate alerts</div>
+                        </div>
+                        <div class="setting-control">
+                            <input type="number" id="alert_throttle_seconds" class="form-control" value="{{ settings.alert_throttle_seconds }}" min="1">
+                        </div>
+                    </div>
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <div class="setting-label">Alert Timeout (minutes)</div>
+                            <div class="setting-desc">Auto-resolve alerts after timeout</div>
+                        </div>
+                        <div class="setting-control">
+                            <input type="number" id="alert_timeout_minutes" class="form-control" value="{{ settings.alert_timeout_minutes }}" min="1">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <div class="settings-section">
+                    <div class="settings-section-title"><i class="bi bi-graph-up me-2"></i>Analysis Engine</div>
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <div class="setting-label">Correlation Window (minutes)</div>
+                            <div class="setting-desc">Time window for event correlation</div>
+                        </div>
+                        <div class="setting-control">
+                            <input type="number" id="correlation_window_minutes" class="form-control" value="{{ settings.correlation_window_minutes }}" min="1">
+                        </div>
+                    </div>
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <div class="setting-label">Correlation Min Confidence</div>
+                            <div class="setting-desc">Minimum confidence threshold (0-1)</div>
+                        </div>
+                        <div class="setting-control">
+                            <input type="number" id="correlation_min_confidence" class="form-control" value="{{ settings.correlation_min_confidence }}" min="0" max="1" step="0.1">
+                        </div>
+                    </div>
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <div class="setting-label">Statistical Window</div>
+                            <div class="setting-desc">Window size for statistical anomaly detection</div>
+                        </div>
+                        <div class="setting-control">
+                            <input type="number" id="statistical_window" class="form-control" value="{{ settings.statistical_window }}" min="5">
+                        </div>
+                    </div>
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <div class="setting-label">Statistical Threshold</div>
+                            <div class="setting-desc">Z-score threshold for anomalies</div>
+                        </div>
+                        <div class="setting-control">
+                            <input type="number" id="statistical_threshold" class="form-control" value="{{ settings.statistical_threshold }}" min="0.5" step="0.1">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="settings-section mb-0">
+                    <div class="settings-section-title"><i class="bi bi-exclamation-triangle me-2"></i>Detection Thresholds</div>
+                    <div class="row">
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="setting-row" style="border-bottom: 1px solid var(--accent-dim);">
+                                <div class="setting-info">
+                                    <div class="setting-label">Process Count</div>
+                                    <div class="setting-desc">Max normal processes</div>
+                                </div>
+                                <div class="setting-control" style="min-width: 80px; max-width: 100px;">
+                                    <input type="number" id="threshold_process_count" class="form-control" value="{{ settings.threshold_process_count }}" min="1">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="setting-row" style="border-bottom: 1px solid var(--accent-dim);">
+                                <div class="setting-info">
+                                    <div class="setting-label">Open Ports</div>
+                                    <div class="setting-desc">Max listening ports</div>
+                                </div>
+                                <div class="setting-control" style="min-width: 80px; max-width: 100px;">
+                                    <input type="number" id="threshold_open_ports" class="form-control" value="{{ settings.threshold_open_ports }}" min="1">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="setting-row" style="border-bottom: 1px solid var(--accent-dim);">
+                                <div class="setting-info">
+                                    <div class="setting-label">File Changes</div>
+                                    <div class="setting-desc">Max changes per interval</div>
+                                </div>
+                                <div class="setting-control" style="min-width: 80px; max-width: 100px;">
+                                    <input type="number" id="threshold_file_changes" class="form-control" value="{{ settings.threshold_file_changes }}" min="1">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="setting-row" style="border-bottom: 1px solid var(--accent-dim);">
+                                <div class="setting-info">
+                                    <div class="setting-label">Established Conns</div>
+                                    <div class="setting-desc">Max established connections</div>
+                                </div>
+                                <div class="setting-control" style="min-width: 80px; max-width: 100px;">
+                                    <input type="number" id="threshold_established_connections" class="form-control" value="{{ settings.threshold_established_connections }}" min="1">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="setting-row" style="border-bottom: 1px solid var(--accent-dim);">
+                                <div class="setting-info">
+                                    <div class="setting-label">External IPs</div>
+                                    <div class="setting-desc">Max unique external IPs</div>
+                                </div>
+                                <div class="setting-control" style="min-width: 80px; max-width: 100px;">
+                                    <input type="number" id="threshold_external_ips" class="form-control" value="{{ settings.threshold_external_ips }}" min="1">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="setting-row" style="border-bottom: 1px solid var(--accent-dim);">
+                                <div class="setting-info">
+                                    <div class="setting-label">Memory %</div>
+                                    <div class="setting-desc">Memory usage threshold</div>
+                                </div>
+                                <div class="setting-control" style="min-width: 80px; max-width: 100px;">
+                                    <input type="number" id="threshold_memory_percent" class="form-control" value="{{ settings.threshold_memory_percent }}" min="1" max="100">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="setting-row" style="border-bottom: 1px solid var(--accent-dim);">
+                                <div class="setting-info">
+                                    <div class="setting-label">Swap %</div>
+                                    <div class="setting-desc">Swap usage threshold</div>
+                                </div>
+                                <div class="setting-control" style="min-width: 80px; max-width: 100px;">
+                                    <input type="number" id="threshold_swap_percent" class="form-control" value="{{ settings.threshold_swap_percent }}" min="1" max="100">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="setting-row" style="border-bottom: 1px solid var(--accent-dim);">
+                                <div class="setting-info">
+                                    <div class="setting-label">Disk %</div>
+                                    <div class="setting-desc">Disk usage threshold</div>
+                                </div>
+                                <div class="setting-control" style="min-width: 80px; max-width: 100px;">
+                                    <input type="number" id="threshold_disk_percent" class="form-control" value="{{ settings.threshold_disk_percent }}" min="1" max="100">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="setting-row" style="border-bottom: none;">
+                                <div class="setting-info">
+                                    <div class="setting-label">Failed Logins</div>
+                                    <div class="setting-desc">Max failed logins per interval</div>
+                                </div>
+                                <div class="setting-control" style="min-width: 80px; max-width: 100px;">
+                                    <input type="number" id="threshold_failed_logins" class="form-control" value="{{ settings.threshold_failed_logins }}" min="1">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="settings-section mb-0">
+                    <div class="settings-section-title"><i class="bi bi-clock-history me-2"></i>Polling Intervals (seconds)</div>
+                    <div class="row">
+                        {% set sensors = [
+                            ('process_sensor', 'Process'),
+                            ('port_sensor', 'Port'),
+                            ('file_sensor', 'File'),
+                            ('network_sensor', 'Network'),
+                            ('memory_sensor', 'Memory'),
+                            ('disk_io_sensor', 'Disk I/O'),
+                            ('auth_sensor', 'Auth'),
+                            ('service_sensor', 'Service'),
+                            ('registry_sensor', 'Registry'),
+                            ('dns_sensor', 'DNS'),
+                            ('driver_sensor', 'Driver'),
+                            ('certificate_sensor', 'Certificate'),
+                            ('hardware_sensor', 'Hardware')
+                        ] %}
+                        {% for sensor_key, sensor_name in sensors %}
+                        <div class="col-lg-3 col-md-4 col-sm-6">
+                            <div class="setting-row" style="border-bottom: {% if loop.last %}none{% else %}1px solid var(--accent-dim){% endif %};">
+                                <div class="setting-info">
+                                    <div class="setting-label">{{ sensor_name }}</div>
+                                    <div class="setting-desc">Polling interval</div>
+                                </div>
+                                <div class="setting-control" style="min-width: 80px; max-width: 100px;">
+                                    <input type="number" id="poll_{{ sensor_key }}" class="form-control" value="{{ settings['poll_' + sensor_key] }}" min="10">
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showSaveIndicator(id, duration) {
+    const el = document.getElementById(id);
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), duration || 2000);
+}
+
+function collectSettings() {
+    const settings = {};
+    const inputs = document.querySelectorAll('input[id], select[id]');
+    inputs.forEach(input => {
+        const key = input.id;
+        if (input.type === 'checkbox') {
+            settings[key] = input.checked;
+        } else if (input.type === 'number') {
+            settings[key] = parseFloat(input.value);
+        } else {
+            settings[key] = input.value.trim();
+        }
+    });
+    return settings;
+}
+
+function saveAllSettings() {
+    const settings = collectSettings();
+    fetch('/api/settings', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(settings)
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            showSaveIndicator('saveSuccess', 2000);
+        } else {
+            showSaveIndicator('saveError', 3000);
+            console.error('Settings errors:', data.errors);
+        }
+    })
+    .catch(err => {
+        showSaveIndicator('saveError', 3000);
+        console.error('Save failed:', err);
+    });
+}
+
+function resetSettings() {
+    if (!confirm('Reset all settings to defaults? This cannot be undone.')) return;
+    fetch('/api/settings/reset', {method: 'POST'})
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    })
+    .catch(err => {
+        showSaveIndicator('saveError', 3000);
+        console.error('Reset failed:', err);
+    });
+}
+</script>
+{% endblock %}

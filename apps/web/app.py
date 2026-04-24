@@ -18,6 +18,8 @@ from threading import Lock
 
 import config
 from src.core import Storage, OpenRouterClient
+from src.core.settings_manager import get_settings_manager
+from src.core.llm_logger import get_llm_logger
 from src.agent import create_agent
 from src.gateway import create_schedule_manager
 
@@ -238,6 +240,20 @@ def alerts_page():
 def docs_page():
     """Documentation page."""
     return render_template("docs.html")
+
+
+@app.route("/settings")
+def settings_page():
+    """Settings configuration page."""
+    settings_mgr = get_settings_manager()
+    settings = settings_mgr.get_masked_settings()
+    return render_template("settings.html", settings=settings)
+
+
+@app.route("/logs")
+def logs_page():
+    """System logs and LLM activity monitor page."""
+    return render_template("logs.html")
 
 
 @app.route("/api/chat", methods=["POST"])
@@ -698,6 +714,82 @@ def approval_stats_api():
     if approval_manager:
         return jsonify(approval_manager.get_approval_stats())
     return jsonify({})
+
+
+# Settings API
+@app.route("/api/settings", methods=["GET"])
+def settings_api():
+    """Get current settings."""
+    settings_mgr = get_settings_manager()
+    return jsonify(settings_mgr.get_masked_settings())
+
+
+@app.route("/api/settings", methods=["POST"])
+def update_settings_api():
+    """Update settings."""
+    data = request.get_json() or {}
+    settings_mgr = get_settings_manager()
+    errors = settings_mgr.set_many(data)
+    if errors:
+        return jsonify({"success": False, "errors": errors}), 400
+    return jsonify({"success": True, "settings": settings_mgr.get_masked_settings()})
+
+
+@app.route("/api/settings/reset", methods=["POST"])
+def reset_settings_api():
+    """Reset settings to defaults."""
+    settings_mgr = get_settings_manager()
+    settings_mgr.reset_to_defaults()
+    return jsonify({"success": True, "settings": settings_mgr.get_masked_settings()})
+
+
+# Logs API
+@app.route("/api/logs", methods=["GET"])
+def logs_api():
+    """Get system logs with filtering."""
+    log_type = request.args.get("type", "events")
+    count = request.args.get("count", 50, type=int)
+    
+    if log_type == "events":
+        if storage:
+            events = storage.get_recent_events(count=count)
+            return jsonify({"events": events, "count": len(events)})
+        return jsonify({"events": [], "count": 0})
+    
+    if log_type == "detections":
+        if storage:
+            detections = storage.get_recent_detections(count=count)
+            return jsonify({"detections": detections, "count": len(detections)})
+        return jsonify({"detections": [], "count": 0})
+    
+    if log_type == "llm":
+        llm_logger = get_llm_logger()
+        status = request.args.get("status")
+        calls = llm_logger.get_recent_calls(count=count, status=status)
+        return jsonify({"calls": calls, "count": len(calls)})
+    
+    return jsonify({"error": "Unknown log type"}), 400
+
+
+@app.route("/api/logs/llm-stats", methods=["GET"])
+def llm_stats_api():
+    """Get LLM call statistics."""
+    llm_logger = get_llm_logger()
+    hours = request.args.get("hours", 24, type=int)
+    return jsonify(llm_logger.get_call_stats(hours=hours))
+
+
+@app.route("/api/logs/clear", methods=["POST"])
+def clear_logs_api():
+    """Clear logs based on type."""
+    data = request.get_json() or {}
+    log_type = data.get("type", "")
+    
+    if log_type == "llm":
+        get_llm_logger().clear_logs()
+        return jsonify({"success": True, "message": "LLM activity logs cleared"})
+    
+    return jsonify({"success": False, "error": "Unknown log type or not supported"}), 400
 
 
 def _load_sensor_module(sensor_module: str):

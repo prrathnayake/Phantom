@@ -7,6 +7,7 @@ import time
 import importlib
 from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass, field
+import threading
 from threading import Lock, Thread
 from typing import Any, Callable, Dict, List, Optional
 
@@ -76,6 +77,7 @@ class ScheduleManager:
         self.autonomous_mode = autonomous_mode
         self._schedules: Dict[str, Schedule] = {}
         self._running = False
+        self._stop_event = threading.Event()
         self._lock = Lock()
         
         debug_logger.info("ScheduleManager initialized", {
@@ -351,6 +353,7 @@ class ScheduleManager:
         Runs in a loop checking for due schedules.
         """
         self._running = True
+        self._stop_event.clear()
         
         debug_logger.info("Autonomous mode started")
         
@@ -367,7 +370,7 @@ class ScheduleManager:
                     "error": str(e)
                 })
             
-            time.sleep(1)
+            self._stop_event.wait(timeout=1)
     
     def start_autonomous(self) -> Thread:
         """Start autonomous mode in background thread.
@@ -385,6 +388,7 @@ class ScheduleManager:
     def stop(self) -> None:
         """Stop autonomous mode."""
         self._running = False
+        self._stop_event.set()
         
         debug_logger.info("ScheduleManager stopped")
 

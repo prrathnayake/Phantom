@@ -557,11 +557,24 @@ class Agent:
                 break
         
         # Extract recommendations
+        in_recommendations_section = False
         for line in analysis.split("\n"):
-            line_lower = line.lower().strip()
-            if "recommend" in line_lower or line_lower.startswith("- ") or line_lower.startswith("* "):
-                if len(line.strip()) > 5:
-                    result.recommendations.append(line.strip())
+            stripped = line.strip()
+            line_lower = stripped.lower()
+            # Detect the start of a recommendations section
+            if "recommendation" in line_lower and stripped.endswith(":"):
+                in_recommendations_section = True
+                continue
+            # Stop if we hit another major section header
+            if in_recommendations_section and stripped and stripped.endswith(":") and not stripped.startswith(("-", "*", "1.", "2.", "3.", "4.", "5.", "6.", "7.", "8.", "9.")):
+                in_recommendations_section = False
+                continue
+            if in_recommendations_section:
+                if stripped.startswith(("- ", "* ", "• ")) or (stripped and stripped[0].isdigit() and "." in stripped[:3]):
+                    if len(stripped) > 5:
+                        result.recommendations.append(stripped)
+            elif "recommend" in line_lower and len(stripped) > 10:
+                result.recommendations.append(stripped)
     
     def _update_memory(
         self,
