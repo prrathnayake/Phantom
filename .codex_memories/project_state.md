@@ -14,7 +14,8 @@ active_threads: {
   "diagnostics": "working, configured process/port/file/network/memory/disk_io/auth/service/registry/dns/driver/certificate/hardware sensors supported by dashboard scheduling",
   "reports": "stored in src/agent/reports/YYYY-MM-DD/",
   "dashboard": "Flask dashboard refined for safer report viewing, live status, mobile layouts, and accessible controls",
-  "tests": "144 tests passing"
+  "tests": "144 tests passing",
+  "cli": "improved with OS-aware background processes, Docker auto-start, bug fixes in phantom and cli/main.py"
 }
 
 ## ARCHITECTURE COMPONENTS

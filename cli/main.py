@@ -1,10 +1,101 @@
 """Phantom CLI - Command-line interface for Phantom Security Agent."""
-import sys
-import os
 import argparse
+import os
+import platform
+import subprocess
+import sys
+import time
 from pathlib import Path
 
 CLI_DIR = Path(__file__).parent
+
+_IS_WINDOWS = platform.system() == "Windows"
+_IS_MACOS = platform.system() == "Darwin"
+_IS_LINUX = platform.system() == "Linux"
+
+
+def _docker_available() -> bool:
+    """Check if Docker daemon is reachable."""
+    try:
+        result = subprocess.run(
+            ["docker", "version", "--format", "{{.Server.Version}}"],
+            capture_output=True, text=True, check=False, timeout=10
+        )
+        return result.returncode == 0 and result.stdout.strip()
+    except Exception:
+        return False
+
+
+def _start_docker() -> bool:
+    """Attempt to start Docker if it is not running."""
+    if _docker_available():
+        return True
+
+    print("Docker does not appear to be running. Attempting to start it...")
+
+    try:
+        if _IS_WINDOWS:
+            possible_paths = [
+                Path(os.environ.get("ProgramFiles", "C:\\Program Files")) / "Docker" / "Docker" / "Docker Desktop.exe",
+                Path(os.environ.get("ProgramFiles(x86)", "C:\\Program Files (x86)")) / "Docker" / "Docker" / "Docker Desktop.exe",
+                Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "Docker" / "Docker" / "Docker Desktop.exe",
+            ]
+            for docker_path in possible_paths:
+                if docker_path.exists():
+                    subprocess.Popen([str(docker_path)], shell=False)
+                    break
+            else:
+                print("  Could not find Docker Desktop executable.")
+                return False
+        elif _IS_MACOS:
+            mac_paths = [
+                Path("/Applications/Docker.app/Contents/MacOS/Docker"),
+                Path("/usr/local/bin/docker"),
+                Path("/opt/homebrew/bin/docker"),
+            ]
+            for docker_path in mac_paths:
+                if docker_path.exists():
+                    if "MacOS" in str(docker_path):
+                        subprocess.Popen([str(docker_path)], shell=False)
+                    else:
+                        subprocess.run(["open", "-a", "Docker"], check=False)
+                    break
+            else:
+                print("  Could not find Docker application.")
+                return False
+        elif _IS_LINUX:
+            result = subprocess.run(["systemctl", "is-active", "--quiet", "docker"], capture_output=True, check=False)
+            if result.returncode != 0:
+                result = subprocess.run(["sudo", "systemctl", "start", "docker"], capture_output=True, check=False)
+                if result.returncode != 0:
+                    result = subprocess.run(["sudo", "service", "docker", "start"], capture_output=True, check=False)
+            if result.returncode != 0:
+                print("  Failed to start Docker service. You may need to start it manually.")
+                return False
+        else:
+            print(f"  Auto-start not implemented for {platform.system()}.")
+            return False
+    except Exception as exc:
+        print(f"  Error starting Docker: {exc}")
+        return False
+
+    # Wait up to 60 seconds for Docker to become available
+    print("  Waiting for Docker daemon...")
+    for _ in range(30):
+        time.sleep(2)
+        if _docker_available():
+            print("  Docker is now running!")
+            return True
+
+    print("  Docker did not become available in time.")
+    return False
+
+
+def _ensure_docker() -> bool:
+    """Ensure Docker is running, attempting to start it if necessary."""
+    if _docker_available():
+        return True
+    return _start_docker()
 
 
 def main():
@@ -21,6 +112,7 @@ def main():
     )
     parser.add_argument("args", nargs=argparse.REMAINDER, help="Arguments for command")
     parser.add_argument("-h", "--help", dest="show_help", action="store_true", help="Show help")
+    parser.add_argument("--docker", action="store_true", help="Ensure Docker is running (for start/stop/status)")
 
     args = parser.parse_args()
 
@@ -35,6 +127,12 @@ def main():
     if args.command == "version":
         show_version()
         return 0
+
+    # Ensure Docker if requested via --docker flag
+    if args.docker and args.command in ("start", "stop", "status"):
+        if not _ensure_docker():
+            print("Error: Docker is not running or could not be started.")
+            return 1
 
     if args.command == "onboard":
         return cmd_onboard(args.args)
@@ -77,6 +175,9 @@ Commands:
   status              Show agent status
   run [diagnostic]    Run diagnostics manually
   reports             View analysis reports
+
+Options:
+  --docker            Ensure Docker is running (for start/stop/status)
 
 Examples:
   ./agent help
@@ -132,12 +233,12 @@ def onboard_check():
         issues.append("OPENROUTER_API_KEY not set")
 
     try:
-        import flask
+        import flask  # noqa: F401
     except ImportError:
         issues.append("flask not installed")
 
     try:
-        import psutil
+        import psutil  # noqa: F401
     except ImportError:
         issues.append("psutil not installed")
 
@@ -154,11 +255,10 @@ def onboard_check():
 def check_environment():
     print("  Environment: OK")
 
-    import platform
-    print(f"  Platform: {platform.system()} {platform.release()}")
+    import platform as plat
+    print(f"  Platform: {plat.system()} {plat.release()}")
     print(f"  Python: {sys.version.split()[0]}")
 
-    from pathlib import Path
     print(f"  Working dir: {Path.cwd()}")
 
 
@@ -172,7 +272,7 @@ def check_config():
 
 
 def check_dependencies():
-    deps = ["flask", "psutil", "requests", "openai", "python-dotenv", "websockets"]
+    deps = ["flask", "psutil", "requests", "openai", "dotenv", "websockets"]
     for dep in deps:
         try:
             __import__(dep.replace("-", "_"))
@@ -182,7 +282,6 @@ def check_dependencies():
 
 
 def create_directories():
-    from pathlib import Path
     import config
 
     dirs = [
@@ -197,13 +296,11 @@ def create_directories():
 
 
 def setup_config():
-    from pathlib import Path
-    import shutil
-
     env_file = Path(".env")
     if not env_file.exists():
-        template = Path(CLI_DIR.parent, "cli", ".env.template")
+        template = CLI_DIR / ".env.template"
         if template.exists():
+            import shutil
             shutil.copy(template, env_file)
             print(f"  Created .env from template")
         else:
@@ -321,18 +418,37 @@ def cmd_start(args):
         print("Agent is already running!")
         return 1
 
-    import subprocess
-    import sys
-
     pid_file = Path("phantom.pid")
-    proc = subprocess.Popen(
-        [sys.executable, "main.py"],
-        cwd=Path(__file__).parent.parent,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        start_new_session=True
-    )
+    project_root = Path(__file__).parent.parent
+    devnull = open(os.devnull, "w")
 
+    try:
+        if _IS_WINDOWS:
+            proc = subprocess.Popen(
+                [sys.executable, "main.py"],
+                cwd=project_root,
+                stdout=devnull,
+                stderr=devnull,
+                stdin=devnull,
+                creationflags=subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.CREATE_NO_WINDOW,
+            )
+        else:
+            proc = subprocess.Popen(
+                [sys.executable, "main.py"],
+                cwd=project_root,
+                stdout=devnull,
+                stderr=devnull,
+                stdin=devnull,
+                start_new_session=True,
+            )
+    except Exception as exc:
+        print(f"Failed to start agent: {exc}")
+        devnull.close()
+        return 1
+
+    # Don't wait for the process; just record the PID and return.
+    # Note: we intentionally do NOT close devnull here because the child
+    # process inherits it. On Windows, closing it could cause errors.
     pid_file.write_text(str(proc.pid))
     print(f"Agent started with PID: {proc.pid}")
     print("Run './agent status' to check status.")
@@ -349,36 +465,56 @@ def cmd_stop(args):
     killed_any = False
 
     for port in ports:
-        for conn in psutil.net_connections(kind="inet"):
-            if conn.laddr.port == port and conn.status == "LISTEN":
-                try:
-                    proc = psutil.Process(conn.pid)
-                    print(f"Killing process {conn.pid} on port {port} ({proc.name()})...")
-                    proc.kill()
-                    killed_any = True
-                except (psutil.NoSuchProcess, psutil.AccessDenied):
-                    pass
+        try:
+            for conn in psutil.net_connections(kind="inet"):
+                if conn.laddr.port == port and conn.status == "LISTEN":
+                    try:
+                        proc = psutil.Process(conn.pid)
+                        print(f"Stopping process {conn.pid} on port {port} ({proc.name()})...")
+                        proc.terminate()
+                        try:
+                            proc.wait(timeout=5)
+                        except psutil.TimeoutExpired:
+                            proc.kill()
+                        killed_any = True
+                    except (psutil.NoSuchProcess, psutil.AccessDenied):
+                        pass
+        except (psutil.AccessDenied, psutil.Error):
+            pass
 
     pid_file = Path("phantom.pid")
     if pid_file.exists():
-        pid = int(pid_file.read_text().strip())
         try:
-            proc = psutil.Process(pid)
-            proc.kill()
-            killed_any = True
-        except psutil.NoSuchProcess:
+            pid = int(pid_file.read_text().strip())
+            try:
+                proc = psutil.Process(pid)
+                proc.terminate()
+                try:
+                    proc.wait(timeout=5)
+                except psutil.TimeoutExpired:
+                    proc.kill()
+                killed_any = True
+            except psutil.NoSuchProcess:
+                pass
+        except ValueError:
             pass
-        pid_file.unlink()
+        finally:
+            if pid_file.exists():
+                pid_file.unlink()
 
     if not killed_any:
         for proc in psutil.process_iter(["pid", "name", "cmdline"]):
             try:
                 cmdline = proc.info.get("cmdline") or []
-                if "main.py" in " ".join(cmdline):
+                if any("main.py" in part for part in cmdline):
                     print(f"Stopping process {proc.pid}...")
-                    proc.kill()
+                    proc.terminate()
+                    try:
+                        proc.wait(timeout=5)
+                    except psutil.TimeoutExpired:
+                        proc.kill()
                     killed_any = True
-            except:
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
                 pass
 
     if killed_any:
@@ -397,20 +533,23 @@ def cmd_status(args):
 
         pid_file = Path("phantom.pid")
         if pid_file.exists():
-            pid = pid_file.read_text().strip()
-            print(f"PID: {pid}")
+            try:
+                pid = pid_file.read_text().strip()
+                print(f"PID: {pid}")
+            except Exception:
+                pass
 
         import psutil
         for proc in psutil.process_iter(["pid", "name", "cmdline"]):
             try:
                 cmdline = proc.info.get("cmdline") or []
-                if "main.py" in " ".join(cmdline):
+                if any("main.py" in part for part in cmdline):
                     cpu = proc.cpu_percent(interval=0.5)
                     mem = proc.memory_info().rss / 1024 / 1024
                     print(f"CPU: {cpu:.1f}%")
                     print(f"Memory: {mem:.1f} MB")
                     break
-            except:
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
                 pass
     else:
         print("Status: STOPPED")
@@ -439,10 +578,14 @@ def cmd_run(args):
 
     print(f"Running diagnostic: {diagnostic}...")
 
-    module_name = diagnostic.replace("_sensor", "")
+    # Normalize module name: accept both "process" and "process_sensor"
+    module_name = diagnostic
+    if not module_name.endswith("_sensor"):
+        module_name = f"{module_name}_sensor"
+
     try:
         import importlib
-        module = importlib.import_module(f"src.diagnostics.{module_name}_sensor")
+        module = importlib.import_module(f"src.diagnostics.{module_name}")
 
         if hasattr(module, "collect"):
             result = module.collect()
@@ -455,12 +598,11 @@ def cmd_run(args):
             return 1
     except ImportError as e:
         print(f"Diagnostic not found: {diagnostic}")
+        print(f"  Error: {e}")
         return 1
 
 
 def cmd_reports(args):
-    from pathlib import Path
-
     reports_dir = Path("src/agent/reports")
 
     if not reports_dir.exists():
@@ -500,12 +642,15 @@ def is_running():
     if not pid_file.exists():
         return False
 
-    pid = int(pid_file.read_text().strip())
+    try:
+        pid = int(pid_file.read_text().strip())
+    except (ValueError, OSError):
+        return False
 
     try:
         import psutil
         return psutil.pid_exists(pid)
-    except:
+    except Exception:
         return False
 
 

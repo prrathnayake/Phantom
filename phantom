@@ -17,8 +17,12 @@ from pathlib import Path
 PROJECT_DIR = Path(__file__).parent.resolve()
 COMPOSE_FILE = PROJECT_DIR / "docker" / "docker-compose.yml"
 
-# ── Colors ──────────────────────────────────────────────────────────
+# ── Platform detection ──────────────────────────────────────────────
 _IS_WINDOWS = platform.system() == "Windows"
+_IS_MACOS = platform.system() == "Darwin"
+_IS_LINUX = platform.system() == "Linux"
+
+# ── Colors ──────────────────────────────────────────────────────────
 _NO_COLOR = os.environ.get("NO_COLOR", "")
 
 
@@ -80,6 +84,80 @@ def docker_available() -> bool:
     """Check if Docker daemon is reachable."""
     result = run_cmd("docker version --format '{{.Server.Version}}'", capture=True)
     return result.returncode == 0 and result.stdout.strip()
+
+
+def start_docker() -> bool:
+    """Attempt to start Docker if it is not running."""
+    if docker_available():
+        return True
+
+    print(yellow("Docker does not appear to be running. Attempting to start it..."))
+
+    try:
+        if _IS_WINDOWS:
+            # Try Docker Desktop on Windows
+            possible_paths = [
+                Path(os.environ.get("ProgramFiles", "C:\\Program Files")) / "Docker" / "Docker" / "Docker Desktop.exe",
+                Path(os.environ.get("ProgramFiles(x86)", "C:\\Program Files (x86)")) / "Docker" / "Docker" / "Docker Desktop.exe",
+                Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "Docker" / "Docker" / "Docker Desktop.exe",
+            ]
+            for docker_path in possible_paths:
+                if docker_path.exists():
+                    subprocess.Popen([str(docker_path)], shell=False)
+                    break
+            else:
+                print(red("  Could not find Docker Desktop executable."))
+                return False
+        elif _IS_MACOS:
+            mac_paths = [
+                Path("/Applications/Docker.app/Contents/MacOS/Docker"),
+                Path("/usr/local/bin/docker"),
+                Path("/opt/homebrew/bin/docker"),
+            ]
+            for docker_path in mac_paths:
+                if docker_path.exists():
+                    if "MacOS" in str(docker_path):
+                        subprocess.Popen([str(docker_path)], shell=False)
+                    else:
+                        run_cmd("open -a Docker", check=False)
+                    break
+            else:
+                print(red("  Could not find Docker application."))
+                return False
+        elif _IS_LINUX:
+            # Try systemd service first, then init.d
+            result = run_cmd("systemctl is-active --quiet docker", capture=True)
+            if result.returncode != 0:
+                result = run_cmd("sudo systemctl start docker", capture=True)
+                if result.returncode != 0:
+                    result = run_cmd("sudo service docker start", capture=True)
+            if result.returncode != 0:
+                print(red("  Failed to start Docker service. You may need to start it manually."))
+                return False
+        else:
+            print(red(f"  Auto-start not implemented for {platform.system()}."))
+            return False
+    except Exception as exc:
+        print(red(f"  Error starting Docker: {exc}"))
+        return False
+
+    # Wait up to 60 seconds for Docker to become available
+    print(dim("  Waiting for Docker daemon..."))
+    for _ in range(30):
+        time.sleep(2)
+        if docker_available():
+            print(green("  Docker is now running!"))
+            return True
+
+    print(red("  Docker did not become available in time."))
+    return False
+
+
+def ensure_docker() -> bool:
+    """Ensure Docker is running, attempting to start it if necessary."""
+    if docker_available():
+        return True
+    return start_docker()
 
 
 def compose_cmd(action: str, *args: str, check: bool = False) -> subprocess.CompletedProcess:
@@ -185,9 +263,9 @@ def cmd_restart(args: argparse.Namespace) -> None:
         print()
         print(bold(f"[RESTARTING: {svc}]"))
         if _DRY_RUN:
-            print(dim(f"  (dry-run) docker restart phantom-{svc}"))
+            print(dim(f"  (dry-run) docker compose restart {svc}"))
             return
-        run_cmd(f"docker restart phantom-{svc}")
+        compose_cmd("restart", svc)
         print(green(f"  phantom-{svc} restarted."))
     else:
         print()
@@ -208,7 +286,11 @@ def cmd_logs(args: argparse.Namespace) -> None:
     if _DRY_RUN:
         print(dim(f"  (dry-run) docker logs --tail {lines} phantom-{svc}"))
         return
-    run_cmd(f"docker logs --tail {lines} phantom-{svc}")
+    result = run_cmd(f"docker logs --tail {lines} phantom-{svc}", capture=True)
+    if result.returncode != 0:
+        print(red(f"  Error: {result.stderr.strip() or 'Could not retrieve logs'}"))
+    else:
+        print(result.stdout)
 
 
 def cmd_logs_follow(args: argparse.Namespace) -> None:
@@ -268,9 +350,15 @@ def cmd_exec(args: argparse.Namespace) -> None:
     if _DRY_RUN:
         print(dim("  (dry-run)"))
         return
-    # Use exec form to avoid shell quoting issues
-    shell = "powershell.exe" if _IS_WINDOWS else "sh"
-    run_cmd(f'docker exec -it phantom-{svc} {shell} -c "{command}"')
+    # Use non-interactive exec for scripted commands to avoid tty issues
+    result = run_cmd(f'docker exec phantom-{svc} sh -c "{command}"', capture=True)
+    if result.returncode != 0:
+        # Fallback to bash if sh fails
+        result = run_cmd(f'docker exec phantom-{svc} bash -c "{command}"', capture=True)
+    if result.stdout:
+        print(result.stdout)
+    if result.stderr:
+        print(red(result.stderr))
 
 
 def cmd_shell(args: argparse.Namespace) -> None:
@@ -280,9 +368,12 @@ def cmd_shell(args: argparse.Namespace) -> None:
     print(bold(f"[SHELL: {svc}]"))
     print(dim("  Type 'exit' to leave"))
     print()
-    shell = "powershell.exe" if _IS_WINDOWS else "bash"
-    # Fallback to sh if bash not available
-    run_cmd(f"docker exec -it phantom-{svc} {shell}", check=False)
+    # Try bash first, then sh (works on both Linux and Windows containers)
+    for shell in ("bash", "sh"):
+        result = run_cmd(f"docker exec -it phantom-{svc} {shell}", check=False)
+        if result.returncode == 0 or result.returncode == 130:  # 130 = Ctrl+D/C exit
+            return
+    print(red("  Could not open a shell in the container."))
 
 
 def cmd_health(args: argparse.Namespace) -> None:
@@ -585,10 +676,10 @@ def main() -> int:
         cmd_status(args)
         return 0
 
-    # Pre-flight: verify Docker is available (skip for config/version)
-    if args.command not in ("config", "version"):
-        if not docker_available():
-            print(red("Error: Docker is not running or not installed."))
+    # Pre-flight: verify Docker is available (skip for config/version/help)
+    if args.command not in ("config", "version", "help"):
+        if not ensure_docker():
+            print(red("Error: Docker is not running or could not be started."))
             print(dim("  Please start Docker Desktop or install Docker."))
             return 1
 
