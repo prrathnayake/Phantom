@@ -2,21 +2,302 @@
 
 {% block title %}Diagnostics - Phantom Mission Control{% endblock %}
 
+{% block extra_styles %}
+<style>
+/* Diagnostics Live Diagram Styles */
+.diag-hero {
+    background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-dark) 100%);
+    border: 1px solid var(--accent-dim);
+    padding: 1.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.diag-hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        var(--accent-glow) 2px,
+        var(--accent-glow) 4px
+    );
+    opacity: 0.03;
+    pointer-events: none;
+}
+
+.live-canvas-container {
+    position: relative;
+    height: 180px;
+    background: var(--bg-dark);
+    border: 1px solid var(--accent-dim);
+    overflow: hidden;
+}
+
+.sensor-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 0.5rem;
+    background: var(--bg-dark);
+    border: 1px solid var(--border);
+    transition: all 0.3s ease;
+    cursor: pointer;
+    user-select: none;
+}
+
+.sensor-node:hover {
+    border-color: var(--accent);
+    box-shadow: var(--terminal-glow);
+    transform: translateY(-2px);
+}
+
+.sensor-node.active {
+    border-color: var(--accent);
+    background: var(--accent-glow);
+}
+
+.sensor-node .sensor-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    font-size: 1.25rem;
+    color: var(--text-muted);
+    transition: all 0.3s ease;
+}
+
+.sensor-node.active .sensor-icon {
+    color: var(--accent);
+    border-color: var(--accent);
+    box-shadow: var(--terminal-glow);
+}
+
+.sensor-node .sensor-name {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+}
+
+.sensor-node.active .sensor-name {
+    color: var(--accent);
+}
+
+.gauge-container {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    margin: 0 auto;
+}
+
+.gauge-bg {
+    fill: none;
+    stroke: var(--border);
+    stroke-width: 8;
+}
+
+.gauge-fill {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 8;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.5s ease, stroke 0.3s ease;
+}
+
+.gauge-value {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.gauge-label {
+    text-align: center;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-top: 0.5rem;
+    letter-spacing: 0.1em;
+}
+
+.scanner-card {
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.scanner-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, var(--accent-glow), transparent);
+    transition: left 0.5s ease;
+}
+
+.scanner-card:hover::after {
+    left: 100%;
+}
+
+.scanner-card:hover {
+    border-color: var(--accent);
+    box-shadow: var(--terminal-glow);
+    transform: translateY(-2px);
+}
+
+.scanner-icon-wrap {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--bg-dark);
+    border: 1px solid var(--accent-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    color: var(--accent);
+    margin-bottom: 1rem;
+}
+
+.timeline-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0;
+    border-left: 2px solid var(--border);
+    padding-left: 1rem;
+    position: relative;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -5px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 2px solid var(--bg-dark);
+}
+
+.timeline-item.success::before { background: var(--success); }
+.timeline-item.warning::before { background: var(--warning); }
+.timeline-item.danger::before { background: var(--danger); }
+.timeline-item.info::before { background: var(--info); }
+
+.mini-bar-chart {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 60px;
+    padding: 0.5rem;
+}
+
+.mini-bar {
+    flex: 1;
+    background: var(--accent);
+    opacity: 0.6;
+    border-radius: 2px 2px 0 0;
+    transition: height 0.3s ease;
+    min-height: 4px;
+}
+
+.mini-bar:hover {
+    opacity: 1;
+}
+
+.schedule-row-active {
+    background: rgba(53, 242, 125, 0.05);
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="row">
-    <div class="col-lg-12">
-        <h4 class="mb-4">
-            <i class="bi bi-cpu text-accent"></i>
-            Run Diagnostics
-        </h4>
+<!-- Hero: Live Activity Diagram + Health Gauge -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="diag-hero">
+            <div class="row align-items-center g-3">
+                <div class="col-lg-3">
+                    <h4 class="mb-2"><i class="bi bi-cpu text-accent me-2"></i>Diagnostics</h4>
+                    <p class="text-muted small mb-3">Live system analysis and sensor monitoring</p>
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="status-dot online" id="diagStatusDot"></span>
+                        <span class="small text-muted" id="diagSystemStatus">System Online</span>
+                    </div>
+                    <div class="small text-muted" id="diagUptime">Uptime: --:--:--</div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="live-canvas-container rounded">
+                        <canvas id="activityCanvas"></canvas>
+                        <div class="position-absolute top-0 start-0 p-2">
+                            <span class="badge bg-dark border border-secondary text-muted small">
+                                <i class="bi bi-broadcast me-1"></i>Live Activity
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3">
+                    <div class="d-flex flex-column align-items-center">
+                        <div class="gauge-container">
+                            <svg viewBox="0 0 120 120" style="transform: rotate(-90deg);">
+                                <circle class="gauge-bg" cx="60" cy="60" r="50"/>
+                                <circle class="gauge-fill" id="healthGauge" cx="60" cy="60" r="50"
+                                    stroke-dasharray="314.16" stroke-dashoffset="78.54"/>
+                            </svg>
+                            <div class="gauge-value" id="healthValue">75%</div>
+                        </div>
+                        <div class="gauge-label">System Health</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
+<!-- Sensor Activity Grid -->
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="bi bi-grid-3x3-gap"></i>
+                    Sensor Activity Monitor
+                </div>
+                <span class="badge bg-dark border border-secondary text-muted small" id="activeSensorCount">0 active</span>
+            </div>
+            <div class="card-body">
+                <div class="row g-2" id="sensorGrid">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scanner Cards & Schedule -->
 <div class="row g-3">
     <!-- Left: Scanner Cards -->
     <div class="col-lg-4">
-        <!-- Process Scanner -->
-        <div class="card mb-3">
+        <!-- Sensor Runner -->
+        <div class="card mb-3 scanner-card">
             <div class="card-header">
                 <i class="bi bi-sliders"></i> Sensor Runner
             </div>
@@ -47,11 +328,13 @@
             </div>
         </div>
 
-        <div class="card mb-3">
+        <!-- Process Scanner -->
+        <div class="card mb-3 scanner-card">
             <div class="card-header">
                 <i class="bi bi-memory"></i> Process Scanner
             </div>
             <div class="card-body d-flex flex-column">
+                <div class="scanner-icon-wrap"><i class="bi bi-memory"></i></div>
                 <p class="text-secondary small mb-3">Scan running processes on the system to detect anomalies, high resource usage, or suspicious processes.</p>
                 <div class="mt-auto">
                     <button class="btn btn-accent w-100" onclick="runDiagnostic('process')" id="btnProcess">
@@ -61,13 +344,14 @@
                 <div class="mt-3" id="processResult"></div>
             </div>
         </div>
-        
+
         <!-- Port Scanner -->
-        <div class="card mb-3">
+        <div class="card mb-3 scanner-card">
             <div class="card-header">
                 <i class="bi bi-wifi"></i> Port Scanner
             </div>
             <div class="card-body d-flex flex-column">
+                <div class="scanner-icon-wrap"><i class="bi bi-wifi"></i></div>
                 <p class="text-secondary small mb-3">Scan listening network ports to identify unauthorized services or potential attack vectors.</p>
                 <div class="mt-auto">
                     <button class="btn btn-accent w-100" onclick="runDiagnostic('port')" id="btnPort">
@@ -77,13 +361,14 @@
                 <div class="mt-3" id="portResult"></div>
             </div>
         </div>
-        
+
         <!-- File Scanner -->
-        <div class="card mb-3">
+        <div class="card mb-3 scanner-card">
             <div class="card-header">
                 <i class="bi bi-folder2-open"></i> File Scanner
             </div>
             <div class="card-body d-flex flex-column">
+                <div class="scanner-icon-wrap"><i class="bi bi-folder2-open"></i></div>
                 <p class="text-secondary small mb-3">Scan for file system changes in the monitored directory to detect unauthorized modifications.</p>
                 <div class="mt-auto">
                     <button class="btn btn-accent w-100" onclick="runDiagnostic('file')" id="btnFile">
@@ -94,10 +379,10 @@
             </div>
         </div>
     </div>
-    
-    <!-- Right: Scheduled Diagnostics -->
+
+    <!-- Right: Scheduled Diagnostics + Mini Chart + Timeline -->
     <div class="col-lg-8">
-        <div class="card h-100">
+        <div class="card mb-3">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <div>
                     <i class="bi bi-clock-history"></i> Scheduled Diagnostics
@@ -106,7 +391,7 @@
                     <i class="bi bi-arrow-clockwise"></i> Refresh
                 </button>
             </div>
-            <div class="table-responsive" style="max-height: 500px;">
+            <div class="table-responsive" style="max-height: 420px;">
                 <table class="table table-dark mb-0">
                     <thead>
                         <tr>
@@ -128,20 +413,345 @@
                 </table>
             </div>
         </div>
+
+        <!-- Schedule Activity Mini Chart -->
+        <div class="card mb-3">
+            <div class="card-header">
+                <i class="bi bi-bar-chart-line"></i> Schedule Activity (Events / 5min)
+            </div>
+            <div class="card-body">
+                <div class="mini-bar-chart" id="scheduleBarChart">
+                    <div class="mini-bar" style="height: 20%"></div>
+                    <div class="mini-bar" style="height: 35%"></div>
+                    <div class="mini-bar" style="height: 15%"></div>
+                    <div class="mini-bar" style="height: 50%"></div>
+                    <div class="mini-bar" style="height: 30%"></div>
+                    <div class="mini-bar" style="height: 45%"></div>
+                    <div class="mini-bar" style="height: 25%"></div>
+                    <div class="mini-bar" style="height: 60%"></div>
+                    <div class="mini-bar" style="height: 40%"></div>
+                    <div class="mini-bar" style="height: 55%"></div>
+                    <div class="mini-bar" style="height: 20%"></div>
+                    <div class="mini-bar" style="height: 35%"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Diagnostic Runs Timeline -->
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-clock-history"></i> Recent Diagnostic Runs
+            </div>
+            <div class="card-body">
+                <div id="diagTimeline">
+                    <div class="text-muted small text-center py-4">
+                        <i class="bi bi-inbox me-2"></i>No recent diagnostics
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
+/* =========================================================
+   LIVE DIAGRAMS & VISUALIZATIONS
+   ========================================================= */
+
+const SENSORS = [
+    {id: 'process', icon: 'bi-memory', name: 'Process'},
+    {id: 'port', icon: 'bi-wifi', name: 'Port'},
+    {id: 'file', icon: 'bi-folder2-open', name: 'File'},
+    {id: 'network', icon: 'bi-globe', name: 'Network'},
+    {id: 'memory', icon: 'bi-device-ssd', name: 'Memory'},
+    {id: 'disk_io', icon: 'bi-hdd', name: 'Disk I/O'},
+    {id: 'auth', icon: 'bi-shield-lock', name: 'Auth'},
+    {id: 'service', icon: 'bi-gear', name: 'Service'},
+    {id: 'registry', icon: 'bi-journal-text', name: 'Registry'},
+    {id: 'dns', icon: 'bi-globe2', name: 'DNS'},
+    {id: 'driver', icon: 'bi-motherboard', name: 'Driver'},
+    {id: 'certificate', icon: 'bi-file-earmark-lock', name: 'Cert'},
+    {id: 'hardware', icon: 'bi-cpu', name: 'Hardware'}
+];
+
+/* ---------- Canvas Live Activity Waveform ---------- */
+const canvas = document.getElementById('activityCanvas');
+const ctx = canvas ? canvas.getContext('2d') : null;
+let activityPoints = [];
+let canvasAnimationId;
+
+function resizeCanvas() {
+    if (!canvas) return;
+    const rect = canvas.parentElement.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+}
+window.addEventListener('resize', resizeCanvas);
+
+function drawActivityWave() {
+    if (!ctx || !canvas) { canvasAnimationId = requestAnimationFrame(drawActivityWave); return; }
+    const w = canvas.width;
+    const h = canvas.height;
+    const cy = h / 2;
+
+    // Fade trail
+    ctx.fillStyle = 'rgba(8, 11, 10, 0.18)';
+    ctx.fillRect(0, 0, w, h);
+
+    // Grid
+    ctx.strokeStyle = 'rgba(53, 242, 125, 0.04)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < h; i += 18) {
+        ctx.beginPath();
+        ctx.moveTo(0, i);
+        ctx.lineTo(w, i);
+        ctx.stroke();
+    }
+    for (let i = 0; i < w; i += 24) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i, h);
+        ctx.stroke();
+    }
+
+    // Waveform
+    if (activityPoints.length > 1) {
+        ctx.strokeStyle = 'var(--accent)';
+        ctx.lineWidth = 2;
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = 'var(--accent)';
+        ctx.beginPath();
+        const step = w / (activityPoints.length - 1);
+        activityPoints.forEach((val, i) => {
+            const x = i * step;
+            const y = cy - (val * (h * 0.38));
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // Area fill
+        ctx.fillStyle = 'rgba(53, 242, 125, 0.07)';
+        ctx.beginPath();
+        ctx.moveTo(0, cy);
+        activityPoints.forEach((val, i) => {
+            const x = i * step;
+            const y = cy - (val * (h * 0.38));
+            ctx.lineTo(x, y);
+        });
+        ctx.lineTo(w, cy);
+        ctx.closePath();
+        ctx.fill();
+
+        // Leading dot
+        const lastIdx = activityPoints.length - 1;
+        const lastX = lastIdx * step;
+        const lastY = cy - (activityPoints[lastIdx] * (h * 0.38));
+        ctx.beginPath();
+        ctx.arc(lastX, lastY, 4, 0, Math.PI * 2);
+        ctx.fillStyle = 'var(--accent)';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(lastX, lastY, 10, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(53, 242, 125, 0.2)';
+        ctx.fill();
+    }
+
+    canvasAnimationId = requestAnimationFrame(drawActivityWave);
+}
+
+function pushActivityValue(val) {
+    activityPoints.push(val);
+    if (activityPoints.length > 60) activityPoints.shift();
+}
+
+function fetchActivityWave() {
+    fetch('/api/activity?count=30')
+        .then(r => r.json())
+        .then(data => {
+            const count = (data.events || []).length;
+            pushActivityValue(Math.min(count / 15, 1));
+            updateHealthFromData(data);
+            updateBarChart(data.events || []);
+        })
+        .catch(() => {
+            pushActivityValue(Math.random() * 0.25);
+        });
+}
+
+/* ---------- Health Gauge ---------- */
+function updateHealthGauge(value) {
+    const circle = document.getElementById('healthGauge');
+    const text = document.getElementById('healthValue');
+    if (!circle || !text) return;
+    const circumference = 2 * Math.PI * 50; // ~314.16
+    const offset = circumference - (Math.max(0, Math.min(100, value)) / 100) * circumference;
+    circle.style.strokeDashoffset = offset;
+    text.textContent = Math.round(value) + '%';
+
+    if (value >= 80) circle.style.stroke = 'var(--success)';
+    else if (value >= 50) circle.style.stroke = 'var(--warning)';
+    else circle.style.stroke = 'var(--danger)';
+}
+
+function updateHealthFromData(data) {
+    const detections = (data.detections || []).length;
+    const events = (data.events || []).length;
+    // Simple heuristic: base 95, -5 per detection, -1 per 50 events
+    let health = 95 - (detections * 5) - Math.floor(events / 50);
+    updateHealthGauge(Math.max(10, health));
+}
+
+/* ---------- Sensor Grid ---------- */
+function renderSensorGrid() {
+    const grid = document.getElementById('sensorGrid');
+    if (!grid) return;
+    grid.innerHTML = SENSORS.map(s => `
+        <div class="col-4 col-md-3 col-lg-2">
+            <div class="sensor-node" id="sensor-${s.id}" onclick="selectSensor('${s.id}')" title="${s.name}">
+                <div class="sensor-icon"><i class="bi ${s.icon}"></i></div>
+                <div class="sensor-name">${s.name}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function updateSensorGrid() {
+    fetch('/api/schedules')
+        .then(r => r.json())
+        .then(data => {
+            const schedules = data.schedules || data || {};
+            let activeCount = 0;
+            SENSORS.forEach(s => {
+                const el = document.getElementById('sensor-' + s.id);
+                if (el) el.classList.remove('active');
+            });
+            Object.values(schedules).forEach(sch => {
+                if (!sch || !sch.enabled || !sch.module) return;
+                const mod = sch.module.replace('_sensor', '');
+                const el = document.getElementById('sensor-' + mod);
+                if (el) { el.classList.add('active'); activeCount++; }
+            });
+            const badge = document.getElementById('activeSensorCount');
+            if (badge) badge.textContent = activeCount + ' active';
+        })
+        .catch(() => {});
+}
+
+function selectSensor(type) {
+    const select = document.getElementById('diagnosticType');
+    if (select) select.value = type;
+    const el = document.getElementById('sensor-' + type);
+    if (el) {
+        el.style.transform = 'scale(0.95)';
+        setTimeout(() => el.style.transform = '', 150);
+    }
+}
+
+/* ---------- Bar Chart ---------- */
+let barCounts = new Array(12).fill(0);
+
+function updateBarChart(events) {
+    const now = Date.now();
+    const bucketMs = 5 * 60 * 1000; // 5 minutes
+    const buckets = new Array(12).fill(0);
+    events.forEach(e => {
+        const t = new Date(e.timestamp).getTime();
+        const age = now - t;
+        if (age < 12 * bucketMs) {
+            const idx = Math.floor(age / bucketMs);
+            if (idx >= 0 && idx < 12) buckets[11 - idx]++;
+        }
+    });
+    barCounts = buckets;
+    const max = Math.max(...barCounts, 1);
+    const bars = document.querySelectorAll('#scheduleBarChart .mini-bar');
+    bars.forEach((bar, i) => {
+        const h = Math.max(8, (barCounts[i] / max) * 100);
+        bar.style.height = h + '%';
+        bar.title = barCounts[i] + ' events';
+        // Color based on density
+        if (barCounts[i] === 0) bar.style.background = 'var(--border)';
+        else if (barCounts[i] < 3) bar.style.background = 'var(--accent)';
+        else if (barCounts[i] < 8) bar.style.background = 'var(--warning)';
+        else bar.style.background = 'var(--danger)';
+    });
+}
+
+/* ---------- Diagnostic Timeline ---------- */
+let diagHistory = [];
+
+function addDiagToTimeline(type, status, message) {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString();
+    let statusClass = 'success';
+    let icon = 'bi-check-circle';
+    if (status === 'error') { statusClass = 'danger'; icon = 'bi-x-circle'; }
+    else if (status === 'warning') { statusClass = 'warning'; icon = 'bi-exclamation-triangle'; }
+    else if (status === 'running') { statusClass = 'info'; icon = 'bi-arrow-repeat'; }
+
+    diagHistory.unshift({type, statusClass, icon, time: timeStr, message});
+    if (diagHistory.length > 12) diagHistory.pop();
+    renderTimeline();
+}
+
+function renderTimeline() {
+    const container = document.getElementById('diagTimeline');
+    if (!container) return;
+    if (diagHistory.length === 0) {
+        container.innerHTML = '<div class="text-muted small text-center py-4"><i class="bi bi-inbox me-2"></i>No recent diagnostics</div>';
+        return;
+    }
+    container.innerHTML = diagHistory.map(item => `
+        <div class="timeline-item ${item.statusClass}">
+            <i class="bi ${item.icon} text-${item.statusClass === 'success' ? 'success' : item.statusClass === 'warning' ? 'warning' : item.statusClass === 'info' ? 'info' : 'danger'}"></i>
+            <div class="flex-grow-1">
+                <div class="small text-light">${escapeHtml(item.type.charAt(0).toUpperCase() + item.type.slice(1))} Scanner</div>
+                <div class="text-muted" style="font-size: 0.65rem;">${escapeHtml(item.time)} ${item.message ? '&middot; ' + escapeHtml(item.message) : ''}</div>
+            </div>
+            <span class="badge bg-${item.statusClass === 'success' ? 'success' : item.statusClass === 'warning' ? 'warning text-dark' : item.statusClass === 'info' ? 'info text-dark' : 'danger'}" style="font-size: 0.6rem;">${item.statusClass}</span>
+        </div>
+    `).join('');
+}
+
+/* ---------- Status Polling ---------- */
+function updateDiagStatus() {
+    fetch('/api/status')
+        .then(r => r.json())
+        .then(data => {
+            const statusEl = document.getElementById('diagSystemStatus');
+            const dot = document.getElementById('diagStatusDot');
+            const uptime = document.getElementById('diagUptime');
+            if (statusEl) statusEl.textContent = data.status === 'running' ? 'System Online' : 'System Offline';
+            if (dot) dot.className = data.status === 'running' ? 'status-dot online' : 'status-dot offline';
+            if (uptime && data.uptime) uptime.textContent = 'Uptime: ' + data.uptime;
+        })
+        .catch(() => {
+            const statusEl = document.getElementById('diagSystemStatus');
+            const dot = document.getElementById('diagStatusDot');
+            if (statusEl) statusEl.textContent = 'Connection Lost';
+            if (dot) dot.className = 'status-dot offline';
+        });
+}
+
+/* =========================================================
+   ORIGINAL FUNCTIONALITY (PRESERVED)
+   ========================================================= */
+
 function runDiagnostic(type, buttonId) {
     const btn = document.getElementById(buttonId || ('btn' + type.charAt(0).toUpperCase() + type.slice(1)));
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Running...';
-    
+
+    // Track in timeline
+    addDiagToTimeline(type, 'running', 'Started');
+
     const resultDiv = document.getElementById(buttonId ? 'genericResult' : (type + 'Result'));
     resultDiv.innerHTML = '';
-    
+
     fetch('/api/diagnostics/run', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -151,17 +761,19 @@ function runDiagnostic(type, buttonId) {
     .then(data => {
         btn.disabled = false;
         btn.innerHTML = buttonId ? '<i class="bi bi-play me-2"></i>Run Selected' : '<i class="bi bi-play me-2"></i>Run Now';
-        
+
         if (data.error) {
             const err = document.createElement('div');
             err.className = 'alert alert-danger mt-3';
             err.textContent = data.error;
             resultDiv.appendChild(err);
+            addDiagToTimeline(type, 'error', data.error);
             return;
         }
-        
+
         showActivity();
-        
+        addDiagToTimeline(type, 'success', data.analysis_status === 'llm_unavailable' ? 'LLM unavailable' : 'Completed');
+
         const ok = document.createElement('div');
         ok.className = data.analysis_status === 'llm_unavailable' ? 'alert alert-warning' : 'alert alert-success';
         ok.textContent = data.analysis_status === 'llm_unavailable'
@@ -182,7 +794,7 @@ function runDiagnostic(type, buttonId) {
         details.appendChild(summary);
         details.appendChild(pre);
         resultDiv.appendChild(details);
-        
+
         if (data.analysis) {
             const analysis = document.createElement('div');
             analysis.className = 'mt-3 p-3 rounded';
@@ -219,6 +831,7 @@ function runDiagnostic(type, buttonId) {
         errBox.className = 'alert alert-danger mt-3';
         errBox.textContent = 'Error: ' + err.message;
         resultDiv.appendChild(errBox);
+        addDiagToTimeline(type, 'error', err.message);
     });
 }
 
@@ -228,20 +841,21 @@ function loadSchedules() {
         .then(data => {
             const tbody = document.getElementById('scheduleTable');
             const entries = Object.entries(data);
-            
+
             if (entries.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No schedules configured</td></tr>';
                 return;
             }
-            
+
             tbody.innerHTML = entries.map(([name, info]) => {
                 const nextRun = info.next_run ? new Date(info.next_run).toLocaleString() : '-';
+                const rowClass = info.enabled ? 'schedule-row-active' : '';
                 return `
-                <tr>
+                <tr class="${rowClass}">
                     <td><strong>${name}</strong></td>
                     <td>
                         <div class="d-flex align-items-center gap-2">
-                            <input type="number" class="form-control form-control-sm" 
+                            <input type="number" class="form-control form-control-sm"
                                    style="width: 80px; background: var(--bg-dark); border: 1px solid var(--border); color: var(--text-primary);"
                                    value="${info.interval}" min="10" id="interval-${name}" aria-label="Interval for ${escapeHtml(name)}">
                             <span class="small text-muted">s</span>
@@ -255,7 +869,7 @@ function loadSchedules() {
                     <td class="text-muted small">${nextRun}</td>
                     <td>
                         <div class="d-flex gap-1">
-                            ${info.enabled 
+                            ${info.enabled
                                 ? `<button class="btn btn-sm btn-outline-warning" onclick="toggleSchedule('${name}', false)" title="Disable" aria-label="Disable ${escapeHtml(name)}"><i class="bi bi-pause"></i></button>`
                                 : `<button class="btn btn-sm btn-outline-success" onclick="toggleSchedule('${name}', true)" title="Enable" aria-label="Enable ${escapeHtml(name)}"><i class="bi bi-play"></i></button>`
                             }
@@ -275,6 +889,7 @@ function toggleSchedule(name, enable) {
         .then(data => {
             if (data.success) showActivity();
             loadSchedules();
+            updateSensorGrid();
         });
 }
 
@@ -299,12 +914,22 @@ function updateInterval(name) {
 
 function runSchedule(name) {
     showActivity();
+    addDiagToTimeline(name, 'running', 'Scheduled run');
     fetch(`/api/schedules/${name}/run`, {method: 'POST'})
         .then(r => r.json())
         .then(data => {
-            if (data.success) alert(`Ran ${name}: ` + (data.result ? 'Success' : 'No result'));
-            else if (data.error) alert(data.error);
+            if (data.success) {
+                addDiagToTimeline(name, 'success', 'Scheduled run finished');
+                alert(`Ran ${name}: ` + (data.result ? 'Success' : 'No result'));
+            }
+            else if (data.error) {
+                addDiagToTimeline(name, 'error', data.error);
+                alert(data.error);
+            }
             loadSchedules();
+        })
+        .catch(err => {
+            addDiagToTimeline(name, 'error', err.message);
         });
 }
 
@@ -315,9 +940,24 @@ function removeSchedule(name) {
         .then(data => {
             if (data.success) showActivity();
             loadSchedules();
+            updateSensorGrid();
         });
 }
 
+/* =========================================================
+   INITIALIZATION
+   ========================================================= */
+
+resizeCanvas();
+drawActivityWave();
+renderSensorGrid();
+updateSensorGrid();
+fetchActivityWave();
+updateDiagStatus();
 loadSchedules();
+
+setInterval(fetchActivityWave, 2500);
+setInterval(updateSensorGrid, 5000);
+setInterval(updateDiagStatus, 10000);
 </script>
 {% endblock %}
