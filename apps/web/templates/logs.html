@@ -1,0 +1,515 @@
+{% extends "base.html" %}
+
+{% block title %}Logs & Activities - Phantom Mission Control{% endblock %}
+
+{% block extra_styles %}
+<style>
+    .log-tabs {
+        border-bottom: 1px solid var(--accent-dim);
+        margin-bottom: 1rem;
+    }
+    .log-tabs .nav-link {
+        color: var(--text-muted);
+        border: none;
+        border-bottom: 2px solid transparent;
+        padding: 0.5rem 1rem;
+        font-size: 0.85rem;
+    }
+    .log-tabs .nav-link:hover {
+        color: var(--accent);
+        border-bottom-color: var(--accent-dim);
+    }
+    .log-tabs .nav-link.active {
+        color: var(--accent);
+        border-bottom-color: var(--accent);
+        background: transparent;
+    }
+    .log-filters {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+    }
+    .log-filters select,
+    .log-filters input {
+        min-width: 120px;
+        padding: 0.375rem 0.75rem;
+        font-size: 0.8rem;
+    }
+    .log-table {
+        width: 100%;
+        font-size: 0.75rem;
+    }
+    .log-table th {
+        color: var(--accent);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 0.5rem 0.75rem;
+        border-bottom: 1px solid var(--accent-dim);
+        white-space: nowrap;
+    }
+    .log-table td {
+        padding: 0.5rem 0.75rem;
+        border-bottom: 1px solid var(--accent-dim);
+        vertical-align: top;
+    }
+    .log-table tr:hover td {
+        background: var(--bg-card-hover);
+    }
+    .log-table .timestamp {
+        color: var(--text-muted);
+        white-space: nowrap;
+    }
+    .log-table .sensor-badge {
+        display: inline-block;
+        padding: 0.125rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.65rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    .llm-call-row {
+        cursor: pointer;
+    }
+    .llm-detail-panel {
+        background: var(--bg-dark);
+        border: 1px solid var(--accent-dim);
+        padding: 1rem;
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    .llm-detail-panel pre {
+        margin: 0;
+        font-size: 0.7rem;
+        color: var(--text-secondary);
+        white-space: pre-wrap;
+        word-break: break-word;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+    .llm-detail-panel .detail-label {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: var(--accent);
+        margin-bottom: 0.25rem;
+        margin-top: 0.75rem;
+    }
+    .llm-detail-panel .detail-label:first-child {
+        margin-top: 0;
+    }
+    .status-badge-sm {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.125rem 0.5rem;
+        border-radius: 0.25rem;
+        font-size: 0.65rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    .status-badge-sm.success { background: rgba(53, 242, 125, 0.15); color: var(--success); }
+    .status-badge-sm.error { background: rgba(255, 92, 92, 0.15); color: var(--danger); }
+    .stats-row {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+    }
+    .stats-row .stat-item {
+        background: var(--bg-card);
+        border: 1px solid var(--accent-dim);
+        padding: 0.75rem 1rem;
+        min-width: 120px;
+        text-align: center;
+    }
+    .stats-row .stat-item .stat-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--accent);
+    }
+    .stats-row .stat-item .stat-label {
+        font-size: 0.65rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+    <div class="col-12">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+            <h5 class="text-accent mb-0"><i class="bi bi-journal-text me-2"></i>Logs & Activities</h5>
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-outline-accent btn-sm" onclick="refreshLogs()">
+                    <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                </button>
+                <button class="btn btn-outline-danger btn-sm" onclick="clearCurrentLogs()">
+                    <i class="bi bi-trash me-1"></i>Clear
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <ul class="nav log-tabs" id="logTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="events-tab" data-bs-toggle="tab" data-bs-target="#events-pane" type="button" role="tab" onclick="switchTab('events')">
+                    <i class="bi bi-lightning-charge me-1"></i>System Events
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="detections-tab" data-bs-toggle="tab" data-bs-target="#detections-pane" type="button" role="tab" onclick="switchTab('detections')">
+                    <i class="bi bi-shield-exclamation me-1"></i>Detections
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="llm-tab" data-bs-toggle="tab" data-bs-target="#llm-pane" type="button" role="tab" onclick="switchTab('llm')">
+                    <i class="bi bi-robot me-1"></i>LLM Activity
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="logTabContent">
+            <!-- System Events -->
+            <div class="tab-pane fade show active" id="events-pane" role="tabpanel">
+                <div class="log-filters">
+                    <select id="eventsCount" class="form-control" onchange="loadEvents()">
+                        <option value="25">25 entries</option>
+                        <option value="50" selected>50 entries</option>
+                        <option value="100">100 entries</option>
+                        <option value="200">200 entries</option>
+                    </select>
+                </div>
+                <div class="card">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="log-table">
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>Sensor</th>
+                                        <th>Data</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="eventsTableBody">
+                                    <tr><td colspan="3" class="text-center text-muted py-4">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detections -->
+            <div class="tab-pane fade" id="detections-pane" role="tabpanel">
+                <div class="log-filters">
+                    <select id="detectionsCount" class="form-control" onchange="loadDetections()">
+                        <option value="25">25 entries</option>
+                        <option value="50" selected>50 entries</option>
+                        <option value="100">100 entries</option>
+                        <option value="200">200 entries</option>
+                    </select>
+                </div>
+                <div class="card">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="log-table">
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>Rule</th>
+                                        <th>Description</th>
+                                        <th>Details</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="detectionsTableBody">
+                                    <tr><td colspan="4" class="text-center text-muted py-4">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LLM Activity -->
+            <div class="tab-pane fade" id="llm-pane" role="tabpanel">
+                <div class="log-filters">
+                    <select id="llmCount" class="form-control" onchange="loadLLMCalls()">
+                        <option value="25">25 entries</option>
+                        <option value="50" selected>50 entries</option>
+                        <option value="100">100 entries</option>
+                    </select>
+                    <select id="llmStatus" class="form-control" onchange="loadLLMCalls()">
+                        <option value="">All Status</option>
+                        <option value="success">Success</option>
+                        <option value="error">Error</option>
+                    </select>
+                </div>
+                <div id="llmStats" class="stats-row"></div>
+                <div class="card">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="log-table">
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>Model</th>
+                                        <th>Status</th>
+                                        <th>Duration</th>
+                                        <th>Messages</th>
+                                        <th>Response Preview</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="llmTableBody">
+                                    <tr><td colspan="7" class="text-center text-muted py-4">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentTab = 'events';
+let expandedLLMRow = null;
+
+function switchTab(tab) {
+    currentTab = tab;
+    if (tab === 'events') loadEvents();
+    if (tab === 'detections') loadDetections();
+    if (tab === 'llm') {
+        loadLLMCalls();
+        loadLLMStats();
+    }
+}
+
+function refreshLogs() {
+    switchTab(currentTab);
+}
+
+function clearCurrentLogs() {
+    if (!confirm('Clear all ' + currentTab + ' logs? This cannot be undone.')) return;
+    if (currentTab === 'llm') {
+        fetch('/api/logs/clear', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({type: 'llm'})
+        })
+        .then(r => r.json())
+        .then(() => loadLLMCalls());
+    } else {
+        alert('Clear not implemented for this log type.');
+    }
+}
+
+function formatTimestamp(iso) {
+    if (!iso) return '-';
+    try {
+        const d = new Date(iso);
+        return d.toLocaleString();
+    } catch {
+        return iso;
+    }
+}
+
+function truncate(str, len) {
+    if (!str) return '-';
+    if (str.length <= len) return str;
+    return str.substring(0, len) + '...';
+}
+
+function jsonPreview(obj, len) {
+    try {
+        const s = JSON.stringify(obj);
+        return truncate(s, len);
+    } catch {
+        return '-';
+    }
+}
+
+function loadEvents() {
+    const count = document.getElementById('eventsCount').value;
+    fetch('/api/logs?type=events&count=' + count)
+        .then(r => r.json())
+        .then(data => {
+            const tbody = document.getElementById('eventsTableBody');
+            const events = data.events || [];
+            if (events.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-4">No events found</td></tr>';
+                return;
+            }
+            tbody.innerHTML = events.map(e => `
+                <tr>
+                    <td class="timestamp">${formatTimestamp(e.timestamp)}</td>
+                    <td><span class="sensor-badge" style="background: rgba(53,242,125,0.1); color: var(--accent);">${escapeHtml(e.sensor || 'unknown')}</span></td>
+                    <td><code style="color: var(--text-secondary); font-size: 0.7rem;">${jsonPreview(e.data, 200)}</code></td>
+                </tr>
+            `).join('');
+        })
+        .catch(() => {
+            document.getElementById('eventsTableBody').innerHTML = '<tr><td colspan="3" class="text-center text-danger py-4">Failed to load events</td></tr>';
+        });
+}
+
+function loadDetections() {
+    const count = document.getElementById('detectionsCount').value;
+    fetch('/api/logs?type=detections&count=' + count)
+        .then(r => r.json())
+        .then(data => {
+            const tbody = document.getElementById('detectionsTableBody');
+            const detections = data.detections || [];
+            if (detections.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">No detections found</td></tr>';
+                return;
+            }
+            tbody.innerHTML = detections.map(d => `
+                <tr>
+                    <td class="timestamp">${formatTimestamp(d.timestamp)}</td>
+                    <td><span class="sensor-badge" style="background: rgba(255,92,92,0.15); color: var(--danger);">${escapeHtml(d.rule || 'unknown')}</span></td>
+                    <td>${escapeHtml(d.description || '')}</td>
+                    <td><code style="color: var(--text-secondary); font-size: 0.7rem;">${jsonPreview(d.details, 150)}</code></td>
+                </tr>
+            `).join('');
+        })
+        .catch(() => {
+            document.getElementById('detectionsTableBody').innerHTML = '<tr><td colspan="4" class="text-center text-danger py-4">Failed to load detections</td></tr>';
+        });
+}
+
+function loadLLMStats() {
+    fetch('/api/logs/llm-stats?hours=24')
+        .then(r => r.json())
+        .then(stats => {
+            const container = document.getElementById('llmStats');
+            container.innerHTML = `
+                <div class="stat-item">
+                    <div class="stat-value">${stats.total_calls || 0}</div>
+                    <div class="stat-label">Total Calls (24h)</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value text-success">${stats.success_count || 0}</div>
+                    <div class="stat-label">Success</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value text-danger">${stats.error_count || 0}</div>
+                    <div class="stat-label">Errors</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${stats.avg_duration_ms || 0}ms</div>
+                    <div class="stat-label">Avg Duration</div>
+                </div>
+            `;
+        })
+        .catch(() => {});
+}
+
+function loadLLMCalls() {
+    const count = document.getElementById('llmCount').value;
+    const status = document.getElementById('llmStatus').value;
+    let url = '/api/logs?type=llm&count=' + count;
+    if (status) url += '&status=' + status;
+    fetch(url)
+        .then(r => r.json())
+        .then(data => {
+            const tbody = document.getElementById('llmTableBody');
+            const calls = data.calls || [];
+            if (calls.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">No LLM calls found</td></tr>';
+                return;
+            }
+            tbody.innerHTML = calls.map((call, idx) => {
+                const msgCount = (call.messages || []).length;
+                const systemMsg = (call.messages || []).find(m => m.role === 'system');
+                const userMsg = (call.messages || []).find(m => m.role === 'user');
+                const preview = call.response ? truncate(call.response, 80) : (call.error || 'Error');
+                const statusClass = call.status === 'success' ? 'success' : 'error';
+                const statusText = call.status === 'success' ? 'OK' : 'ERR';
+                return `
+                <tr class="llm-call-row" onclick="toggleLLMDetail(${idx}, this)">
+                    <td class="timestamp">${formatTimestamp(call.timestamp)}</td>
+                    <td>${escapeHtml(call.model || '-')}</td>
+                    <td><span class="status-badge-sm ${statusClass}">${statusText}</span></td>
+                    <td>${call.duration_ms || 0}ms</td>
+                    <td>${msgCount}</td>
+                    <td>${escapeHtml(preview)}</td>
+                    <td><i class="bi bi-chevron-down" id="chevron-${idx}"></i></td>
+                </tr>
+                <tr id="llm-detail-${idx}" style="display: none;">
+                    <td colspan="7" style="padding: 0; border: none;">
+                        <div class="llm-detail-panel">
+                            <div class="detail-label"><i class="bi bi-cpu me-1"></i>Model</div>
+                            <div style="color: var(--text-primary); font-size: 0.75rem;">${escapeHtml(call.model || '-')}</div>
+                            <div class="detail-label"><i class="bi bi-clock me-1"></i>Duration</div>
+                            <div style="color: var(--text-primary); font-size: 0.75rem;">${call.duration_ms || 0}ms</div>
+                            ${systemMsg ? `
+                            <div class="detail-label"><i class="bi bi-chat-left-text me-1"></i>System Prompt</div>
+                            <pre>${escapeHtml(systemMsg.content)}</pre>
+                            ` : ''}
+                            ${userMsg ? `
+                            <div class="detail-label"><i class="bi bi-chat-left-dots me-1"></i>User Prompt</div>
+                            <pre>${escapeHtml(userMsg.content)}</pre>
+                            ` : ''}
+                            ${call.response ? `
+                            <div class="detail-label"><i class="bi bi-reply me-1"></i>Response</div>
+                            <pre>${escapeHtml(call.response)}</pre>
+                            ` : ''}
+                            ${call.error ? `
+                            <div class="detail-label"><i class="bi bi-exclamation-triangle me-1"></i>Error</div>
+                            <pre style="color: var(--danger);">${escapeHtml(call.error)}</pre>
+                            ` : ''}
+                            <div class="detail-label"><i class="bi bi-info-circle me-1"></i>Metadata</div>
+                            <pre>${jsonPreview(call.metadata, 400)}</pre>
+                        </div>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        })
+        .catch(() => {
+            document.getElementById('llmTableBody').innerHTML = '<tr><td colspan="7" class="text-center text-danger py-4">Failed to load LLM calls</td></tr>';
+        });
+}
+
+function toggleLLMDetail(idx, row) {
+    const detailRow = document.getElementById('llm-detail-' + idx);
+    const chevron = document.getElementById('chevron-' + idx);
+    if (!detailRow) return;
+    if (detailRow.style.display === 'none') {
+        // Close any previously expanded row
+        if (expandedLLMRow !== null) {
+            const prev = document.getElementById('llm-detail-' + expandedLLMRow);
+            const prevChevron = document.getElementById('chevron-' + expandedLLMRow);
+            if (prev) prev.style.display = 'none';
+            if (prevChevron) prevChevron.className = 'bi bi-chevron-down';
+        }
+        detailRow.style.display = 'table-row';
+        chevron.className = 'bi bi-chevron-up';
+        expandedLLMRow = idx;
+    } else {
+        detailRow.style.display = 'none';
+        chevron.className = 'bi bi-chevron-down';
+        expandedLLMRow = null;
+    }
+}
+
+// Initial load
+loadEvents();
+setInterval(() => {
+    if (currentTab === 'events') loadEvents();
+    if (currentTab === 'detections') loadDetections();
+    if (currentTab === 'llm') {
+        loadLLMCalls();
+        loadLLMStats();
+    }
+}, 10000);
+</script>
+{% endblock %}
