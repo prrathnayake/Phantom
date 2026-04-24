@@ -19,33 +19,15 @@ Do not create or use any alternate memory root.
 **Project**: Phantom - AI Agentic Harness System
 **Focus**: Centralized security monitoring with Gateway + Agent architecture
 
-## Project Structure & Important Directories
+## Architecture & Entrypoints
 
-```
-src/
-  agent/     # Intelligence (LLM analysis loop)
-    system_prompt.md  # Single system prompt
-    context.py      # Session context manager
-    memory.py       # Session memory with TTL
-    agent.py        # Agent with LLM loop
-    reports/        # Generated reports (YYYY-MM-DD/)
-    skills/         # Skill implementations
+The repo has multiple independent entrypoints. Do not confuse them:
 
-  gateway/          # Input interfaces + schedule manager
-    schedule_manager.py  # Autonomous diagnostic runs
-    payload_sender.py   # Sends payloads to Agent
-    interfaces/     # HTTP, CLI, Queue, File, WebSocket
-  diagnostics/      # Diagnostic collectors
-  analysis/         # Detection engine
-  core/             # Storage + OpenRouterClient + Tools
-  integrations/     # External service clients
-  utils/            # Utilities
-  skills/           # Legacy agent skills
-
-tests/              # Test suite
-apps/web/           # Flask web dashboard
-cli/                # CLI tools
-```
+- **`python main.py`** — Runs the full stack locally: Gateway (HTTP 8000, WS 8001) + Agent + auto-starts Flask web dashboard (port 5000) as a subprocess.
+- **`python dashboard.py`** — Textual TUI dashboard (SOC console). Imports from `core.*` and `utils.*` directly (not `src.*`) because it adds repo root to `sys.path`.
+- **`python -m flask --app apps.web.app:create_app run`** — Flask web dashboard standalone. Factory is `apps.web.app:create_app`.
+- **`python -m cli`** — Application CLI (not the Docker helper).
+- **`python -m main`** — Docker container entrypoint (used by `docker/Dockerfile`).
 
 ## Build, Setup, and Run Commands
 
@@ -53,51 +35,81 @@ cli/                # CLI tools
 # Install dependencies
 pip install -r requirements.txt
 
-# Run the agent (local)
+# Run full stack locally (agent + gateway + web dashboard)
 python main.py
 
-# Run with Docker
-./phantom start        # Start all containers
-./phantom status     # Check status
-./phantom stop       # Stop containers
+# Run TUI dashboard standalone
+python dashboard.py
+
+# Run web dashboard standalone
+python -m flask --app apps.web.app:create_app run --host 0.0.0.0 --port 5000
+
+# Run application CLI
+python -m cli
 
 # Run tests
 pytest tests/
+# Run a specific test file
+pytest tests/test_agent_unit.py
 ```
 
 ## Docker Management
 
-Use `./phantom` CLI for container management:
+Compose file is at `docker/docker-compose.yml`; Dockerfile is at `docker/Dockerfile`. Use the `./phantom` helper (not `docker compose` directly) for consistency:
 
 ```bash
-./phantom start              # Start containers
+./phantom start              # Start all containers
+./phantom start --wait       # Start and block until healthy
 ./phantom stop               # Stop containers
 ./phantom status             # Show status
-./phantom restart [service]  # Restart service
-./phantom logs [service]     # View logs
-./phantom logs-follow        # Follow logs
-./phantom exec service cmd # Execute in container
+./phantom restart [service]  # Restart service (or all)
+./phantom logs [service]     # View logs (default: agent)
+./phantom follow [service]   # Follow logs
+./phantom exec service cmd   # Execute in container
+./phantom shell [service]    # Interactive shell (default: agent)
+./phantom health             # Health check all services
 ./phantom clean              # Remove containers & volumes
 ```
 
-## Testing Commands & Conventions
+## Configuration & Environment
 
-- Preferred test root: `tests/`
-- Test Agent: `tests/test_agent_unit.py`
-- Test Gateway: `tests/test_gateway.py`
-- Test Diagnostics: `tests/test_diagnostics.py`
-- Test Integration: `tests/test_integration.py`
-- Test Core: `tests/test_core.py`
-- Test Analysis: `tests/test_analysis.py`
-- Test ThreadPool: `tests/test_threadpool.py`
-- Test Config: `tests/test_config.py`
+- `config.py` loads `.env` via `python-dotenv` at import time. Any env var prefixed in `config.py` can override defaults.
+- `OPENROUTER_API_KEY` is required for LLM features but the system degrades gracefully without it (local fallback summaries are used).
+- `AGENT_LOG_DIR` defaults to `./.logs`; falls back to a temp dir if the path is read-only.
 
-## Comments & Docstrings
+## Testing Quirks
 
-- Preserve useful comments/docstrings where they help future readers
-- Do not add noisy comments for obvious code
+- **No `pytest.ini`, `setup.cfg`, or `pyproject.toml`** — pytest discovers from `tests/` with default settings.
+- **Import path inconsistency across tests**: Some test files import `from agent.context` (no `src` prefix) while others use `from src.agent.context`. `conftest.py` adds both the repo root and `src/` to `sys.path`, but individual test files also manipulate `sys.path`. If adding new tests, prefer `from src.agent...` to avoid ambiguity.
+- `tests/conftest.py` provides `temp_dir`, `mock_context`, and `sample_snapshot` fixtures.
+- 144 tests passing as of last project state. Run the full suite before claiming done.
+
+## Project Structure & Boundaries
+
+```
+src/
+  agent/           # Intelligence layer (LLM loop, context, memory, reports)
+  gateway/         # I/O + scheduler; dynamically imports any `src/diagnostics/*.py` with `collect(context)`
+  diagnostics/     # Sensor collectors (zero-registration: drop a file with `collect()` and the scheduler picks it up)
+  analysis/        # Detection engine, alert/approval/response managers
+  core/            # Storage, OpenRouterClient, tool registry/executor
+  integrations/    # Slack, Teams, PagerDuty, SIEM, ELK, CloudWatch clients
+  utils/           # ThreadPool, timeline, event cache, agent state
+  skills/          # Legacy skills (risk_assessment, vulnerability_check)
+
+apps/web/          # Flask dashboard templates + routes
+cli/               # Application CLI (not the `./phantom` Docker helper)
+tests/             # Test suite
+```
+
+## Code Conventions
+
+- Preserve useful comments/docstrings; do not add noisy comments for obvious code.
+- All storage, sensor, and external API calls fail silently and log to `debug.log` (see `src/utils/debug_log.py`). Do not introduce crash-on-failure behavior in those boundaries.
+- When adding a new diagnostic sensor, expose `collect(context)` in `src/diagnostics/<name>_sensor.py`; no registry edit is required.
+- Update `.codex_memories/project_state.md` when completing substantial work.
 
 ## Documentation Sync Expectations
 
-- Update local docs when architecture or workflow changes
-- Keep docs aligned with meaningful code changes
+- Update local docs when architecture or workflow changes.
+- Keep docs aligned with meaningful code changes.
