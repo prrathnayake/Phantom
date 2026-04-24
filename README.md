@@ -168,7 +168,7 @@ python dashboard.py
 
 Generated reports stored in:
 ```
-src/agent/reports/YYYY-MM-DD/report_{session_id}_{timestamp}.md
+src/agent/reports/YYYY-MM-DD/report_{session_id}_YYYYMMDD_HHMMSS.md
 ```
 
 ## Key Features

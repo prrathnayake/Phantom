@@ -51,7 +51,7 @@ class ReportStorage:
         report_dir = self.reports_dir / date_str
         report_dir.mkdir(parents=True, exist_ok=True)
         
-        timestamp = datetime.now(timezone.utc).isoformat().replace(":", "-")
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
         filename = f"report_{session_id}_{timestamp}.md"
         report_path = report_dir / filename
         

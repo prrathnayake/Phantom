@@ -40,7 +40,7 @@ The agent loops around a single LLM for analysis:
 ## Reports
 - Format: Markdown with JSON metadata
 - Location: `src/agent/reports/YYYY-MM-DD/`
-- Naming: `report_{session_id}_{timestamp}.md`
+- Naming: `report_{session_id}_YYYYMMDD_HHMMSS.md`
 - Content: Executive summary, findings, recommendations,raw data
 
 ## Trigger Mode
