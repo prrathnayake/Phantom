@@ -75,13 +75,20 @@
 <!-- Report Modal -->
 <div class="modal fade" id="reportModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-xl">
-        <div class="modal-content" style="background: var(--bg-card); border: 1px solid var(--border);">
+        <div class="modal-content" style="background: var(--bg-card); border: 1px solid var(--border); max-height: 90vh;">
             <div class="modal-header">
                 <h5 class="modal-title text-accent">Report Viewer</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div class="d-flex align-items-center gap-2">
+                    <div class="font-size-controls" role="group" aria-label="Text size controls">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="adjustFontSize(-1)" title="Decrease font size" aria-label="Decrease font size">A-</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="resetFontSize()" title="Reset font size" aria-label="Reset font size">A</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="adjustFontSize(1)" title="Increase font size" aria-label="Increase font size">A+</button>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
             </div>
-            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
-                <pre id="reportContent" style="white-space: pre-wrap; word-wrap: break-word; font-size: 0.85rem; font-family: 'JetBrains Mono', monospace;"></pre>
+            <div class="modal-body" style="max-height: 75vh; overflow-y: auto;">
+                <div id="reportContent" class="markdown-body"></div>
             </div>
             <div class="modal-footer bg-transparent border-top border-secondary">
                 <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
@@ -138,6 +145,294 @@
     color: var(--text-muted);
 }
 
+/* Font size controls */
+.font-size-controls {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.font-size-controls .btn {
+    padding: 0.125rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+/* Markdown Body Styles */
+.markdown-body {
+    font-family: 'JetBrains Mono', 'Segoe UI', system-ui, sans-serif;
+    font-size: 0.9rem;
+    line-height: 1.7;
+    color: var(--text-primary);
+    word-wrap: break-word;
+}
+
+.markdown-body > *:first-child {
+    margin-top: 0 !important;
+}
+
+.markdown-body > *:last-child {
+    margin-bottom: 0 !important;
+}
+
+/* Headings */
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--accent);
+    margin-top: 1.75rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.4rem;
+}
+
+.markdown-body h1 {
+    font-size: 1.6rem;
+    border-bottom: 2px solid var(--accent-dim);
+    margin-top: 0;
+    padding-bottom: 0.6rem;
+}
+
+.markdown-body h2 {
+    font-size: 1.35rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.markdown-body h3 {
+    font-size: 1.15rem;
+    color: var(--text-secondary);
+}
+
+.markdown-body h4 {
+    font-size: 1rem;
+    color: var(--text-secondary);
+}
+
+.markdown-body h5 {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.markdown-body h6 {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Paragraphs */
+.markdown-body p {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    line-height: 1.75;
+}
+
+/* Horizontal Rules */
+.markdown-body hr {
+    height: 2px;
+    padding: 0;
+    margin: 1.5rem 0;
+    background: linear-gradient(90deg, transparent, var(--accent-dim), transparent);
+    border: 0;
+    overflow: hidden;
+}
+
+.markdown-body hr::before {
+    content: '';
+    display: block;
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.3;
+}
+
+/* Links */
+.markdown-body a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    transition: all 0.15s ease;
+}
+
+.markdown-body a:hover {
+    color: var(--success);
+    text-shadow: var(--terminal-glow);
+}
+
+/* Lists */
+.markdown-body ul,
+.markdown-body ol {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    padding-left: 1.75rem;
+}
+
+.markdown-body ul {
+    list-style-type: disc;
+}
+
+.markdown-body ul ul {
+    list-style-type: circle;
+    margin-bottom: 0;
+}
+
+.markdown-body ol {
+    list-style-type: decimal;
+}
+
+.markdown-body ol ol {
+    list-style-type: lower-alpha;
+    margin-bottom: 0;
+}
+
+.markdown-body li {
+    margin-bottom: 0.35rem;
+    line-height: 1.7;
+}
+
+.markdown-body li::marker {
+    color: var(--accent-dim);
+}
+
+/* Task Lists */
+.markdown-body input[type="checkbox"] {
+    margin-right: 0.5rem;
+    accent-color: var(--accent);
+}
+
+/* Blockquotes */
+.markdown-body blockquote {
+    margin: 1rem 0;
+    padding: 0.75rem 1rem;
+    border-left: 4px solid var(--accent-dim);
+    background: var(--bg-dark);
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.markdown-body blockquote p:last-child {
+    margin-bottom: 0;
+}
+
+.markdown-body blockquote blockquote {
+    margin-top: 0.5rem;
+    border-left-color: var(--border);
+}
+
+/* Code */
+.markdown-body code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85em;
+    padding: 0.15rem 0.4rem;
+    background: var(--bg-dark);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    color: var(--info);
+    word-break: break-word;
+}
+
+.markdown-body pre {
+    margin: 1rem 0;
+    padding: 1rem;
+    background: var(--bg-dark);
+    border: 1px solid var(--border);
+    border-radius: 0;
+    overflow-x: auto;
+    line-height: 1.5;
+}
+
+.markdown-body pre code {
+    display: block;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    color: var(--text-primary);
+    font-size: 0.8rem;
+    white-space: pre;
+    word-break: normal;
+    word-wrap: normal;
+}
+
+/* Tables */
+.markdown-body table {
+    width: 100%;
+    margin: 1rem 0;
+    border-collapse: collapse;
+    overflow-x: auto;
+    display: block;
+    font-size: 0.85rem;
+}
+
+.markdown-body table thead {
+    background: var(--bg-dark);
+}
+
+.markdown-body table th {
+    font-weight: 600;
+    color: var(--accent);
+    text-align: left;
+    padding: 0.6rem 0.75rem;
+    border-bottom: 2px solid var(--accent-dim);
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+}
+
+.markdown-body table td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+}
+
+.markdown-body table tbody tr:hover {
+    background: var(--bg-card-hover);
+}
+
+.markdown-body table tbody tr:nth-child(even) {
+    background: rgba(13, 20, 17, 0.5);
+}
+
+/* Images */
+.markdown-body img {
+    max-width: 100%;
+    height: auto;
+    margin: 1rem 0;
+    border: 1px solid var(--border);
+}
+
+/* Strong and Emphasis */
+.markdown-body strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.markdown-body em {
+    color: var(--text-secondary);
+}
+
+/* Definition Lists */
+.markdown-body dl {
+    margin: 1rem 0;
+}
+
+.markdown-body dt {
+    font-weight: 600;
+    color: var(--accent);
+    margin-top: 0.75rem;
+}
+
+.markdown-body dd {
+    margin-left: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-secondary);
+}
+
 @media (max-width: 640px) {
     .ls-header {
         display: none;
@@ -163,12 +458,24 @@
         text-align: left;
         color: var(--text-muted);
     }
+    .markdown-body {
+        font-size: 0.85rem;
+    }
+    .markdown-body h1 { font-size: 1.35rem; }
+    .markdown-body h2 { font-size: 1.15rem; }
+    .markdown-body h3 { font-size: 1rem; }
 }
 </style>
 {% endblock %}
 
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
 <script>
+let currentFontSize = 0;
+const FONT_SIZE_STEP = 0.1;
+const MIN_FONT_SIZE = -2;
+const MAX_FONT_SIZE = 3;
+
 function filterReports() {
     const search = document.getElementById('searchReports').value.toLowerCase();
     let visible = 0;
@@ -181,8 +488,28 @@ function filterReports() {
     document.getElementById('reportsEmptySearch').style.display = visible ? 'none' : 'block';
 }
 
+function adjustFontSize(delta) {
+    currentFontSize = Math.max(MIN_FONT_SIZE, Math.min(MAX_FONT_SIZE, currentFontSize + delta));
+    applyFontSize();
+}
+
+function resetFontSize() {
+    currentFontSize = 0;
+    applyFontSize();
+}
+
+function applyFontSize() {
+    const body = document.getElementById('reportContent');
+    if (body) {
+        const baseSize = 0.9 + (currentFontSize * FONT_SIZE_STEP);
+        body.style.fontSize = baseSize + 'rem';
+    }
+}
+
 function viewReport(path) {
-    document.getElementById('reportContent').textContent = 'Loading report...';
+    const contentEl = document.getElementById('reportContent');
+    contentEl.innerHTML = '<p class="text-muted">Loading report...</p>';
+    resetFontSize();
     const modal = new bootstrap.Modal(document.getElementById('reportModal'));
     modal.show();
     
@@ -193,10 +520,14 @@ function viewReport(path) {
             return r.text();
         })
         .then(content => {
-            document.getElementById('reportContent').textContent = content;
+            contentEl.innerHTML = marked.parse(content, {
+                breaks: true,
+                gfm: true,
+                headerIds: false
+            });
         })
         .catch(err => {
-            document.getElementById('reportContent').textContent = 'Error: ' + err.message;
+            contentEl.innerHTML = '<p class="text-danger">Error: ' + escapeHtml(err.message) + '</p>';
         });
 }
 
