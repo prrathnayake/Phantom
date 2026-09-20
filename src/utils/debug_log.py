@@ -9,9 +9,10 @@ from typing import Any, Dict
 
 class DebugLogger:
     def __init__(self):
-        config.ensure_log_dir()
-        self.debug_file = config.LOG_DIR / "debug.log"
         self.enabled = config.DEBUG_MODE
+        self.debug_file = config.LOG_DIR / "debug.log"
+        if self.enabled:
+            config.ensure_log_dir()
 
     def log(self, category: str, message: str, data: Dict[str, Any] = None) -> None:
         if not self.enabled:
